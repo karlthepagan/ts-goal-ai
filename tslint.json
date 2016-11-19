@@ -12,6 +12,8 @@
       "check-format",
       "allow-pascal-case",
       "allow-leading-underscore"
-    ]
+    ],
+    "no-unused-expression": false, // TODO workaround for unused variable
+    "no-unused-variable": false
   }
 }

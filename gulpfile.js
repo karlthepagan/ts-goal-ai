@@ -17,6 +17,7 @@ const sourcemaps = require('gulp-sourcemaps');
 const through = require('through2');
 const git = require("simple-git");
 const _ = require("lodash");
+const uglify = require('gulp-uglify');
 
 /********/
 /* INIT */

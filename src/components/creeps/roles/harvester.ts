@@ -1,4 +1,5 @@
 import * as creepActions from "../creepActions";
+import * as T from "../../tasks";
 
 /**
  * Runs all creep actions.
@@ -25,7 +26,9 @@ function _tryHarvest(creep: Creep, target: Source): number {
 
 function _moveToHarvest(creep: Creep, target: Source): void {
   if (_tryHarvest(creep, target) === ERR_NOT_IN_RANGE) {
-    creepActions.moveTo(creep, target.pos);
+    T.tasks.push(() => {
+      creepActions.moveTo(creep, target.pos);
+    });
   }
 }
 
@@ -35,6 +38,8 @@ function _tryEnergyDropOff(creep: Creep, target: Spawn | Structure): number {
 
 function _moveToDropEnergy(creep: Creep, target: Spawn | Structure): void {
   if (_tryEnergyDropOff(creep, target) === ERR_NOT_IN_RANGE) {
-    creepActions.moveTo(creep, target.pos);
+    T.tasks.push(() => {
+      creepActions.moveTo(creep, target.pos);
+    });
   }
 }

@@ -1,4 +1,5 @@
 import * as Config from "../../config/config";
+import * as T from "../tasks";
 
 /**
  * Shorthand method for `Creep.moveTo()`.
@@ -50,7 +51,9 @@ export function tryRenew(creep: Creep, spawn: Spawn): number {
  */
 export function moveToRenew(creep: Creep, spawn: Spawn): void {
   if (tryRenew(creep, spawn) === ERR_NOT_IN_RANGE) {
-    creep.moveTo(spawn);
+    T.tasks.push(() => {
+      creep.moveTo(spawn);
+    });
   }
 }
 
@@ -68,7 +71,9 @@ export function getEnergy(creep: Creep, roomObject: RoomObject): void {
     if (creep.pos.isNearTo(energy)) {
       creep.pickup(energy);
     } else {
-      moveTo(creep, energy.pos);
+      T.tasks.push(() => {
+        moveTo(creep, energy.pos);
+      });
     }
   }
 }
