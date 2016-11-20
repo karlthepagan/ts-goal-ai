@@ -30,6 +30,42 @@ defineGoal(Move.left as GoalLambda);
 defineGoal(Move.right as GoalLambda);
 defineGoal(MoveTo.constructor as GoalLambda);
 
-export function run(room: Room): void {
+/**
+ * build global goals, examine rooms
+ */
+export function plan() {
+  for (let room of Game.rooms) {
+    // build candidate goals for all visible rooms, this cascades into rooms in memory
+    plan(room);
+  }
+}
+
+/**
+ * build candidate goals
+ */
+export function plan(room: Room) {
+  for (let goalName of priority) {
+
+  }
+}
+
+/**
+ * elect a winning plan
+ */
+export function election() {
+
+}
+
+/**
+ * execute plans
+ */
+export function execute(): void {
+
+}
+
+/**
+ * cleanup dead goals, plan for next cycle
+ */
+export function conflictResolution(): void {
 
 }

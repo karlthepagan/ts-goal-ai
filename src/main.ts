@@ -15,35 +15,48 @@ console.log("loading");
  * @export
  */
 export function loop() {
+  // initialize working memory
   Look.init();
+
+  for (let room of Game.rooms) {
+    // build initial working memory for all visible rooms
+    Look.atRoom(room);
+  }
+
+  // plan level zero
+  GoalManager.plan();
+
+  // prune conflicting goals
+  GoalManager.election();
+
+  // execute goals
+  GoalManager.execute();
 
   for (let i in Game.rooms) {
     let room: Room = Game.rooms[i];
 
-    Look.atRoom(room);
-
-    GoalManager.run(room);
-
+    // legacy procedural ai
     CreepManager.run(room);
-
-    // Clears any non-existing creep memory.
-    for (let name in Memory.creeps) {
-      let creep: any = Memory.creeps[name];
-
-      if (creep.room === room.name) {
-        if (!Game.creeps[name]) {
-          console.log("Clearing non-existing creep memory: ", name);
-          delete Memory.creeps[name];
-        }
-      }
-    }
   }
 
   for (const fun of T.tasks) {
     fun();
   }
 
-  // TODO clear?
+  // clean up failed or conflicting goals
+  GoalManager.conflictResolution();
+
+  // Clears any non-existing creep memory.
+  for (let name in Memory.creeps) {
+    let creep: any = Memory.creeps[name];
+
+    if (!Game.creeps[name]) {
+      console.log("Clearing non-existing creep memory: ", name);
+      delete Memory.creeps[name];
+    }
+  }
+
+  // TODO clear array?
   T.tasks.splice(0, T.tasks.length);
 
   console.log("CPU: ", Game.cpu.getUsed());

@@ -1,29 +1,30 @@
 import Goal from "./goal";
 import * as Keys from "../keys";
-import {NOOP} from "../tasks";
 import RoomState from "../state/roomState";
 
-export default class StoreEnergy implements Goal<Room, RoomState> {
-  constructor(room: string) {
-    console.log("hello room");
+export default class UpgradeController implements Goal<Room, Spawn, RoomState> {
+  constructor(spec: any) {
+    console.log("hello ", this.getGoalKey());
   }
 
   public getGoalKey(): string {
-    return Keys.GOAL_STORE_ENERGY;
+    return Keys.GOAL_UPGRADE_CONTROLLER;
   }
 
   public execute(state: RoomState, actor: Room): void {
+    state = state;
     actor = actor;
   }
 
   public canFinish(state: RoomState, actor: Room): Task|undefined {
     state = state;
+    actor = actor;
+    return undefined;
+  }
 
-    if (actor.energyAvailable < actor.energyCapacityAvailable) {
-      return undefined;
-    }
-
-    return NOOP;
+  public canProgress(state: RoomState): boolean {
+    state = state;
+    return true;
   }
 
   public takeResource(state: RoomState, actor: Room): boolean {
@@ -35,18 +36,14 @@ export default class StoreEnergy implements Goal<Room, RoomState> {
   }
 
   public getTasks(state: RoomState, actor: Room): Task[] {
-    return [];
-  }
-
-  public canProgress(state: RoomState): boolean {
-    state = state;
-    return true;
+    return undefined;
   }
 
   public getGoalId(): string|undefined {
     return undefined;
   }
+
   public toString(): string {
-    return "storeEnergy"; // TODO non-addressable
+    return "create"; // TODO non-addressable
   }
 }

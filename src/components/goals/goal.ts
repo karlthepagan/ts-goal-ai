@@ -10,7 +10,7 @@ interface Goal<T, R, S extends State<T>> {
   getGoalId(): string|undefined;
   toString(): string;
   /**
-   * perform operation assigned to achieve this goal
+   * perform calculation to finish this goal
    */
   execute(state: S, actor: T): void;
   /**
@@ -35,12 +35,12 @@ interface Goal<T, R, S extends State<T>> {
   /**
    * calculate if an unallocated resource should be assigned to this goal
    */
-  takeResource(state: S, actor: T): Task;
+  takeResource(state: S, actor: T): boolean;
 
   /**
    * calculate if a resource should be stolen from another goal
    */
-  stealResource(state: S, actor: T): Task;
+  stealResource(state: S, actor: T): boolean;
 
   /**
    * tasks calculated to depend on calculated progress

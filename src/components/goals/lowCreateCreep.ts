@@ -1,35 +1,48 @@
-import State from "../state/abstractState";
 import Goal from "./goal";
 import * as Keys from "../keys";
+import RoomState from "../state/roomState";
 
-export default class CreateCreep implements Goal<Spawn> {
+export default class CreateCreep implements Goal<Room, Spawn, RoomState> {
   constructor(spec: any) {
-    console.log("hello creep");
+    console.log("hello ", this.getGoalKey());
   }
 
   public getGoalKey(): string {
-    return Keys.GOAL_MOVE_TO;
+    return Keys.GOAL_CREATE_CREEP;
   }
 
-  public execute(state: State<Spawn>, actor: Spawn): void {
+  public execute(state: RoomState, actor: Room): void {
     state = state;
     actor = actor;
   }
 
-  public canFinish(state: State<Spawn>, actor: Spawn): Task|undefined {
+  public canFinish(state: RoomState, actor: Room): Task|undefined {
     state = state;
     actor = actor;
     return undefined;
   }
 
-  public canProgress(state: State<Spawn>): boolean {
+  public canProgress(state: RoomState): boolean {
     state = state;
     return true;
+  }
+
+  public takeResource(state: RoomState, actor: Room): boolean {
+    return false;
+  }
+
+  public stealResource(state: RoomState, actor: Room): boolean {
+    return false;
+  }
+
+  public getTasks(state: RoomState, actor: Room): Task[] {
+    return undefined;
   }
 
   public getGoalId(): string|undefined {
     return undefined;
   }
+
   public toString(): string {
     return "create"; // TODO non-addressable
   }
