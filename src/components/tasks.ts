@@ -1,1 +1,2 @@
-export let tasks: Task[] = [];
+export const tasks: Task[] = [];
+export const NOOP: Task = () => { return; };

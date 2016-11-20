@@ -1,21 +1,27 @@
 import State from "../state/abstractState";
 
-interface Goal<T> {
+/**
+ * T actor type
+ * R resource type
+ * S state type
+ */
+interface Goal<T, R, S extends State<T>> {
+  getGoalKey(): string;
   getGoalId(): string|undefined;
   toString(): string;
   /**
    * perform operation assigned to achieve this goal
    */
-  execute(state: State<any>, actor: T): void;
+  execute(state: S, actor: T): void;
   /**
    * this goal can be immediately resolved in the next tick with a single task
    */
-  canFinish(state: State<any>, actor: T): Task|undefined;
+  canFinish(state: S, actor: T): Task|undefined;
   /**
    * progress is immediately possible
    */
-  canProgress(state: State<any>): boolean;
-  //
+  canProgress(state: S): boolean;
+
   // /**
   //  * ticks to reach the next progress increment
   //  */
@@ -25,11 +31,21 @@ interface Goal<T> {
   //  * magnitude of the next progress increment
   //  */
   // getProgressVelocity(state: State): number;
-  //
-  // /**
-  //  * tasks calculated to depend on calculated progress
-  //  */
-  // getTasks(state: State): Task[];
+
+  /**
+   * calculate if an unallocated resource should be assigned to this goal
+   */
+  takeResource(state: S, actor: T): Task;
+
+  /**
+   * calculate if a resource should be stolen from another goal
+   */
+  stealResource(state: S, actor: T): Task;
+
+  /**
+   * tasks calculated to depend on calculated progress
+   */
+  getTasks(state: S, actor: T): Task[];
 }
 
 export default Goal;

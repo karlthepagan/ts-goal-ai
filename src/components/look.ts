@@ -19,5 +19,5 @@ export function init() {
 }
 
 export function atRoom(room: Room) {
-  RoomState.spawn(room);
+  RoomState.right(room);
 }

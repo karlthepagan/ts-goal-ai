@@ -1,1 +1,1 @@
-type Task = () => void;
+type Task = () => number;

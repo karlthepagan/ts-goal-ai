@@ -1,10 +1,15 @@
 import State from "../state/abstractState";
 import Goal from "./goal";
+import * as Keys from "../keys";
 
 export default class MoveTo implements Goal<Creep> {
   private dir: any;
-  constructor(direction: RoomPosition[]|PathStep[]|string) {
+  constructor(direction: RoomPosition[]|PathStep[]|string|undefined) {
     this.dir = direction;
+  }
+
+  public getGoalKey(): string {
+    return Keys.GOAL_MOVE_TO;
   }
 
   public execute(state: State<Creep>, actor: Creep): void {

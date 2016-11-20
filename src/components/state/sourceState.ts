@@ -1,15 +1,22 @@
-import State from "./abstractState";
+import ResourceState from "./abstractResourceState";
 
-export default class SourceState extends State<Source> {
-  public static spawn(obj: Source): SourceState {
-    return SourceState._inst.wrap(obj, obj.getMemory());
+export default class SourceState extends ResourceState<Source> {
+  public static left(obj: Source): SourceState {
+    return SourceState._left.wrap(obj, obj.getMemory()) as SourceState;
   }
 
-  private static _inst = new SourceState();
+  public static right(obj: Source): SourceState {
+    return SourceState._right.wrap(obj, obj.getMemory()) as SourceState;
+  }
+
+  private static _left = new SourceState();
+  private static _right = new SourceState();
 
   public init(): boolean {
     if (super.init()) {
       console.log("source");
+
+      this.initTerrain();
 
       return true;
     }

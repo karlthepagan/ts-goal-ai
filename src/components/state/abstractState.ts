@@ -1,4 +1,6 @@
 import Goal from "../goals/goal";
+import * as Keys from "../keys";
+import * as Filters from "../filters";
 
 /**
  * Flyweight objects which wrap memory and object to calculate state
@@ -17,9 +19,14 @@ abstract class State<T> {
   }
 
   public init(): boolean {
-    console.log("at ", this.subject);
-    if (this.memory.seen === undefined) {
-      this.memory.seen = 1;
+    console.log("at ", this.subject, ":", JSON.stringify(this.memory));
+    if (this.memory[Keys.SEEN] === undefined) {
+      this.memory[Keys.SEEN] = 1;
+      this.memory[Keys.LOCATION_POS] = Filters.posAsStr((this.subject as any).pos);
+      this.memory[Keys.LOCATION_ROOM] = Filters.room(this.subject);
+
+      this.memory[Keys.TASK_CANDIDATE_CREEPS] = {};
+      this.memory[Keys.TASK_ASSIGNED_CREEPS] = {};
 
       return true;
     }

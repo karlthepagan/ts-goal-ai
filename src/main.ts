@@ -1,51 +1,10 @@
 import * as CreepManager from "./components/creeps/creepManager";
+import * as GoalManager from "./components/goals/goalManager";
 import * as T from "./components/tasks";
 import * as Look from "./components/look";
 import * as Config from "./config/config";
 
-// Any code written outside the `loop()` method is executed only when the
-// Screeps system reloads your script.
-// Use this bootstrap wisely. You can cache some of your stuff to save CPU.
-// You should extend prototypes before the game loop executes here.
-
 console.log("loading");
-let loading: boolean = true;
-
-// This is an example for using a config variable from `config.ts`.
-if (Config.USE_PATHFINDER) {
-  PathFinder.use(true);
-}
-
-RoomObject.prototype.getMemory = function() {
-  let mem: any|undefined = Memory.objects[this.id];
-  if (mem === undefined) {
-    console.log("create memory ", this);
-    return Memory.objects[this.id] = {};
-  }
-  return mem;
-};
-
-Creep.prototype.getMemory = function() {
-  return this.memory;
-};
-
-Flag.prototype.getMemory = function() {
-  return this.memory;
-};
-
-Spawn.prototype.getMemory = function() {
-  return this.memory;
-};
-
-OwnedStructure.prototype.getMemory = function() {
-  return this.memory;
-};
-
-StructureController.prototype.getMemory = RoomObject.prototype.getMemory;
-
-Room.prototype.getMemory = function() {
-  return this.memory;
-};
 
 /**
  * Screeps system expects this "loop" method in main.js to run the
@@ -62,6 +21,8 @@ export function loop() {
     let room: Room = Game.rooms[i];
 
     Look.atRoom(room);
+
+    GoalManager.run(room);
 
     CreepManager.run(room);
 
@@ -88,3 +49,41 @@ export function loop() {
   console.log("CPU: ", Game.cpu.getUsed());
   loading = false;
 }
+
+let loading: boolean = true;
+
+// This is an example for using a config variable from `config.ts`.
+if (Config.USE_PATHFINDER) {
+  PathFinder.use(true);
+}
+
+RoomObject.prototype.getMemory = function() {
+  let mem: any|undefined = Memory.objects[this.id];
+  if (mem === undefined) {
+    // console.log("create memory ", this);
+    return Memory.objects[this.id] = {};
+  }
+  return mem;
+};
+
+Creep.prototype.getMemory = function() {
+  return this.memory;
+};
+
+Flag.prototype.getMemory = function() {
+  return this.memory;
+};
+
+Spawn.prototype.getMemory = function() {
+  return this.memory;
+};
+
+OwnedStructure.prototype.getMemory = function() {
+  return this.memory;
+};
+
+StructureController.prototype.getMemory = RoomObject.prototype.getMemory;
+
+Room.prototype.getMemory = function() {
+  return this.memory;
+};

@@ -1,10 +1,56 @@
 import State from "../state/abstractState";
 import Goal from "./goal";
+import * as Keys from "../keys";
+
+const mTop = new Move(TOP);
+const mTopR = new Move(TOP_RIGHT);
+const mRight = new Move(RIGHT);
+const mBotR = new Move(BOTTOM_RIGHT);
+const mBot = new Move(BOTTOM);
+const mBotL = new Move(BOTTOM_LEFT);
+const mLeft = new Move(LEFT);
+const mTopL = new Move(TOP_LEFT);
 
 export default class Move implements Goal<Creep> {
+  public static top(): Goal<Creep> {
+    return mTop;
+  }
+
+  public static topRight(): Goal<Creep> {
+    return mTopR;
+  }
+
+  public static right(): Goal<Creep> {
+    return mRight;
+  }
+
+  public static bottomRight(): Goal<Creep> {
+    return mBotR;
+  }
+
+  public static bottom(): Goal<Creep> {
+    return mBot;
+  }
+
+  public static bottomLeft(): Goal<Creep> {
+    return mBotL;
+  }
+
+  public static left(): Goal<Creep> {
+    return mLeft;
+  }
+
+  public static topLeft(): Goal<Creep> {
+    return mTopL;
+  }
+
   private dir: number;
   constructor(direction: number) {
     this.dir = direction;
+  }
+
+  public getGoalKey(): string {
+    return Keys.GOAL_MOVE;
   }
 
   public execute(state: State<Creep>, actor: Creep): void {
@@ -28,10 +74,10 @@ export default class Move implements Goal<Creep> {
   }
 
   public getGoalId(): string|undefined {
-    return "move" + this.dir;
+    return this.getGoalKey() + this.dir;
   }
 
   public toString(): string {
-    return this.getGoalId() as string;
+    return "move" + this.dir;
   }
 }
