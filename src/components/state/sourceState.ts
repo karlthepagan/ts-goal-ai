@@ -1,6 +1,7 @@
-import ResourceState from "./abstractResourceState";
+import State from "./abstractState";
+import * as Tasks from "../tasks";
 
-export default class SourceState extends ResourceState<Source> {
+export default class SourceState extends State<Source> {
   public static left(obj: Source): SourceState {
     return SourceState._left.wrap(obj, obj.getMemory()) as SourceState;
   }
@@ -16,7 +17,7 @@ export default class SourceState extends ResourceState<Source> {
     if (super.init()) {
       console.log("source");
 
-      this.initTerrain();
+      Tasks.initTerrain(this._subject, this._memory);
 
       return true;
     }

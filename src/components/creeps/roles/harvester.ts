@@ -27,7 +27,7 @@ function _tryHarvest(creep: Creep, target: Source): number {
 function _moveToHarvest(creep: Creep, target: Source): void {
   if (_tryHarvest(creep, target) === ERR_NOT_IN_RANGE) {
     T.tasks.push(() => {
-      creepActions.moveTo(creep, target.pos);
+      return creepActions.moveTo(creep, target.pos);
     });
   }
 }
@@ -39,7 +39,7 @@ function _tryEnergyDropOff(creep: Creep, target: Spawn | Structure): number {
 function _moveToDropEnergy(creep: Creep, target: Spawn | Structure): void {
   if (_tryEnergyDropOff(creep, target) === ERR_NOT_IN_RANGE) {
     T.tasks.push(() => {
-      creepActions.moveTo(creep, target.pos);
+      return creepActions.moveTo(creep, target.pos);
     });
   }
 }

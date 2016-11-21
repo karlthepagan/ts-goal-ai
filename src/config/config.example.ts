@@ -1,5 +1,3 @@
-import { LogLevels } from "../components/support/log.levels";
-
 /**
  * Enable this if you want a lot of text to be logged to console.
  * @type {boolean}
@@ -16,11 +14,6 @@ export const USE_PATHFINDER: boolean = true;
  * @type {number}
  */
 export const DEFAULT_MIN_LIFE_BEFORE_NEEDS_REFILL: number = 700;
-
-/**
- * Debug level for log output
- */
-export const LOG_LEVEL: number = LogLevels.DEBUG;
 
 /**
  * Prepend log output with current tick number.

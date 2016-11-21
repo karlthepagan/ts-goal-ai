@@ -52,7 +52,7 @@ export function tryRenew(creep: Creep, spawn: Spawn): number {
 export function moveToRenew(creep: Creep, spawn: Spawn): void {
   if (tryRenew(creep, spawn) === ERR_NOT_IN_RANGE) {
     T.tasks.push(() => {
-      creep.moveTo(spawn);
+      return creep.moveTo(spawn);
     });
   }
 }
@@ -72,7 +72,7 @@ export function getEnergy(creep: Creep, roomObject: RoomObject): void {
       creep.pickup(energy);
     } else {
       T.tasks.push(() => {
-        moveTo(creep, energy.pos);
+        return moveTo(creep, energy.pos);
       });
     }
   }

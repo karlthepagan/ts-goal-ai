@@ -1,7 +1,8 @@
-import ResourceState from "./abstractResourceState";
 import * as Keys from "../keys";
+import * as Tasks from "../tasks";
+import State from "./abstractState";
 
-export default class MineralState extends ResourceState<Mineral> {
+export default class MineralState extends State<Mineral> {
   public static left(obj: Mineral): MineralState {
     return MineralState._left.wrap(obj, obj.getMemory()) as MineralState;
   }
@@ -17,9 +18,9 @@ export default class MineralState extends ResourceState<Mineral> {
     if (super.init()) {
       console.log("mineral");
 
-      this.memory[Keys.INFO_MINERAL] = this.subject.mineralType;
+      this._memory[Keys.INFO_MINERAL] = this._subject.mineralType;
 
-      this.initTerrain();
+      Tasks.initTerrain(this._subject, this._memory);
 
       return true;
     }

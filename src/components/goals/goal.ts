@@ -1,51 +1,44 @@
 import State from "../state/abstractState";
+import Plan from "./plan";
 
 /**
- * T actor type
+ * simplified goal interface, uses closures to spawn dependent goals
+ * A actor type
  * R resource type
- * S state type
+ * M state type
  */
-interface Goal<T, R, S extends State<T>> {
+interface Goal<A, R, M extends State<A>> {
   getGoalKey(): string;
-  getGoalId(): string|undefined;
   toString(): string;
-  /**
-   * perform calculation to finish this goal
-   */
-  execute(state: S, actor: T): void;
-  /**
-   * this goal can be immediately resolved in the next tick with a single task
-   */
-  canFinish(state: S, actor: T): Task|undefined;
-  /**
-   * progress is immediately possible
-   */
-  canProgress(state: S): boolean;
-
-  // /**
-  //  * ticks to reach the next progress increment
-  //  */
-  // getProgressTicks(state: State): number;
-  //
-  // /**
-  //  * magnitude of the next progress increment
-  //  */
-  // getProgressVelocity(state: State): number;
 
   /**
-   * calculate if an unallocated resource should be assigned to this goal
+   * build global goals, examine rooms
+   *
+   * @returns rich plan with all possible candidates assigned
    */
-  takeResource(state: S, actor: T): boolean;
+  plan(state: M): Plan<R>;
 
   /**
-   * calculate if a resource should be stolen from another goal
+   * elect a winning plan
+   *
+   * @returns pruned plan structure
    */
-  stealResource(state: S, actor: T): boolean;
+  elect(state: M, plan: Plan<R>): Plan<R>;
 
   /**
-   * tasks calculated to depend on calculated progress
+   * execute plans
+   *
+   * state and world is modified
+   *
+   * @returns list of failed plan roots
    */
-  getTasks(state: S, actor: T): Task[];
+  execute(actor: A, state: M, plan: Plan<R>): Plan<R>[];
+
+  /**
+   * cleanup dead goals, plan for next cycle
+   *
+   * @returns resolution plan root
+   */
+  resolve(failures: Plan<R> []): Plan<R>|any;
 }
-
 export default Goal;

@@ -1,10 +1,12 @@
 import * as CreepManager from "./components/creeps/creepManager";
-import * as GoalManager from "./components/goals/goalManager";
 import * as T from "./components/tasks";
-import * as Look from "./components/look";
 import * as Config from "./config/config";
+import MasterGoal from "./components/goals/highMasterGoal";
+import GoalState from "./components/state/goalState";
 
 console.log("loading");
+
+const goals: MasterGoal = new MasterGoal();
 
 /**
  * Screeps system expects this "loop" method in main.js to run the
@@ -16,21 +18,28 @@ console.log("loading");
  */
 export function loop() {
   // initialize working memory
-  Look.init();
-
-  for (let room of Game.rooms) {
-    // build initial working memory for all visible rooms
-    Look.atRoom(room);
-  }
+  const state = GoalState.boot();
 
   // plan level zero
-  GoalManager.plan();
+  let initialPlan = goals.plan(state);
+  let iteration = 0;
 
-  // prune conflicting goals
-  GoalManager.election();
+  while (initialPlan !== undefined) {
+    console.log(++iteration, "planned", initialPlan.size());
 
-  // execute goals
-  GoalManager.execute();
+    // prune conflicting goals
+    const electedPlan = goals.elect(state, initialPlan);
+
+    console.log(iteration, "elected", electedPlan.size());
+
+    // execute goals
+    const failedPlans = goals.execute(Game, state, electedPlan);
+
+    console.log(iteration, "failed", failedPlans.length);
+
+    // clean up failed or conflicting goals
+    initialPlan = goals.resolve(failedPlans);
+  }
 
   for (let i in Game.rooms) {
     let room: Room = Game.rooms[i];
@@ -43,13 +52,8 @@ export function loop() {
     fun();
   }
 
-  // clean up failed or conflicting goals
-  GoalManager.conflictResolution();
-
   // Clears any non-existing creep memory.
   for (let name in Memory.creeps) {
-    let creep: any = Memory.creeps[name];
-
     if (!Game.creeps[name]) {
       console.log("Clearing non-existing creep memory: ", name);
       delete Memory.creeps[name];

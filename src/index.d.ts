@@ -20,6 +20,7 @@ interface Room {
 }
 
 interface Memory {
+  goals: any;
   objects: any;
   uuid: number;
   log: any;
