@@ -1,24 +1,16 @@
 import State from "./abstractState";
 
-export default class RoomObjectState extends State<RoomObject> {
-  public static left(obj: RoomObject|undefined): RoomObjectState|undefined {
-    if (obj === undefined) {
-      return undefined;
-    }
-
-    return RoomObjectState._left.wrap(obj, obj.getMemory()) as RoomObjectState;
+export default class RoomObjectState<T extends RoomObject> extends State<T> {
+  public static left<U extends RoomObject>(obj: U): RoomObjectState<U> {
+    return RoomObjectState._left.wrap(obj, obj.getMemory()) as RoomObjectState<U>;
   }
 
-  public static right(obj: RoomObject|undefined): RoomObjectState|undefined {
-    if (obj === undefined) {
-      return undefined;
-    }
-
-    return RoomObjectState._right.wrap(obj, obj.getMemory()) as RoomObjectState;
+  public static right<U extends RoomObject>(obj: U): RoomObjectState<U> {
+    return RoomObjectState._right.wrap(obj, obj.getMemory()) as RoomObjectState<U>;
   }
 
-  private static _left = new RoomObjectState();
-  private static _right = new RoomObjectState();
+  private static _left = new RoomObjectState<RoomObject>();
+  private static _right = new RoomObjectState<RoomObject>();
 
   public init() {
     if (super.init()) {

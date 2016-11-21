@@ -6,8 +6,8 @@ export default class GoalState extends State<Game> {
     return GoalState._master;
   }
 
-  public static build(mem: any) {
-    return new GoalState().wrap(Game, mem) as GoalState;
+  public static build(game: Game, mem: any) {
+    return new GoalState().wrap(game, mem) as GoalState;
   }
 
   public static boot(): GoalState {
@@ -31,7 +31,7 @@ export default class GoalState extends State<Game> {
       Memory.goals = {};
     }
 
-    return GoalState._master = GoalState.build(Memory.goals);
+    return GoalState._master = GoalState.build(Game, Memory.goals);
   }
 
   private static _master: GoalState;

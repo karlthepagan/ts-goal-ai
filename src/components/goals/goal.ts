@@ -12,6 +12,13 @@ interface Goal<A, R, M extends State<A>> {
   toString(): string;
 
   /**
+   * construct state given actor
+   *
+   * @param subject
+   */
+  state(actor: A): M;
+
+  /**
    * build global goals, examine rooms
    *
    * @returns rich plan with all possible candidates assigned

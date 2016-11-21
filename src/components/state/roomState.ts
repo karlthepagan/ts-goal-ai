@@ -28,7 +28,9 @@ export default class RoomState extends State<Room> {
       // iterate thru room objects and look up action fitness filter
 
       // not yet owned (usually)
-      RoomObjectState.left(this._subject.controller);
+      if (this._subject.controller !== undefined) {
+        RoomObjectState.left(this._subject.controller);
+      }
 
       this._subject.find(FIND_SOURCES).forEach(SourceState.right);
       this._subject.find(FIND_MINERALS).forEach(MineralState.right);

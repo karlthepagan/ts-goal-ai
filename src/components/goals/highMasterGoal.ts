@@ -1,20 +1,13 @@
-import Goal from "./goal";
 import GoalState from "../state/goalState";
 import Plan from "./plan";
 import * as High from "./high";
-import Expand from "./highExpand";
-import RoomControlLevel from "./highRcl";
-import State from "../state/abstractState";
 import Goal from "./goal";
+import State from "../state/abstractState";
+import {goals} from "./high";
 
-type CandidateLambda = (state: GoalState) => State<any>;
+type CandidateLambda = (state: GoalState) => any[];
 
-const candidateBuilders: { [key: string]: CandidateLambda } = {};
-candidateBuilders[High.GOAL_EXPAND] = State.prototype.subject; // instance reference?
-candidateBuilders[High.GOAL_RCL] =
-
-// TODO externalize MasterGoal priorities
-const candidates: string[] = [ // TODO map name -> candidate builder
+const priority: string[] = [
   High.GOAL_EXPAND,
   High.GOAL_RCL,
   High.GOAL_SCOUT,
@@ -23,35 +16,55 @@ const candidates: string[] = [ // TODO map name -> candidate builder
 /**
  * ai goal root
  */
-export default class MasterGoal implements Goal<Game, Game|Room, GoalState> {
+export default class MasterGoal implements Goal<Game, Game, GoalState> {
+  private _candidateBuilders: { [key: string]: CandidateLambda } = {};
+
   constructor() {
     console.log("hello ", this.getGoalKey());
+
+    this._candidateBuilders[High.GOAL_EXPAND] = State.prototype.subject;
+    this._candidateBuilders[High.GOAL_RCL] = this.rooms;
+    this._candidateBuilders[High.GOAL_SCOUT] = this.creeps;
   }
 
-  public plan(state: GoalState): Plan<Game|Room> {
+  public rooms(state: GoalState): Room[] {
+    return _.values(state.subject().rooms) as Room[];
+  }
+
+  public creeps(state: GoalState): Creep[] {
+    return _.values(state.subject().creeps) as Creep[];
+  }
+
+  public state(actor: Game): GoalState {
+    return GoalState.build(actor, Memory.goals);
+  }
+
+  public plan(state: GoalState): Plan<Game> {
     state = state;
 
-    // for (const name in state.subject().rooms) {
-    //   const room = state.subject().rooms[name];
-    //   // build candidate goals for all visible rooms, this cascades into rooms in memory
-    //   console.log("plan ", name); // TODO impl
-    // }
+    const plan = new Plan<Game>(this, state.subject());
 
-    for (const goal of priority) {
+    for (const name of priority) {
+      const candidates: any[] = this._candidateBuilders[name](state);
 
+      for (const actor of candidates) {
+        const goal = goals[name](actor);
+
+        plan.add( goal.plan( goal.state(actor) ) );
+      }
     }
 
-    return new Plan<Game|Room>(null, null);
+    return plan;
   }
 
-  public elect(state: GoalState, plan: Plan<Game|Room>): Plan<Game|Room> {
+  public elect(state: GoalState, plan: Plan<Game>): Plan<Game> {
     state = state;
     plan = plan;
 
-    return new Plan<Game|Room>(null, null);
+    return new Plan<Game>(this, state.subject());
   }
 
-  public execute(actor: Game, state: GoalState, plan: Plan<Game|Room>): Plan<Game|Room>[] {
+  public execute(actor: Game, state: GoalState, plan: Plan<Game>): Plan<Game>[] {
     actor = actor;
     state = state;
     plan = plan;
@@ -59,7 +72,7 @@ export default class MasterGoal implements Goal<Game, Game|Room, GoalState> {
     return [];
   }
 
-  public resolve(failures: Plan<Game|Room>[]): Plan<Game|Room>|any {
+  public resolve(failures: Plan<Game>[]): Plan<Game>|any {
     failures = failures;
 
     return undefined;
