@@ -23,14 +23,14 @@ interface Goal<A, R, M extends State<A>> {
    *
    * @returns rich plan with all possible candidates assigned
    */
-  plan(state: M): Plan<R>;
+  plan(state: M): Plan<R>[];
 
   /**
    * elect a winning plan
    *
    * @returns pruned plan structure
    */
-  elect(state: M, plan: Plan<R>): Plan<R>;
+  elect(state: M, plan: Plan<R>[]): Plan<R>;
 
   /**
    * execute plans
@@ -46,6 +46,6 @@ interface Goal<A, R, M extends State<A>> {
    *
    * @returns resolution plan root
    */
-  resolve(failures: Plan<R> []): Plan<R>|any;
+  resolve(failures: Plan<R> []): Plan<R>[]|any;
 }
 export default Goal;

@@ -5,7 +5,7 @@ import * as High from "./high";
 import RoomState from "../state/roomState";
 
 /**
- * expand territory and max out each controlled territory
+ * expand territory
  */
 export default class Expand implements Goal<Game, Room, GoalState> {
   constructor() {
@@ -16,7 +16,7 @@ export default class Expand implements Goal<Game, Room, GoalState> {
     return GoalState.build(actor, Memory.goals);
   }
 
-  public plan(state: GoalState): Plan<Room> {
+  public plan(state: GoalState): Plan<Room>[] {
     state = state;
 
     let room: Room = {} as Room; // TODO empty case
@@ -28,10 +28,10 @@ export default class Expand implements Goal<Game, Room, GoalState> {
       RoomState.right(room);
     }
 
-    return new Plan<Room>(this, room);
+    return [ new Plan<Room>(this, room) ];
   }
 
-  public elect(state: GoalState, plan: Plan<Room>): Plan<Room> {
+  public elect(state: GoalState, plan: Plan<Room>[]): Plan<Room> {
     state = state;
     plan = plan;
 
