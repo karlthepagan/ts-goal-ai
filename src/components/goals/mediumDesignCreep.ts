@@ -15,20 +15,20 @@ export default class DesignCreep implements Goal<Room, any, RoomState> {
     return RoomState.right(actor);
   }
 
-  public plan(state: RoomState): Plan<Room> {
+  public plan(state: RoomState): Plan<any>[] {
     state = state;
 
-    return new Plan<Room>(this, state.subject());
+    return [ new Plan<Room>(this, state.subject()) ];
   }
 
-  public elect(state: RoomState, plan: Plan<Room>): Plan<Room> {
+  public elect(state: RoomState, plan: Plan<any>[]): Plan<any> {
     state = state;
     plan = plan;
 
     return new Plan<Room>(this, state.subject());
   }
 
-  public execute(actor: Room, state: RoomState, plan: Plan<Room>): Plan<Room>[] {
+  public execute(actor: Room, state: RoomState, plan: Plan<any>): Plan<any>[] {
     actor = actor;
     state = state;
     plan = plan;
@@ -36,7 +36,7 @@ export default class DesignCreep implements Goal<Room, any, RoomState> {
     return [];
   }
 
-  public resolve(failures: Plan<Room>[]): Plan<Room>|any {
+  public resolve(failures: Plan<any>[]): Plan<any>[]|any {
     failures = failures;
 
     return undefined;

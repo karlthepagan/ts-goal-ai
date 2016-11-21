@@ -25,15 +25,23 @@ abstract class State<T> {
     return this._memory;
   }
 
+  public isPaused(): boolean {
+    return this._memory === undefined;
+  }
+
   public init(): boolean {
+    if (this._memory === undefined) {
+      return false;
+    }
+
     console.log("at ", this._subject, ":", JSON.stringify(this._memory));
     if (this._memory[Keys.SEEN] === undefined) {
       this._memory[Keys.SEEN] = 1;
       this._memory[Keys.LOCATION_POS] = Filters.posAsStr((this._subject as any).pos);
       this._memory[Keys.LOCATION_ROOM] = Filters.room(this._subject);
 
-      this._memory[Keys.TASK_CANDIDATE_CREEPS] = {};
-      this._memory[Keys.TASK_ASSIGNED_CREEPS] = {};
+      // this._memory[Keys.TASK_CANDIDATE_CREEPS] = {};
+      // this._memory[Keys.TASK_ASSIGNED_CREEPS] = {};
 
       return true;
     }

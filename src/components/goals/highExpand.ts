@@ -46,7 +46,7 @@ export default class Expand implements Goal<Game, Room, GoalState> {
     return [];
   }
 
-  public resolve(failures: Plan<Room>[]): Plan<Room>|any {
+  public resolve(failures: Plan<Room>[]): Plan<Room>[]|any {
     failures = failures;
 
     return undefined;

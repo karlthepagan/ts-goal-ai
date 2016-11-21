@@ -20,7 +20,7 @@ export default class MineralState extends State<Mineral> {
 
       this._memory[Keys.INFO_MINERAL] = this._subject.mineralType;
 
-      Tasks.initTerrain(this._subject, this._memory);
+      Tasks.findOpenPositions(this._subject.pos, this._memory, 1);
 
       return true;
     }

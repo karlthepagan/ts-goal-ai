@@ -13,9 +13,9 @@ type GoalLambda = (actor: any) => Goal<any, any, State<any>>;
 // goal constructors
 export const goals: { [key: string]: GoalLambda } = {};
 
-goals[GOAL_EXPAND] = Expand.constructor as GoalLambda;
-goals[GOAL_RCL] = RoomControlLevel.constructor as GoalLambda;
-goals[GOAL_SCOUT] = ScoutRoom.constructor as GoalLambda;
+goals[GOAL_EXPAND] = () => new Expand();
+goals[GOAL_RCL] = (a) => new RoomControlLevel(a);
+goals[GOAL_SCOUT] = (a) => new ScoutRoom(a);
 /*
 
  game domain goals

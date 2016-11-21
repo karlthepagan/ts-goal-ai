@@ -17,13 +17,13 @@ export default class ScoutRoom implements Goal<Game, Creep, GoalState> {
     return GoalState.build(actor, Memory.goals);
   }
 
-  public plan(state: GoalState): Plan<Creep> {
+  public plan(state: GoalState): Plan<Creep>[] {
     state = state;
 
-    return new Plan<Creep>(this, {} as Creep);
+    return [ new Plan<Creep>(this, {} as Creep) ];
   }
 
-  public elect(state: GoalState, plan: Plan<Creep>): Plan<Creep> {
+  public elect(state: GoalState, plan: Plan<Creep>[]): Plan<Creep> {
     state = state;
     plan = plan;
 
@@ -38,7 +38,7 @@ export default class ScoutRoom implements Goal<Game, Creep, GoalState> {
     return [];
   }
 
-  public resolve(failures: Plan<Creep>[]): Plan<Creep>|any {
+  public resolve(failures: Plan<Creep>[]): Plan<Creep>[]|any {
     failures = failures;
 
     return undefined;

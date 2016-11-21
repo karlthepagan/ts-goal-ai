@@ -2,7 +2,6 @@ import GoalState from "../state/goalState";
 import Plan from "./plan";
 import * as High from "./high";
 import Goal from "./goal";
-import State from "../state/abstractState";
 import {goals} from "./high";
 
 type CandidateLambda = (state: GoalState) => any[];
@@ -22,42 +21,45 @@ export default class MasterGoal implements Goal<Game, Game, GoalState> {
   constructor() {
     console.log("hello ", this.getGoalKey());
 
-    this._candidateBuilders[High.GOAL_EXPAND] = State.prototype.subject;
+    this._candidateBuilders[High.GOAL_EXPAND] = this.subject;
     this._candidateBuilders[High.GOAL_RCL] = this.rooms;
     this._candidateBuilders[High.GOAL_SCOUT] = this.creeps;
-  }
-
-  public rooms(state: GoalState): Room[] {
-    return _.values(state.subject().rooms) as Room[];
-  }
-
-  public creeps(state: GoalState): Creep[] {
-    return _.values(state.subject().creeps) as Creep[];
   }
 
   public state(actor: Game): GoalState {
     return GoalState.build(actor, Memory.goals);
   }
 
-  public plan(state: GoalState): Plan<Game> {
-    state = state;
+  public plan(state: GoalState): Plan<Game>[] {
+    if (state.isPaused()) {
+      console.log("paused");
+      return [];
+    }
 
     const plan = new Plan<Game>(this, state.subject());
 
     for (const name of priority) {
-      const candidates: any[] = this._candidateBuilders[name](state);
+      console.log("pri", name);
+
+      let candidates: any[] = this.buildCandidateActors(name, state);
 
       for (const actor of candidates) {
+        console.log("act", actor);
+
         const goal = goals[name](actor);
 
-        plan.add( goal.plan( goal.state(actor) ) );
+        console.log(goal);
+
+        if (goal !== undefined) {
+          plan.addAll(goal.plan(goal.state(actor)));
+        }
       }
     }
 
-    return plan;
+    return [ plan ];
   }
 
-  public elect(state: GoalState, plan: Plan<Game>): Plan<Game> {
+  public elect(state: GoalState, plan: Plan<Game>[]): Plan<Game> {
     state = state;
     plan = plan;
 
@@ -72,7 +74,7 @@ export default class MasterGoal implements Goal<Game, Game, GoalState> {
     return [];
   }
 
-  public resolve(failures: Plan<Game>[]): Plan<Game>|any {
+  public resolve(failures: Plan<Game>[]): Plan<Game>[]|any {
     failures = failures;
 
     return undefined;
@@ -84,5 +86,25 @@ export default class MasterGoal implements Goal<Game, Game, GoalState> {
 
   public toString(): string {
     return this.getGoalKey();
+  }
+
+  protected buildCandidateActors(goalName: string, state: GoalState): any[] {
+    let candidates: any[] = this._candidateBuilders[goalName](state);
+    if (candidates === undefined) {
+      return [];
+    }
+    return candidates;
+  }
+
+  private rooms(state: GoalState): Room[] {
+    return _.values(state.subject().rooms) as Room[];
+  }
+
+  private creeps(state: GoalState): Creep[] {
+    return _.values(state.subject().creeps) as Creep[];
+  }
+
+  private subject(state: GoalState): Game[] {
+    return [ state.subject() ];
   }
 }

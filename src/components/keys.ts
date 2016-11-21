@@ -1,4 +1,4 @@
-export const RESOURCE_OUTPUT_POSITIONS = "outpos"; // "⎐";
+export const OBJECT_WORK_POSITIONS = "workpos"; // "⎐";
 export const LOCATION_ROOM = "room"; // "▣";
 export const LOCATION_POS = "pos"; // "▦";
 export const INFO_MINERAL = "mineral"; // "⎑";

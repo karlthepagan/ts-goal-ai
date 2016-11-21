@@ -25,7 +25,7 @@ export function loop() {
   let iteration = 0;
 
   while (initialPlan !== undefined) {
-    console.log(++iteration, "planned", initialPlan.size());
+    console.log(++iteration, "planned", initialPlan.length);
 
     // prune conflicting goals
     const electedPlan = goals.elect(state, initialPlan);

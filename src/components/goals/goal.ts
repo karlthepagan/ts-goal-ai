@@ -46,6 +46,6 @@ interface Goal<A, R, M extends State<A>> {
    *
    * @returns resolution plan root
    */
-  resolve(failures: Plan<R> []): Plan<R>[]|any;
+  resolve(failures: Plan<R>[]): Plan<R>[]|any;
 }
 export default Goal;

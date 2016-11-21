@@ -25,5 +25,7 @@ interface Memory {
   uuid: number;
   log: any;
   delete: boolean;
+  reset: boolean;
+  pause: boolean;
   init(): void;
 }

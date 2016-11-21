@@ -27,4 +27,8 @@ export default class Plan<R> {
   public add(dependency: Plan<any>) {
     this._next.push(dependency);
   }
+
+  public addAll(dependencies: Plan<any>[]) {
+    this._next.push(...dependencies);
+  }
 }

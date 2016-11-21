@@ -10,7 +10,7 @@ export default class RoomControlLevel implements Goal<Room, Room, RoomState> {
   private _address: string;
 
   constructor(actor: Room) {
-    console.log("hello ", this.getGoalKey());
+    console.log("hello", this.getGoalKey(), "actor", actor);
 
     this._address = actor.name;
   }
@@ -19,13 +19,13 @@ export default class RoomControlLevel implements Goal<Room, Room, RoomState> {
     return RoomState.right(actor);
   }
 
-  public plan(state: RoomState): Plan<Room> {
+  public plan(state: RoomState): Plan<Room>[] {
     state = state;
 
-    return new Plan<Room>(this, state.subject());
+    return [ new Plan<Room>(this, state.subject()) ];
   }
 
-  public elect(state: RoomState, plan: Plan<Room>): Plan<Room> {
+  public elect(state: RoomState, plan: Plan<Room>[]): Plan<Room> {
     state = state;
     plan = plan;
 
@@ -40,7 +40,7 @@ export default class RoomControlLevel implements Goal<Room, Room, RoomState> {
     return [];
   }
 
-  public resolve(failures: Plan<Room>[]): Plan<Room>|any {
+  public resolve(failures: Plan<Room>[]): Plan<Room>[]|any {
     failures = failures;
 
     return undefined;

@@ -18,17 +18,17 @@ export default class UpgradeController
     return RoomObjectState.right(actor);
   }
 
-  public plan(state: RoomObjectState<StructureController>): Plan<Creep> {
+  public plan(state: RoomObjectState<StructureController>): Plan<Creep>[] {
     state = state;
 
-    return new Plan<Creep>(this, {} as Creep); // TODO look up creep
+    return [ new Plan<Creep>(this, {} as Creep) ]; // TODO look up creep
   }
 
-  public elect(state: RoomObjectState<StructureController>, plan: Plan<Creep>): Plan<Creep> {
+  public elect(state: RoomObjectState<StructureController>, plan: Plan<Creep>[]): Plan<Creep> {
     state = state;
 
     // TODO validate state
-    return plan;
+    return plan[0];
   }
 
   public execute(actor: StructureController,
@@ -41,7 +41,7 @@ export default class UpgradeController
     return [];
   }
 
-  public resolve(failures: Plan<Creep>[]): Plan<Creep>|any {
+  public resolve(failures: Plan<Creep>[]): Plan<Creep>[]|any {
     failures = failures;
 
     return undefined;

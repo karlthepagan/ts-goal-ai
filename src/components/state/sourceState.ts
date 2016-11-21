@@ -17,7 +17,7 @@ export default class SourceState extends State<Source> {
     if (super.init()) {
       console.log("source");
 
-      Tasks.initTerrain(this._subject, this._memory);
+      Tasks.findOpenPositions(this._subject.pos, this._memory, 1);
 
       return true;
     }
