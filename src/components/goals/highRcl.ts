@@ -2,11 +2,16 @@ import Goal from "./goal";
 import Plan from "./plan";
 import * as High from "./high";
 import RoomState from "../state/roomState";
+import GoalState from "../state/goalState";
 
 /**
  * expand territory and max out each controlled territory
  */
 export default class RoomControlLevel implements Goal<Room, Room, RoomState> {
+  public static fromGoalState(state: GoalState): Room[] {
+    return _.values(state.subject().rooms) as Room[];
+  }
+
   private _address: string;
 
   constructor(actor: Room) {

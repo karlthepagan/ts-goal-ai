@@ -2,9 +2,6 @@ import GoalState from "../state/goalState";
 import Plan from "./plan";
 import * as High from "./high";
 import Goal from "./goal";
-import {goals} from "./high";
-
-type CandidateLambda = (state: GoalState) => any[];
 
 const priority: string[] = [
   High.GOAL_EXPAND,
@@ -16,14 +13,8 @@ const priority: string[] = [
  * ai goal root
  */
 export default class MasterGoal implements Goal<Game, Game, GoalState> {
-  private _candidateBuilders: { [key: string]: CandidateLambda } = {};
-
   constructor() {
     console.log("hello ", this.getGoalKey());
-
-    this._candidateBuilders[High.GOAL_EXPAND] = this.subject;
-    this._candidateBuilders[High.GOAL_RCL] = this.rooms;
-    this._candidateBuilders[High.GOAL_SCOUT] = this.creeps;
   }
 
   public state(actor: Game): GoalState {
@@ -46,12 +37,12 @@ export default class MasterGoal implements Goal<Game, Game, GoalState> {
       for (const actor of candidates) {
         console.log("act", actor);
 
-        const goal = goals[name](actor);
+        const goal = High.goals[name](actor);
 
         console.log(goal);
 
         if (goal !== undefined) {
-          plan.addAll(goal.plan(goal.state(actor)));
+          plan.addAll( goal.plan(goal.state(actor)) );
         }
       }
     }
@@ -89,22 +80,10 @@ export default class MasterGoal implements Goal<Game, Game, GoalState> {
   }
 
   protected buildCandidateActors(goalName: string, state: GoalState): any[] {
-    let candidates: any[] = this._candidateBuilders[goalName](state);
+    let candidates: any[] = High.goalStateActors[goalName](state);
     if (candidates === undefined) {
       return [];
     }
     return candidates;
-  }
-
-  private rooms(state: GoalState): Room[] {
-    return _.values(state.subject().rooms) as Room[];
-  }
-
-  private creeps(state: GoalState): Creep[] {
-    return _.values(state.subject().creeps) as Creep[];
-  }
-
-  private subject(state: GoalState): Game[] {
-    return [ state.subject() ];
   }
 }

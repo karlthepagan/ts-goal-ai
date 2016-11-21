@@ -9,7 +9,7 @@ export function findOpenPositions(pos: RoomPosition, memory: any, range: number)
     LOOK_TERRAIN, pos.y - range, pos.x - range, pos.y + range, pos.x + range, true) as LookAtResultWithPos[])
     .filter(Filters.isMovable);
 
-  memory[Keys.OBJECT_WORK_POSITIONS] = _.transform(terrain, (look) => {
-    Filters.xyAsStr(look.x, look.y);
-  });
+  memory[Keys.OBJECT_WORK_POSITIONS] = _.transform(terrain, (acc: string[], look: LookAtResultWithPos) => {
+    acc.push( Filters.xyAsStr(look.x, look.y) );
+  }, []);
 }

@@ -8,6 +8,10 @@ import RoomState from "../state/roomState";
  * expand territory
  */
 export default class Expand implements Goal<Game, Room, GoalState> {
+  public static fromGoalState(state: GoalState): Game[] {
+    return [ state.subject() ];
+  }
+
   constructor() {
     console.log("hello ", this.getGoalKey());
   }

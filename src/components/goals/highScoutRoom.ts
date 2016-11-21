@@ -7,6 +7,10 @@ import GoalState from "../state/goalState";
  * from the origin room, determine the next
  */
 export default class ScoutRoom implements Goal<Game, Creep, GoalState> {
+  public static fromGoalState(state: GoalState): Creep[] {
+    return _.values(state.subject().creeps) as Creep[];
+  }
+
   constructor(actor: Game) {
     actor = actor;
 
