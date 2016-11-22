@@ -34,19 +34,6 @@ export default class ScoutRoom extends Goal<Game, Creep, GoalState> {
     return plan[0];
   }
 
-  public execute(actor: Game, plan: Plan<Creep>): Plan<Creep>[] {
-    actor = actor;
-    plan = plan;
-
-    return [];
-  }
-
-  public resolve(failures: Plan<Creep>[]): Plan<Creep>[]|any {
-    failures = failures;
-
-    return undefined;
-  }
-
   public getGoalKey(): string {
     return Medium.GOAL_SCOUT;
   }

@@ -31,25 +31,8 @@ export default class MasterGoal extends Goal<Game, Game, GoalState> {
       return plan[0];
     }
 
-    // TODO sort plans by priority, eliminate plans with higher priority allocated resources
+    // TODO sort plans by priority, eliminate plans with lower priority allocated resources
     return plan[0];
-  }
-
-  public execute(actor: Game, plan: Plan<Game>): Plan<Game>[] {
-    actor = actor;
-    plan = plan;
-
-    for (let task of plan.next()) {
-      task.goal().execute(actor, task.resource());
-    }
-
-    return [];
-  }
-
-  public resolve(failures: Plan<Game>[]): Plan<Game>[]|any {
-    failures = failures;
-
-    return undefined;
   }
 
   public getGoalKey(): string {

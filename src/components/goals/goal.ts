@@ -78,7 +78,12 @@ abstract class Goal<A, R, M extends State<A>> {
     plan = plan;
 
     for (let task of plan.next()) {
-      task.goal().execute(actor, task.resource());
+      let failures = task.goal().execute(task.resource(), task);
+      // TODO package failures
+
+      if (failures.length > 0) {
+        console.log("failed goal=", task.goal().getGoalKey(), "res=", task.resource());
+      }
     }
 
     return [];
@@ -89,7 +94,11 @@ abstract class Goal<A, R, M extends State<A>> {
    *
    * @returns resolution plan root
    */
-  public abstract resolve(failures: Plan<R>[]): Plan<R>[]|any;
+  public resolve(failures: Plan<R>[]): Plan<R>[]|any {
+    failures = failures;
+
+    return undefined;
+  }
 
   public isPaused(): boolean {
     return false;

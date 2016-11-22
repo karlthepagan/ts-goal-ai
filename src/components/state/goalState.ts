@@ -64,6 +64,8 @@ export default class GoalState extends State<Game> {
         RoomState.left(room);
       }
 
+      // TODO id's of global resources
+
       return true;
     }
 

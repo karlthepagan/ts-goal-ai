@@ -29,20 +29,6 @@ export default class UpgradeController
     return plan[0];
   }
 
-  public execute(actor: Room,
-                 plan: Plan<Creep>): Plan<Creep>[] {
-    actor = actor;
-    plan = plan;
-
-    return [];
-  }
-
-  public resolve(failures: Plan<Creep>[]): Plan<Creep>[]|any {
-    failures = failures;
-
-    return undefined;
-  }
-
   protected _identifyResources(state: RoomState): Creep[] {
     state = state;
 

@@ -41,19 +41,6 @@ export default class RoomControlLevel extends Goal<Room, Room, RoomState> {
     return new Plan<Room>(this, state.subject());
   }
 
-  public execute(actor: Room, plan: Plan<Room>): Plan<Room>[] {
-    actor = actor;
-    plan = plan;
-
-    return [];
-  }
-
-  public resolve(failures: Plan<Room>[]): Plan<Room>[]|any {
-    failures = failures;
-
-    return undefined;
-  }
-
   public getGoalKey(): string {
     return High.GOAL_RCL;
   }

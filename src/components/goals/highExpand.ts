@@ -45,19 +45,6 @@ export default class Expand extends Goal<Game, Room, GoalState> {
     return new Plan<Room>(this, {} as Room);
   }
 
-  public execute(actor: Game, plan: Plan<Room>): Plan<Room>[] {
-    actor = actor;
-    plan = plan;
-
-    return [];
-  }
-
-  public resolve(failures: Plan<Room>[]): Plan<Room>[]|any {
-    failures = failures;
-
-    return undefined;
-  }
-
   public getGoalKey(): string {
     return High.GOAL_EXPAND;
   }

@@ -34,6 +34,8 @@ export default class RoomState extends State<Room> {
       this._subject.find(FIND_SOURCES).forEach(SourceState.right);
       this._subject.find(FIND_MINERALS).forEach(MineralState.right);
 
+      // enumerate per-room resources?
+
       return true;
     }
 
