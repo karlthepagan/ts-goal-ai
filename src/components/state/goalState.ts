@@ -71,4 +71,13 @@ export default class GoalState extends State<Game> {
 
     return false;
   }
+
+  public creeps(): Creep[] {
+    // TODO lazy
+    return _.values(this.subject().creeps) as Creep[];
+  }
+
+  public rooms(): Room[] {
+    return _.values(this.subject().rooms) as Room[];
+  }
 }

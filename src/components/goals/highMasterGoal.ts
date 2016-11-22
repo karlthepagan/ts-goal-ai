@@ -37,9 +37,9 @@ export default class MasterGoal extends Goal<Game, Game, GoalState> {
   protected _goalPriority(): string[] {
     // TODO genome
     return [
-      High.GOAL_STICKY,
-      High.GOAL_EXPAND,
-      High.GOAL_RCL,
+      High.GOAL_STICKY, // game -> creeps, objects
+      High.GOAL_EXPAND, // game -> room -> creep, spawn
+      High.GOAL_GCL, // game -> room -> creep, spawn
     ];
   }
 

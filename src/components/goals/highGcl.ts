@@ -1,14 +1,14 @@
 import Goal from "./goal";
-import GoalState from "../state/goalState";
-import Plan from "./plan";
 import * as High from "./high";
+import * as Medium from "./medium";
+import GoalState from "../state/goalState";
 import {CandidateFactory} from "../filters";
 import {goalStateActors} from "./goals";
 
 /**
- * expand territory
+ * expand territory and max out each controlled territory
  */
-export default class Sticky extends Goal<Game, any, GoalState> {
+export default class GlobalControlIncrease extends Goal<Game, Room, GoalState> {
   public static fromGoalState(state: GoalState): Game[] {
     return [ state.subject() ];
   }
@@ -23,34 +23,26 @@ export default class Sticky extends Goal<Game, any, GoalState> {
     return GoalState.build(actor, Memory.goals);
   }
 
-  public plan(state: GoalState): Plan<any>[] {
-    state = state;
-
-    // TODO deserialize plans from memory
-
-    return [];
-  }
-
   public getGoalKey(): string {
-    return High.GOAL_STICKY;
+    return High.GOAL_GCL;
   }
 
   public toString(): string {
     return this.getGoalKey();
   }
 
-  protected _identifyResources(state: GoalState): any[] {
-    state = state;
-
-    // return _.values(state.subject().rooms) as Room[];
-    return [];
+  protected _identifyResources(state: GoalState): Room[] {
+    return state.rooms();
   }
 
   protected _candidateActorFactory(): CandidateFactory<GoalState> {
     return goalStateActors;
   }
 
-  // TODO?
-  // goal -> creep
-  // goal -> object
+  protected _goalPriority(): string[] {
+    // TODO genome
+    return [
+      Medium.GOAL_RCL, // room -> creep, spawn
+    ];
+  }
 }

@@ -4,8 +4,7 @@ import {CandidateFactory} from "../filters";
 import RoomState from "../state/roomState";
 import {roomStateActors} from "./goals";
 
-export default class UpgradeController
-    extends Goal<Room, Creep, RoomState> {
+export default class UpgradeController extends Goal<Room, Creep, RoomState> {
 
   constructor(room: Room) {
     super();
@@ -22,10 +21,8 @@ export default class UpgradeController
   }
 
   protected _identifyResources(state: RoomState): Creep[] {
-    state = state;
-
-    // TODO creeps
-    return [];
+    // TODO creeps near this room (not just in)
+    return state.subject().find(FIND_MY_CREEPS) as Creep[];
   }
 
   protected _candidateActorFactory(): CandidateFactory<RoomState> {

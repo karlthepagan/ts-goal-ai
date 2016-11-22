@@ -1,5 +1,6 @@
 import Goal from "./goal";
-import * as High from "./high";
+import * as Medium from "./medium";
+import * as Low from "./low";
 import RoomState from "../state/roomState";
 import GoalState from "../state/goalState";
 import {CandidateFactory} from "../filters";
@@ -28,7 +29,7 @@ export default class RoomControlLevel extends Goal<Room, Room, RoomState> {
   }
 
   public getGoalKey(): string {
-    return High.GOAL_RCL;
+    return Medium.GOAL_RCL;
   }
 
   public toString(): string {
@@ -41,5 +42,14 @@ export default class RoomControlLevel extends Goal<Room, Room, RoomState> {
 
   protected _candidateActorFactory(): CandidateFactory<RoomState> {
     return roomStateActors;
+  }
+
+  protected _goalPriority(): string[] {
+    // TODO genome
+    return [
+      Medium.GOAL_ENERGY_VELOCITY, // room -> creep
+      Low.GOAL_UPGRADE_CONTROLLER, // room -> creep
+      Low.GOAL_CREATE_CREEP, // room -> spawn
+    ];
   }
 }

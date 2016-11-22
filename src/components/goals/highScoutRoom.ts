@@ -9,7 +9,7 @@ import {goalStateActors} from "./goals";
  */
 export default class ScoutRoom extends Goal<Game, Creep, GoalState> {
   public static fromGoalState(state: GoalState): Creep[] {
-    return _.values(state.subject().creeps) as Creep[];
+    return state.creeps();
   }
 
   private _creep: string;
