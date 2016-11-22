@@ -2,13 +2,17 @@ import RoomState from "../state/roomState";
 import Plan from "./plan";
 import Goal from "./goal";
 import * as Medium from "./medium";
+import {CandidateFactory} from "../filters";
+import {roomStateActors} from "./goals";
 
 /**
  * calculate creep build inventory
  */
-export default class DesignCreep implements Goal<Room, any, RoomState> {
+export default class DesignCreep extends Goal<Room, any, RoomState> {
   constructor(room: Room) {
-    console.log("hello ", this.getGoalKey(), room.name);
+    super();
+
+    console.log("hello", this.getGoalKey(), room.name);
   }
 
   public state(actor: Room): RoomState {
@@ -48,5 +52,15 @@ export default class DesignCreep implements Goal<Room, any, RoomState> {
 
   public toString(): string {
     return "design creep";
+  }
+
+  protected _identifyResources(state: RoomState): any[] {
+    state = state;
+
+    return [ {} ]; // TODO what is design resource? memory?
+  }
+
+  protected _candidateActorFactory(): CandidateFactory<RoomState> {
+    return roomStateActors; // TODO controller filter
   }
 }

@@ -1,5 +1,6 @@
 import State from "./abstractState";
 import * as Tasks from "../tasks";
+import * as Keys from "../keys";
 
 export default class SourceState extends State<Source> {
   public static left(obj: Source): SourceState {
@@ -15,9 +16,7 @@ export default class SourceState extends State<Source> {
 
   public init(): boolean {
     if (super.init()) {
-      console.log("source");
-
-      Tasks.findOpenPositions(this._subject.pos, this._memory, 1);
+      this._memory[Keys.OBJECT_WORK_POSITIONS] = Tasks.findOpenPositions(this._subject.pos, 1);
 
       return true;
     }

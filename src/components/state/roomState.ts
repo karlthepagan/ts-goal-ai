@@ -4,6 +4,7 @@ import SourceState from "./sourceState";
 import MineralState from "./mineralState";
 import * as Keys from "../keys";
 import Goal from "../goals/goal";
+import GoalState from "./goalState";
 
 export default class RoomState extends State<Room> {
   public static left(obj: Room): RoomState {
@@ -19,8 +20,6 @@ export default class RoomState extends State<Room> {
 
   public init() {
     if (super.init()) {
-      console.log("room");
-
       // rooms don't have a pos, their name is their room id
       delete this._memory[Keys.LOCATION_POS];
       delete this._memory[Keys.LOCATION_ROOM];
@@ -65,5 +64,9 @@ export default class RoomState extends State<Room> {
 
     return (assignments[goal.getGoalKey()] as string[])
       .map((v) => Game.creeps[v]);
+  }
+
+  public parent(): GoalState {
+    return GoalState.master();
   }
 }

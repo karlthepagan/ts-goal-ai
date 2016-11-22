@@ -1,15 +1,18 @@
 export const GOAL_DESIGN_CREEP = "design";
 export const GOAL_INFRASTRUCTURE = "infrastructure";
-export const GOAL_DEFENSES = "defenses";
+export const GOAL_FORTIFY = "fortify";
 export const GOAL_CLAIM = "claim";
+export const GOAL_SCOUT = "scout";
+export const GOAL_EVADE = "evade"; // avoid enemies
 
 export const priority: string[] = [
   GOAL_DESIGN_CREEP,
   GOAL_INFRASTRUCTURE,
-  GOAL_DEFENSES,
+  GOAL_FORTIFY,
   GOAL_CLAIM,
+  GOAL_EVADE,
+  GOAL_SCOUT,
 ];
-
 /*
 
  room domain goals

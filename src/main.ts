@@ -3,8 +3,13 @@ import * as T from "./components/tasks";
 import * as Config from "./config/config";
 import MasterGoal from "./components/goals/highMasterGoal";
 import GoalState from "./components/state/goalState";
+import {bootstrap} from "./components/bootstrap";
 
 console.log("loading");
+
+for ( let f of bootstrap ) {
+  f();
+}
 
 const goals: MasterGoal = new MasterGoal();
 

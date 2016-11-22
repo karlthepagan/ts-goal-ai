@@ -1,38 +1,36 @@
 import Goal from "./goal";
-import * as Keys from "../keys";
 import Plan from "./plan";
-import RoomObjectState from "../state/roomObjectState";
+import * as Low from "./low.ts";
+import {CandidateFactory} from "../filters";
+import RoomState from "../state/roomState";
+import {roomStateActors} from "./goals";
 
 export default class UpgradeController
-    implements Goal<StructureController, Creep, RoomObjectState<StructureController>> {
+    extends Goal<Room, Creep, RoomState> {
 
   constructor(room: Room) {
-    console.log("hello ", this.getGoalKey(), room.name);
+    super();
+
+    console.log("hello", this.getGoalKey(), room.name);
   }
 
   public getGoalKey(): string {
-    return Keys.GOAL_UPGRADE_CONTROLLER;
+    return Low.GOAL_UPGRADE_CONTROLLER;
   }
 
-  public state(actor: StructureController): RoomObjectState<StructureController> {
-    return RoomObjectState.right(actor);
+  public state(actor: Room): RoomState {
+    return RoomState.right(actor);
   }
 
-  public plan(state: RoomObjectState<StructureController>): Plan<Creep>[] {
-    state = state;
-
-    return [ new Plan<Creep>(this, {} as Creep) ]; // TODO look up creep
-  }
-
-  public elect(state: RoomObjectState<StructureController>, plan: Plan<Creep>[]): Plan<Creep> {
+  public elect(state: RoomState, plan: Plan<Creep>[]): Plan<Creep> {
     state = state;
 
     // TODO validate state
     return plan[0];
   }
 
-  public execute(actor: StructureController,
-                 state: RoomObjectState<StructureController>,
+  public execute(actor: Room,
+                 state: RoomState,
                  plan: Plan<Creep>): Plan<Creep>[] {
     actor = actor;
     state = state;
@@ -45,5 +43,16 @@ export default class UpgradeController
     failures = failures;
 
     return undefined;
+  }
+
+  protected _identifyResources(state: RoomState): Creep[] {
+    state = state;
+
+    // TODO creeps
+    return [];
+  }
+
+  protected _candidateActorFactory(): CandidateFactory<RoomState> {
+    return roomStateActors; // TODO controller filter
   }
 }

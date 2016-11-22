@@ -1,4 +1,11 @@
-type UnaryVoidLambda = (s: any) => boolean;
+import Goal from "./goals/goal";
+import State from "./state/abstractState";
+
+export type GoalLambda<T> = (resource: T) => Goal<any, T, State<any>>;
+export type CandidateLambda<S, T> = (state: S) => T[];
+export type GoalFactory<T> = { [key: string]: GoalLambda<T> };
+export type CandidateFactory<T> = { [key: string]: CandidateLambda<T, any> };
+type Filter<T> = (s: T) => boolean;
 
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
@@ -11,7 +18,7 @@ function FALSE() {
   return false;
 }
 
-function RAMPART(s: any) {
+function RAMPART(s: any): boolean {
   return s.my;
 }
 
@@ -19,14 +26,14 @@ function elvis<T>(x: T|undefined, y: T): T {
   return x === undefined ? y : x;
 }
 
-const movable: { [key: string]: UnaryVoidLambda } = {
-  plain: TRUE as UnaryVoidLambda,
+const movable: { [key: string]: Filter<any> } = {
+  plain: TRUE as Filter<any>,
   rampart: RAMPART,
-  swamp: TRUE as UnaryVoidLambda,
+  swamp: TRUE as Filter<any>,
 };
 
 export function isMovable(lookAt: LookAtResultWithPos): boolean {
-  return elvis(movable[lookAt.terrain as string], FALSE as UnaryVoidLambda)(lookAt);
+  return elvis(movable[lookAt.terrain as string], FALSE as Filter<any>)(lookAt);
 }
 
 export function pad(num: any, size: number) {
@@ -37,7 +44,7 @@ export function xyAsStr(x: number, y: number): string {
   return pad(x, POS_DIGITS) + pad(y, POS_DIGITS);
 }
 
-export function posAsStr(pos?: RoomPosition): string {
+export function posAsStr(pos?: {x: number, y: number}): string {
   if (pos === undefined) {
     return "";
   }

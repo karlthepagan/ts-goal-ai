@@ -16,11 +16,9 @@ export default class MineralState extends State<Mineral> {
 
   public init() {
     if (super.init()) {
-      console.log("mineral");
-
       this._memory[Keys.INFO_MINERAL] = this._subject.mineralType;
 
-      Tasks.findOpenPositions(this._subject.pos, this._memory, 1);
+      this._memory[Keys.OBJECT_WORK_POSITIONS] = Tasks.findOpenPositions(this._subject.pos, 1);
 
       return true;
     }

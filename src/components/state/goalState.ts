@@ -24,6 +24,8 @@ export default class GoalState extends State<Game> {
 
     if (Memory.reset) {
       console.log("resetting non-creep memory");
+
+      Memory.reset = false;
       delete Memory.objects;
       delete Memory.goals;
       delete Memory.rooms;
@@ -53,8 +55,6 @@ export default class GoalState extends State<Game> {
 
   public init() {
     if (super.init()) {
-      console.log("master goals");
-
       // game doesn't have a pos, id
       delete this._memory[Keys.LOCATION_POS];
       delete this._memory[Keys.LOCATION_ROOM];

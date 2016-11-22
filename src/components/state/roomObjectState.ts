@@ -14,7 +14,7 @@ export default class RoomObjectState<T extends RoomObject> extends State<T> {
 
   public init() {
     if (super.init()) {
-      console.log("roomobject");
+      console.log("roomobject", this._subject);
 
       return true;
     }

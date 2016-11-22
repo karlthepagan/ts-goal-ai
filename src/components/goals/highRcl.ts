@@ -3,11 +3,13 @@ import Plan from "./plan";
 import * as High from "./high";
 import RoomState from "../state/roomState";
 import GoalState from "../state/goalState";
+import {CandidateFactory} from "../filters";
+import {roomStateActors, goals, goalStateActors} from "./goals";
 
 /**
  * expand territory and max out each controlled territory
  */
-export default class RoomControlLevel implements Goal<Room, Room, RoomState> {
+export default class RoomControlLevel extends Goal<Room, Room, RoomState> {
   public static fromGoalState(state: GoalState): Room[] {
     return _.values(state.subject().rooms) as Room[];
   }
@@ -15,6 +17,8 @@ export default class RoomControlLevel implements Goal<Room, Room, RoomState> {
   private _address: string;
 
   constructor(actor: Room) {
+    super();
+
     console.log("hello", this.getGoalKey(), "actor", actor);
 
     this._address = actor.name;
@@ -58,4 +62,14 @@ export default class RoomControlLevel implements Goal<Room, Room, RoomState> {
   public toString(): string {
     return this.getGoalKey();
   }
+
+  protected _identifyResources(state: RoomState): Room[] {
+    return [ state.subject() ];
+  }
+
+  protected _candidateActorFactory(): CandidateFactory<RoomState> {
+    return roomStateActors;
+  }
 }
+goalStateActors[High.GOAL_RCL] = RoomControlLevel.fromGoalState;
+goals[High.GOAL_RCL] = (a: Room) => new RoomControlLevel(a);
