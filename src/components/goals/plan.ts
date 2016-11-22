@@ -20,8 +20,12 @@ export default class Plan<R> {
     return this._resource;
   }
 
+  public goal(): Goal<any, R, State<any>> {
+    return this._goal;
+  }
+
   public size(): number {
-    return _.sum(this._next as List<Plan<any>>, (plan) => { return plan.size(); });
+    return 1 + _.sum(this._next as List<Plan<any>>, (plan) => { return plan.size(); });
   }
 
   public add(dependency: Plan<any>) {
@@ -30,5 +34,9 @@ export default class Plan<R> {
 
   public addAll(dependencies: Plan<any>[]) {
     this._next.push(...dependencies);
+  }
+
+  public next(): Plan<any>[] {
+    return this._next;
   }
 }

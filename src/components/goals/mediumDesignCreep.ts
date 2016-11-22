@@ -32,9 +32,8 @@ export default class DesignCreep extends Goal<Room, any, RoomState> {
     return new Plan<Room>(this, state.subject());
   }
 
-  public execute(actor: Room, state: RoomState, plan: Plan<any>): Plan<any>[] {
+  public execute(actor: Room, plan: Plan<any>): Plan<any>[] {
     actor = actor;
-    state = state;
     plan = plan;
 
     return [];

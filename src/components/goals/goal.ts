@@ -47,7 +47,9 @@ abstract class Goal<A, R, M extends State<A>> {
         for (const actor of candidates) {
           const goal = this._goalFactory()[name](actor);
 
-          if (goal !== undefined) {
+          if (goal === undefined) {
+            console.log("no factory output goal=", name, "actor=", actor);
+          } else {
             plan.addAll( goal.plan(goal.state(actor)) );
           }
         }
@@ -71,7 +73,16 @@ abstract class Goal<A, R, M extends State<A>> {
    *
    * @returns list of failed plan roots
    */
-  public abstract execute(actor: A, state: M, plan: Plan<R>): Plan<R>[];
+  public execute(actor: A, plan: Plan<R>): Plan<R>[] {
+    actor = actor;
+    plan = plan;
+
+    for (let task of plan.next()) {
+      task.goal().execute(actor, task.resource());
+    }
+
+    return [];
+  }
 
   /**
    * cleanup dead goals, plan for next cycle
@@ -95,8 +106,10 @@ abstract class Goal<A, R, M extends State<A>> {
     let candidates: any[] = goalBuilder(state);
 
     if (candidates === undefined) {
+      console.log("no candidates goal=", goalName, "parendGoal=", this.getGoalKey());
       return [];
     }
+
     return candidates;
   }
 

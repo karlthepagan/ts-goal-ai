@@ -3,7 +3,7 @@ import GoalState from "../state/goalState";
 import Plan from "./plan";
 import * as High from "./high";
 import {CandidateFactory} from "../filters";
-import {goalStateActors, goals} from "./goals";
+import {goalStateActors} from "./goals";
 
 /**
  * expand territory
@@ -45,9 +45,8 @@ export default class Expand extends Goal<Game, Room, GoalState> {
     return new Plan<Room>(this, {} as Room);
   }
 
-  public execute(actor: Game, state: GoalState, plan: Plan<Room>): Plan<Room>[] {
+  public execute(actor: Game, plan: Plan<Room>): Plan<Room>[] {
     actor = actor;
-    state = state;
     plan = plan;
 
     return [];
@@ -75,5 +74,3 @@ export default class Expand extends Goal<Game, Room, GoalState> {
     return goalStateActors;
   }
 }
-goalStateActors[High.GOAL_EXPAND] = Expand.fromGoalState;
-goals[High.GOAL_EXPAND] = () => new Expand();

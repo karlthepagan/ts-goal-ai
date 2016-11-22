@@ -3,7 +3,7 @@ import Goal from "./goal";
 import * as Medium from "./medium";
 import GoalState from "../state/goalState";
 import {CandidateFactory} from "../filters";
-import {goalStateActors, goals} from "./goals";
+import {goalStateActors} from "./goals";
 
 /**
  * from the origin room, determine the next
@@ -34,9 +34,8 @@ export default class ScoutRoom extends Goal<Game, Creep, GoalState> {
     return plan[0];
   }
 
-  public execute(actor: Game, state: GoalState, plan: Plan<Creep>): Plan<Creep>[] {
+  public execute(actor: Game, plan: Plan<Creep>): Plan<Creep>[] {
     actor = actor;
-    state = state;
     plan = plan;
 
     return [];
@@ -64,5 +63,3 @@ export default class ScoutRoom extends Goal<Game, Creep, GoalState> {
     return goalStateActors;
   }
 }
-goalStateActors[Medium.GOAL_SCOUT] = ScoutRoom.fromGoalState;
-goals[Medium.GOAL_SCOUT] = (a: Creep) => new ScoutRoom(a);

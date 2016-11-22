@@ -25,17 +25,23 @@ export default class MasterGoal extends Goal<Game, Game, GoalState> {
   }
 
   public elect(state: GoalState, plan: Plan<Game>[]): Plan<Game> {
-    plan = plan;
+    state = state;
+
+    if (plan.length === 1) {
+      return plan[0];
+    }
 
     // TODO sort plans by priority, eliminate plans with higher priority allocated resources
-
-    return new Plan<Game>(this, state.subject());
+    return plan[0];
   }
 
-  public execute(actor: Game, state: GoalState, plan: Plan<Game>): Plan<Game>[] {
+  public execute(actor: Game, plan: Plan<Game>): Plan<Game>[] {
     actor = actor;
-    state = state;
     plan = plan;
+
+    for (let task of plan.next()) {
+      task.goal().execute(actor, task.resource());
+    }
 
     return [];
   }

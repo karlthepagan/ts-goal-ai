@@ -30,17 +30,17 @@ export function loop() {
   let iteration = 0;
 
   while (initialPlan !== undefined) {
-    console.log(++iteration, "planned", initialPlan.length);
+    console.log("gen", ++iteration, "planned", initialPlan.length);
 
     // prune conflicting goals
     const electedPlan = goals.elect(state, initialPlan);
 
-    console.log(iteration, "elected", electedPlan.size());
+    console.log("gen", iteration, "elected", electedPlan.size());
 
     // execute goals
-    const failedPlans = goals.execute(Game, state, electedPlan);
+    const failedPlans = goals.execute(Game, electedPlan);
 
-    console.log(iteration, "failed", failedPlans.length);
+    console.log("gen", iteration, "failed", failedPlans.length);
 
     // clean up failed or conflicting goals
     initialPlan = goals.resolve(failedPlans);

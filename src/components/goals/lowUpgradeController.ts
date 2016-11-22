@@ -30,10 +30,8 @@ export default class UpgradeController
   }
 
   public execute(actor: Room,
-                 state: RoomState,
                  plan: Plan<Creep>): Plan<Creep>[] {
     actor = actor;
-    state = state;
     plan = plan;
 
     return [];

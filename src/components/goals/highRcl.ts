@@ -4,7 +4,7 @@ import * as High from "./high";
 import RoomState from "../state/roomState";
 import GoalState from "../state/goalState";
 import {CandidateFactory} from "../filters";
-import {roomStateActors, goals, goalStateActors} from "./goals";
+import {roomStateActors} from "./goals";
 
 /**
  * expand territory and max out each controlled territory
@@ -41,9 +41,8 @@ export default class RoomControlLevel extends Goal<Room, Room, RoomState> {
     return new Plan<Room>(this, state.subject());
   }
 
-  public execute(actor: Room, state: RoomState, plan: Plan<Room>): Plan<Room>[] {
+  public execute(actor: Room, plan: Plan<Room>): Plan<Room>[] {
     actor = actor;
-    state = state;
     plan = plan;
 
     return [];
@@ -71,5 +70,3 @@ export default class RoomControlLevel extends Goal<Room, Room, RoomState> {
     return roomStateActors;
   }
 }
-goalStateActors[High.GOAL_RCL] = RoomControlLevel.fromGoalState;
-goals[High.GOAL_RCL] = (a: Room) => new RoomControlLevel(a);
