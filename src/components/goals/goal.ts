@@ -64,7 +64,16 @@ abstract class Goal<A, R, M extends State<A>> {
    *
    * @returns pruned plan structure
    */
-  public abstract elect(state: M, plan: Plan<R>[]): Plan<R>;
+  public elect(state: M, plan: Plan<R>[]): Plan<R> {
+    state = state;
+
+    if (plan.length === 1) {
+      return plan[0];
+    }
+
+    // TODO sort plans by priority, eliminate plans with lower priority allocated resources
+    return plan[0];
+  }
 
   /**
    * execute plans

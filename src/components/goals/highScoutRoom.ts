@@ -1,4 +1,3 @@
-import Plan from "./plan";
 import Goal from "./goal";
 import * as Medium from "./medium";
 import GoalState from "../state/goalState";
@@ -25,14 +24,7 @@ export default class ScoutRoom extends Goal<Game, Creep, GoalState> {
     return GoalState.build(actor, Memory.goals);
   }
 
-  public elect(state: GoalState, plan: Plan<Creep>[]): Plan<Creep> {
-    state = state;
-    plan = plan;
-
-    // TODO examine border rooms which are not present in memory, add them and assign creeps based on proximity
-
-    return plan[0];
-  }
+  // TODO examine border rooms which are not present in memory, add them and assign creeps based on proximity
 
   public getGoalKey(): string {
     return Medium.GOAL_SCOUT;

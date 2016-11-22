@@ -1,5 +1,4 @@
 import Goal from "./goal";
-import Plan from "./plan";
 import * as High from "./high";
 import RoomState from "../state/roomState";
 import GoalState from "../state/goalState";
@@ -26,19 +25,6 @@ export default class RoomControlLevel extends Goal<Room, Room, RoomState> {
 
   public state(actor: Room): RoomState {
     return RoomState.right(actor);
-  }
-
-  public plan(state: RoomState): Plan<Room>[] {
-    state = state;
-
-    return [ new Plan<Room>(this, state.subject()) ];
-  }
-
-  public elect(state: RoomState, plan: Plan<Room>[]): Plan<Room> {
-    state = state;
-    plan = plan;
-
-    return new Plan<Room>(this, state.subject());
   }
 
   public getGoalKey(): string {

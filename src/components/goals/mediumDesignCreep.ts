@@ -25,13 +25,6 @@ export default class DesignCreep extends Goal<Room, any, RoomState> {
     return [ new Plan<Room>(this, state.subject()) ];
   }
 
-  public elect(state: RoomState, plan: Plan<any>[]): Plan<any> {
-    state = state;
-    plan = plan;
-
-    return new Plan<Room>(this, state.subject());
-  }
-
   public getGoalKey(): string {
     return Medium.GOAL_DESIGN_CREEP;
   }

@@ -29,7 +29,7 @@ export function loop() {
   let initialPlan = goals.plan(state);
   let iteration = 0;
 
-  while (initialPlan !== undefined) {
+  while (initialPlan !== undefined && initialPlan.length > 0) {
     console.log("gen", ++iteration, "planned", initialPlan.length);
 
     // prune conflicting goals

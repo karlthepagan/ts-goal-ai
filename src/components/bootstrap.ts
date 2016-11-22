@@ -6,11 +6,14 @@ import Expand from "./goals/highExpand";
 import RoomControlLevel from "./goals/highRcl";
 import ScoutRoom from "./goals/highScoutRoom";
 import CollectEnergy from "./goals/lowCollectEnergy";
+import Sticky from "./goals/highSticky";
 
 export const bootstrap: (() => void)[] = [];
 
 // goals.ts
 bootstrap.push(() => {
+  goalStateActors[High.GOAL_STICKY] = Sticky.fromGoalState;
+  goals[High.GOAL_STICKY] = () => new Sticky();
   goalStateActors[High.GOAL_EXPAND] = Expand.fromGoalState;
   goals[High.GOAL_EXPAND] = () => new Expand();
   goalStateActors[High.GOAL_RCL] = RoomControlLevel.fromGoalState;

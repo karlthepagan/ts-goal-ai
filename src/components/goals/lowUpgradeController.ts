@@ -1,5 +1,4 @@
 import Goal from "./goal";
-import Plan from "./plan";
 import * as Low from "./low.ts";
 import {CandidateFactory} from "../filters";
 import RoomState from "../state/roomState";
@@ -20,13 +19,6 @@ export default class UpgradeController
 
   public state(actor: Room): RoomState {
     return RoomState.right(actor);
-  }
-
-  public elect(state: RoomState, plan: Plan<Creep>[]): Plan<Creep> {
-    state = state;
-
-    // TODO validate state
-    return plan[0];
   }
 
   protected _identifyResources(state: RoomState): Creep[] {

@@ -5,11 +5,6 @@ import Goal from "./goal";
 import {CandidateFactory} from "../filters";
 import {goalStateActors} from "./goals";
 
-const priority: string[] = [
-  High.GOAL_EXPAND,
-  High.GOAL_RCL,
-];
-
 /**
  * ai goal root
  */
@@ -41,7 +36,11 @@ export default class MasterGoal extends Goal<Game, Game, GoalState> {
 
   protected _goalPriority(): string[] {
     // TODO genome
-    return priority;
+    return [
+      High.GOAL_STICKY,
+      High.GOAL_EXPAND,
+      High.GOAL_RCL,
+    ];
   }
 
   protected _identifyResources(state: GoalState): Game[] {
