@@ -94,15 +94,20 @@ abstract class Goal<A, R, M extends State<A>> {
    *
    * @returns pruned plan structure
    */
-  public elect(state: M, plan: Plan<R>[]): Plan<R> {
+  public elect(state: M, plan: Plan<R>[]): Plan<R>[] {
     state = state;
 
     if (plan.length === 1) {
-      return plan[0];
+      let p = plan[0];
+      let goal = plan[0].goal();
+
+      let next = goal.elect(goal.state(p.resource()), p.next());
+
+      return [ p.commit(next) ];
     }
 
     // TODO sort plans by priority, eliminate plans with lower priority allocated resources
-    return plan[0];
+    return [ plan[0] ];
   }
 
   /**
@@ -115,12 +120,11 @@ abstract class Goal<A, R, M extends State<A>> {
    *
    * @returns list of failed plan roots
    */
-  public execute(actor: A, plan: Plan<R>): Plan<R>[] {
+  public execute(actor: A, plan: Plan<R>[]): Plan<R>[] {
     actor = actor;
-    plan = plan;
 
-    for (let task of plan.next()) {
-      let failures = task.goal().execute(task.resource(), task);
+    for (let task of plan) {
+      let failures = task.goal().execute(task.resource(), task.next());
       // TODO package failures
 
       if (failures.length > 0) {

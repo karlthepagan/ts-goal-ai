@@ -52,6 +52,12 @@ export default class Plan<R> {
     return this._parent as Plan<any>;
   }
 
+  public commit(next: Plan<any>[]): Plan<R> {
+    const committed = new Plan<R>(this._parent, this._goal, this._resource);
+    committed._next = next;
+    return committed;
+  }
+
   public toString() {
     if (this.isRoot()) {
       return "*";
