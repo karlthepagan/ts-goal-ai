@@ -1,5 +1,4 @@
 import GoalState from "../state/goalState";
-import Plan from "./plan";
 import * as High from "./high";
 import Goal from "./goal";
 
@@ -13,17 +12,6 @@ export default class MasterGoal extends Goal<Game, Game, GoalState> {
 
   public state(actor: Game): GoalState {
     return GoalState.build(actor);
-  }
-
-  public elect(state: GoalState, plan: Plan<Game>[]): Plan<Game> {
-    state = state;
-
-    if (plan.length === 1) {
-      return plan[0];
-    }
-
-    // TODO sort plans by priority, eliminate plans with lower priority allocated resources
-    return plan[0];
   }
 
   public getGoalKey(): string {

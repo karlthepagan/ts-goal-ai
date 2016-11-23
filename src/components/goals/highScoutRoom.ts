@@ -7,10 +7,6 @@ import Plan from "./plan";
  * from the origin room, determine the next
  */
 export default class ScoutRoom extends Goal<Game, Room, GoalState> {
-  public static fromGoalState(state: GoalState): Room[] {
-    return state.rooms(); // TODO neighboring rooms
-  }
-
   constructor(plan: Plan<Game>) {
     super(plan);
   }
@@ -30,6 +26,6 @@ export default class ScoutRoom extends Goal<Game, Room, GoalState> {
   }
 
   protected _identifyResources(state: GoalState): Room[] {
-    return ScoutRoom.fromGoalState(state);
+    return state.rooms(); // TODO neighboring unvisited rooms
   }
 }

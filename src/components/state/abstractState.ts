@@ -35,6 +35,7 @@ abstract class State<T> {
     }
 
     // console.log("at", this.subject(), ":", JSON.stringify(this._memory));
+
     if (this._memory[Keys.SEEN] === undefined) {
       this._memory[Keys.SEEN] = 1;
       this._memory[Keys.LOCATION_POS] = Filters.posAsStr((this.subject() as any).pos);

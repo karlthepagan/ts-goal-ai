@@ -9,6 +9,13 @@ import List = _.List;
 export default class Plan<R> {
   public static ROOT: Plan<Game> = new Plan<Game>(undefined, undefined, Game);
 
+  public static size(plans: Plan<any>[]|undefined): number {
+    if (plans === undefined) {
+      return 0;
+    }
+    return _.sum(plans as List<Plan<any>>, (plan) => { return plan.size(); });
+  }
+
   private _parent: Plan<any>|undefined;
   private _goal: Goal<any, R, State<any>>;
   private _resource: R;
@@ -33,7 +40,7 @@ export default class Plan<R> {
   }
 
   public size(): number {
-    return 1 + _.sum(this._next as List<Plan<any>>, (plan) => { return plan.size(); });
+    return 1 + Plan.size(this._next);
   }
 
   public add(dependency: Plan<any>) {

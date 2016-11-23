@@ -18,12 +18,18 @@ export default class SourceState extends State<Source> {
 
   public init(): boolean {
     if (super.init()) {
-      this._memory[Keys.OBJECT_WORK_POSITIONS] = Tasks.findOpenPositions(this.subject().pos, 1);
+      this.memory()[Keys.OBJECT_WORK_POSITIONS] = Tasks.findOpenPositions(this.subject().pos, 1);
 
       return true;
     }
 
     return false;
+  }
+
+  public locations(): RoomPosition[] {
+    return Tasks.strToRoomPosition(
+      this.memory()[Keys.OBJECT_WORK_POSITIONS],
+      this.subject().room.name);
   }
 
   public toString() {

@@ -7,10 +7,6 @@ import * as High from "./high";
  * expand territory
  */
 export default class Sticky extends Goal<Game, any, GoalState> {
-  public static fromGoalState(state: GoalState): Game[] {
-    return [ state.subject() ];
-  }
-
   constructor(plan: Plan<Game>) {
     super(plan);
   }

@@ -29,7 +29,7 @@ export default class EnergyVelocity extends Goal<Room, Source, RoomState> {
   }
 
   protected _identifyResources(state: RoomState): Source[] {
-    return state.sources();
+    return state.sources(); // TODO remote mining
   }
 
   protected _goalPriority(): string[] {

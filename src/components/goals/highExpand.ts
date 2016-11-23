@@ -7,10 +7,6 @@ import Plan from "./plan";
  * expand territory
  */
 export default class Expand extends Goal<Game, Room, GoalState> {
-  public static fromGoalState(state: GoalState): Game[] {
-    return [ state.subject() ];
-  }
-
   constructor(plan: Plan<Game>) {
     super(plan);
   }
@@ -28,6 +24,6 @@ export default class Expand extends Goal<Game, Room, GoalState> {
   }
 
   protected _identifyResources(state: GoalState): Room[] {
-    return state.rooms();
+    return state.rooms(); // TODO explored neighboring rooms
   }
 }

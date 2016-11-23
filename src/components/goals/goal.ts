@@ -2,6 +2,7 @@ import State from "../state/abstractState";
 import Plan from "./plan";
 import {goals} from "./goals";
 import {GoalFactory} from "../filters";
+import log from "../log";
 
 function print(x: any): any {
   if (x === Game) {
@@ -18,7 +19,7 @@ function print(x: any): any {
  */
 abstract class Goal<A, R, M extends State<A>> {
   constructor(plan: Plan<A>|undefined) {
-    console.log("goal=", this.getGoalKey(), "plan=", plan);
+    log(this, "goal with plan=", plan);
   }
 
   public abstract getGoalKey(): string;
@@ -50,7 +51,7 @@ abstract class Goal<A, R, M extends State<A>> {
     const resources: R[] = this._identifyResources(state);
     const bannedGoals: string[] = [];
 
-    console.log(this.toString(), "planning", resources.length, "resources", this._goalPriority().length, "goals");
+    log(this, "planning", resources.length, "resources", this._goalPriority().length, "goals");
 
     // naive, loop thru each resource and enumerate all the goals they could hit
     return resources.map((resource: R) => {
@@ -69,7 +70,7 @@ abstract class Goal<A, R, M extends State<A>> {
           continue nextGoal;
         }
 
-        const goal: Goal<R, any, any> = factory(plan);
+        const goal = factory(plan);
         if (goal === undefined) {
           console.log("no factory output. goal=", name, "resource=", resource);
           bannedGoals.push(name);
@@ -78,9 +79,11 @@ abstract class Goal<A, R, M extends State<A>> {
 
         const resState = goal.state(resource);
 
-        console.log("created", resState, "from", print(resource));
+        log(this, "created", resState, "from", print(resource));
 
-        plan.addAll( goal.plan(plan, resState) );
+        const childPlans = goal.plan(plan, resState);
+
+        plan.addAll( childPlans );
       }
 
       return plan;
@@ -97,17 +100,38 @@ abstract class Goal<A, R, M extends State<A>> {
   public elect(state: M, plan: Plan<R>[]): Plan<R>[] {
     state = state;
 
+    if (plan.length === 0) {
+      console.log("no plan for", this);
+      return [];
+    }
+
     if (plan.length === 1) {
       let p = plan[0];
-      let goal = plan[0].goal();
+      let goal: Goal<any, R, State<any>> = p.goal();
+
+      console.log(this, "simple election from", this, "to", goal);
 
       let next = goal.elect(goal.state(p.resource()), p.next());
 
       return [ p.commit(next) ];
     }
 
+    console.log("complex election", this, ...plan);
+
+    for (const p of plan) {
+      let goal = p.goal();
+
+      let next = goal.elect(goal.state(p.resource()), p.next());
+
+      if (next.length === 0) {
+        continue;
+      }
+
+      return [ p.commit(next) ];
+    }
+
     // TODO sort plans by priority, eliminate plans with lower priority allocated resources
-    return [ plan[0] ];
+    return [];
   }
 
   /**

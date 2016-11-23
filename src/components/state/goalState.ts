@@ -37,6 +37,7 @@ export default class GoalState extends State<Game> {
       delete Memory.objects;
       delete Memory.goals;
       delete Memory.rooms;
+      delete Memory.log;
     }
 
     // Check memory for null or out of bounds custom objects

@@ -8,10 +8,6 @@ import Plan from "./plan";
  * expand territory and max out each controlled territory
  */
 export default class GlobalControlIncrease extends Goal<Game, Room, GoalState> {
-  public static fromGoalState(state: GoalState): Game[] {
-    return [ state.subject() ];
-  }
-
   constructor(plan: Plan<Game>) {
     super(plan);
   }

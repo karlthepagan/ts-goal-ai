@@ -32,12 +32,12 @@ export function loop() {
   let iteration = 0;
 
   while (initialPlan !== undefined && initialPlan.length > 0) {
-    console.log("gen", ++iteration, "planned", initialPlan.length);
+    console.log("gen", ++iteration, "planned", Plan.size(initialPlan));
 
     // prune conflicting goals
     const electedPlan = goals.elect(state, initialPlan);
 
-    console.log("gen", iteration, "elected", electedPlan.size());
+    console.log("gen", iteration, "elected", Plan.size(electedPlan));
 
     // execute goals
     const failedPlans = goals.execute(Game, electedPlan);
