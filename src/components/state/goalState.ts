@@ -10,8 +10,16 @@ export default class GoalState extends State<Game> {
     return GoalState._master;
   }
 
-  public static build(game: Game, mem: any) {
-    return new GoalState().wrap(game, mem) as GoalState;
+  public static build(game: Game): GoalState {
+    return GoalState._build(game, GoalState.memory(game));
+  }
+
+  public static memory(game: Game) {
+    if (game === Game) {
+      return Memory.goals;
+    } else {
+      return (game as any).memory;
+    }
   }
 
   public static boot(): GoalState {
@@ -44,8 +52,12 @@ export default class GoalState extends State<Game> {
       Memory.goals = {};
     }
 
-    GoalState._master = GoalState.build(Game, Memory.goals);
-    GoalState._paused = GoalState.build(Game, undefined);
+    if (!Memory.log) {
+      Memory.log = {};
+    }
+
+    GoalState._master = GoalState._build(Game, Memory.goals);
+    GoalState._paused = GoalState._build(Game, undefined);
 
     return GoalState.master();
   }
@@ -53,14 +65,18 @@ export default class GoalState extends State<Game> {
   private static _master: GoalState;
   private static _paused: GoalState;
 
+  private static _build(game: Game, mem: any): GoalState {
+    return new GoalState().wrap(game, mem) as GoalState;
+  }
+
   public init() {
     if (super.init()) {
       // game doesn't have a pos, id
       delete this._memory[Keys.LOCATION_POS];
       delete this._memory[Keys.LOCATION_ROOM];
 
-      for (let name in this._subject.rooms) {
-        let room = this._subject.rooms[name];
+      for (let name in this.subject().rooms) {
+        let room = this.subject().rooms[name];
         RoomState.left(room);
       }
 
@@ -79,5 +95,9 @@ export default class GoalState extends State<Game> {
 
   public rooms(): Room[] {
     return _.values(this.subject().rooms) as Room[];
+  }
+
+  public toString() {
+    return "[GoalState]";
   }
 }

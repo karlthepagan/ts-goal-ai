@@ -1,4 +1,5 @@
-export const GOAL_DESIGN_CREEP = "design";
+export const GOAL_ASSASSINATE = "assassin"; // TODO
+export const GOAL_DESIGN = "design";
 export const GOAL_INFRASTRUCTURE = "infrastructure";
 export const GOAL_FORTIFY = "fortify";
 export const GOAL_RCL = "rcl";
@@ -8,7 +9,6 @@ export const GOAL_EVADE = "evade"; // avoid enemies
 export const GOAL_ENERGY_VELOCITY = "energyVelocity";
 
 export const priority: string[] = [
-  GOAL_DESIGN_CREEP,
   GOAL_ENERGY_VELOCITY,
   GOAL_INFRASTRUCTURE,
   GOAL_FORTIFY,
@@ -20,7 +20,7 @@ export const priority: string[] = [
 
  room domain goals
 
- design creep immediately produces creep specs which this room can produce
+ goal assassin is assigned attacks, they consume priority
 
  defenses are secondary to infrastructure, work stealing will invert the priority when threats are near
 

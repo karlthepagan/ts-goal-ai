@@ -1,6 +1,8 @@
 import State from "./abstractState";
 import * as Tasks from "../tasks";
 import * as Keys from "../keys";
+import * as Filters from "../filters";
+import RoomState from "./roomState";
 
 export default class SourceState extends State<Source> {
   public static left(obj: Source): SourceState {
@@ -16,11 +18,19 @@ export default class SourceState extends State<Source> {
 
   public init(): boolean {
     if (super.init()) {
-      this._memory[Keys.OBJECT_WORK_POSITIONS] = Tasks.findOpenPositions(this._subject.pos, 1);
+      this._memory[Keys.OBJECT_WORK_POSITIONS] = Tasks.findOpenPositions(this.subject().pos, 1);
 
       return true;
     }
 
     return false;
+  }
+
+  public toString() {
+    return "[SourceState " + Filters.posAsStr(this.subject().pos) + "]";
+  }
+
+  public parent(): RoomState {
+    return RoomState.right(this.subject().room);
   }
 }

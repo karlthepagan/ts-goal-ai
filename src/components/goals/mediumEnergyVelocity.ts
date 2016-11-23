@@ -1,26 +1,19 @@
 import Goal from "./goal";
 import * as Medium from "./medium";
 import * as Low from "./low";
-import {CandidateFactory} from "../filters";
-import {roomStateActors} from "./goals";
+import Plan from "./plan";
 import RoomState from "../state/roomState";
 
 /**
  * exhaust all
  */
-export default class EnergyVelocity extends Goal<Room, Creep, RoomState> {
-  public static fromRoomState(state: RoomState): Room[] {
-    return [ state.subject() ];
-  }
+export default class EnergyVelocity extends Goal<Room, Source, RoomState> {
+  private _room: string;
 
-  private _id: string;
+  constructor(plan: Plan<Room>) {
+    super(plan);
 
-  constructor(actor: Creep) {
-    super();
-
-    this._id = actor.id;
-
-    console.log("hello", this.getGoalKey());
+    this._room = plan.resource().name;
   }
 
   public state(actor: Room): RoomState {
@@ -35,19 +28,14 @@ export default class EnergyVelocity extends Goal<Room, Creep, RoomState> {
     return this.getGoalKey();
   }
 
-  protected _identifyResources(state: RoomState): Creep[] {
-    return state.parent().creeps(); // TODO filter creeps
-  }
-
-  protected _candidateActorFactory(): CandidateFactory<RoomState> {
-    return roomStateActors;
+  protected _identifyResources(state: RoomState): Source[] {
+    return state.sources();
   }
 
   protected _goalPriority(): string[] {
     // TODO genome
     return [
-      Low.GOAL_GET_ENERGY, // creep
-      Low.GOAL_STORE_ENERGY, // creep
+      Low.GOAL_MINE_SOURCE, // source -> creep
     ];
   }
 }

@@ -3,8 +3,7 @@ import * as Medium from "./medium";
 import * as Low from "./low";
 import RoomState from "../state/roomState";
 import GoalState from "../state/goalState";
-import {CandidateFactory} from "../filters";
-import {roomStateActors} from "./goals";
+import Plan from "./plan";
 
 /**
  * expand territory and max out each controlled territory
@@ -16,12 +15,10 @@ export default class RoomControlLevel extends Goal<Room, Room, RoomState> {
 
   private _address: string;
 
-  constructor(actor: Room) {
-    super();
+  constructor(plan: Plan<Room>) {
+    super(plan);
 
-    console.log("hello", this.getGoalKey(), "actor", actor);
-
-    this._address = actor.name;
+    this._address = plan.resource().name;
   }
 
   public state(actor: Room): RoomState {
@@ -40,14 +37,10 @@ export default class RoomControlLevel extends Goal<Room, Room, RoomState> {
     return [ state.subject() ];
   }
 
-  protected _candidateActorFactory(): CandidateFactory<RoomState> {
-    return roomStateActors;
-  }
-
   protected _goalPriority(): string[] {
     // TODO genome
     return [
-      Medium.GOAL_ENERGY_VELOCITY, // room -> creep
+      Medium.GOAL_ENERGY_VELOCITY, // room -> source -> creep
       Low.GOAL_UPGRADE_CONTROLLER, // room -> creep
       Low.GOAL_CREATE_CREEP, // room -> spawn
     ];

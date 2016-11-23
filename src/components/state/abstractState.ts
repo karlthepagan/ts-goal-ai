@@ -34,16 +34,20 @@ abstract class State<T> {
       return false;
     }
 
-    // console.log("at", this._subject, ":", JSON.stringify(this._memory));
+    // console.log("at", this.subject(), ":", JSON.stringify(this._memory));
     if (this._memory[Keys.SEEN] === undefined) {
       this._memory[Keys.SEEN] = 1;
-      this._memory[Keys.LOCATION_POS] = Filters.posAsStr((this._subject as any).pos);
-      this._memory[Keys.LOCATION_ROOM] = Filters.room(this._subject);
+      this._memory[Keys.LOCATION_POS] = Filters.posAsStr((this.subject() as any).pos);
+      this._memory[Keys.LOCATION_ROOM] = Filters.room(this.subject());
 
       return true;
     }
 
     return false;
+  }
+
+  public toString() {
+    (this._subject as any).derps();
   }
 }
 export default State;

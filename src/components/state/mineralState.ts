@@ -1,6 +1,7 @@
 import * as Keys from "../keys";
 import * as Tasks from "../tasks";
 import State from "./abstractState";
+import * as Filters from "../filters";
 
 export default class MineralState extends State<Mineral> {
   public static left(obj: Mineral): MineralState {
@@ -16,13 +17,17 @@ export default class MineralState extends State<Mineral> {
 
   public init() {
     if (super.init()) {
-      this._memory[Keys.INFO_MINERAL] = this._subject.mineralType;
+      this._memory[Keys.INFO_MINERAL] = this.subject().mineralType;
 
-      this._memory[Keys.OBJECT_WORK_POSITIONS] = Tasks.findOpenPositions(this._subject.pos, 1);
+      this._memory[Keys.OBJECT_WORK_POSITIONS] = Tasks.findOpenPositions(this.subject().pos, 1);
 
       return true;
     }
 
     return false;
+  }
+
+  public toString() {
+    return "[MineralState " + Filters.rposAsStr(this.subject().pos) + " " + this.subject().mineralType + "]";
   }
 }

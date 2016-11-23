@@ -4,7 +4,7 @@
 //
 // export default class MoveTo implements Goal<Creep> {
 //   private dir: any;
-//   constructor(direction: RoomPosition[]|PathStep[]|string|undefined) {
+//   constructor(direction: RoomPosition[]|PathStep[]|string|undefined) { // TODO plan: Plan<any>
 //     this.dir = direction;
 //   }
 //

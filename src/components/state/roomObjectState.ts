@@ -1,4 +1,6 @@
 import State from "./abstractState";
+import RoomState from "./roomState";
+import * as Filters from "../filters";
 
 export default class RoomObjectState<T extends RoomObject> extends State<T> {
   public static left<U extends RoomObject>(obj: U): RoomObjectState<U> {
@@ -14,11 +16,34 @@ export default class RoomObjectState<T extends RoomObject> extends State<T> {
 
   public init() {
     if (super.init()) {
-      console.log("roomobject", this._subject);
+      console.log("roomobject", this.subject());
 
       return true;
     }
 
     return false;
+  }
+
+  public parent(): RoomState {
+    return RoomState.right(this.subject().room);
+
+    // let room = this.subject().room;
+    // const roomName = this.subject().pos.roomName;
+    // if (room !== undefined) {
+    //   return RoomState.right(room);
+    // }
+    // console.log("can't see", roomName);
+    //
+    // room = Game.rooms[roomName];
+    // if (room !== undefined) {
+    //   return RoomState.right(room);
+    // }
+    // console.log("can't resolve", roomName);
+    //
+    // return RoomState.remote(roomName);
+  }
+
+  public toString() {
+    return "[RoomObjectState " + Filters.posAsStr(this.subject().pos) + "]";
   }
 }

@@ -1,4 +1,5 @@
-export const GOAL_GET_ENERGY = "energy";
+export const GOAL_MINE_SOURCE = "mineSource";
+export const GOAL_GET_ENERGY = "getEnergy";
 export const GOAL_GET_MINERAL = "mineral";
 export const GOAL_MOVE = "move";
 export const GOAL_MOVE_TO = "moveTo";
@@ -20,6 +21,7 @@ export const priority: string[] = [
   GOAL_UPGRADE_CONTROLLER,
   GOAL_GET_MINERAL,
   GOAL_GET_ENERGY,
+  GOAL_MINE_SOURCE,
   GOAL_MEET_WITH,
   GOAL_MOVE,
   GOAL_MOVE_TO,

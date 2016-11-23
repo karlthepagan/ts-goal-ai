@@ -1,16 +1,12 @@
-import Goal from "./goal";
-import GoalState from "../state/goalState";
 import Plan from "./plan";
+import Goal from "./goal";
 import * as High from "./high";
+import GoalState from "../state/goalState";
 
 /**
- * expand territory
+ * calculate creep build inventory
  */
-export default class Sticky extends Goal<Game, any, GoalState> {
-  public static fromGoalState(state: GoalState): Game[] {
-    return [ state.subject() ];
-  }
-
+export default class Design extends Goal<Game, any, GoalState> {
   constructor(plan: Plan<Game>) {
     super(plan);
   }
@@ -23,20 +19,14 @@ export default class Sticky extends Goal<Game, any, GoalState> {
     parent = parent;
     state = state;
 
-    // TODO deserialize plans from memory
-
     return [];
   }
 
   public getGoalKey(): string {
-    return High.GOAL_STICKY;
+    return High.GOAL_DESIGN;
   }
 
   public toString(): string {
-    return this.getGoalKey();
+    return "design";
   }
-
-  // TODO?
-  // goal -> creep
-  // goal -> object
 }

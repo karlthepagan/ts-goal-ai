@@ -1,4 +1,4 @@
-import {goalStateActors, goals, roomStateActors} from "./goals/goals";
+import {goals} from "./goals/goals";
 import * as High from "./goals/high";
 import * as Medium from "./goals/medium";
 import * as Low from "./goals/low";
@@ -8,21 +8,25 @@ import ScoutRoom from "./goals/highScoutRoom";
 import CollectEnergy from "./goals/lowCollectEnergy";
 import Sticky from "./goals/highSticky";
 import GlobalControlIncrease from "./goals/highGcl";
+import EnergyVelocity from "./goals/mediumEnergyVelocity";
+import MineSource from "./goals/mediumMineSource";
+import Design from "./goals/highDesign";
 
 export const bootstrap: (() => void)[] = [];
 
 // goals.ts
 bootstrap.push(() => {
-  goalStateActors[High.GOAL_STICKY] = Sticky.fromGoalState;
-  goals[High.GOAL_STICKY] = () => new Sticky();
-  goalStateActors[High.GOAL_EXPAND] = Expand.fromGoalState;
-  goals[High.GOAL_EXPAND] = () => new Expand();
-  goalStateActors[High.GOAL_GCL] = GlobalControlIncrease.fromGoalState;
-  goals[High.GOAL_GCL] = () => new GlobalControlIncrease();
-  goalStateActors[Medium.GOAL_RCL] = RoomControlLevel.fromGoalState;
-  goals[Medium.GOAL_RCL] = (a: Room) => new RoomControlLevel(a);
-  goalStateActors[Medium.GOAL_SCOUT] = ScoutRoom.fromGoalState;
-  goals[Medium.GOAL_SCOUT] = (a: Creep) => new ScoutRoom(a);
-  // TODO goals[] = CollectEnergy
-  roomStateActors[Low.GOAL_GET_ENERGY] = CollectEnergy.fromRoomState;
+  goals[High.GOAL_DESIGN] = (p) => new Design(p);
+  goals[High.GOAL_STICKY] = (p) => new Sticky(p);
+  goals[High.GOAL_EXPAND] = (p) => new Expand(p);
+  goals[High.GOAL_GCL] = (p) => new GlobalControlIncrease(p);
+
+  goals[Medium.GOAL_RCL] = (p) => new RoomControlLevel(p);
+  goals[Medium.GOAL_SCOUT] = (p) => new ScoutRoom(p);
+
+  goals[Medium.GOAL_ENERGY_VELOCITY] = (p) => new EnergyVelocity(p);
+
+  goals[Low.GOAL_MINE_SOURCE] = (p) => new MineSource(p);
+  goals[Low.GOAL_GET_ENERGY] = (p) => new CollectEnergy(p);
+  // goals[Low.GOAL_STORE_ENERGY] = (p) => new StoreEnergy(p);
 });

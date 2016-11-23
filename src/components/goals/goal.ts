@@ -1,7 +1,14 @@
 import State from "../state/abstractState";
 import Plan from "./plan";
-import {CandidateFactory, GoalFactory} from "../filters";
 import {goals} from "./goals";
+import {GoalFactory} from "../filters";
+
+function print(x: any): any {
+  if (x === Game) {
+    return "[Game]";
+  }
+  return x;
+}
 
 /**
  * simplified goal interface, uses closures to spawn dependent goals
@@ -10,8 +17,8 @@ import {goals} from "./goals";
  * M state type
  */
 abstract class Goal<A, R, M extends State<A>> {
-  constructor() {
-    true === true;
+  constructor(plan: Plan<A>|undefined) {
+    console.log("goal=", this.getGoalKey(), "plan=", plan);
   }
 
   public abstract getGoalKey(): string;
@@ -28,31 +35,52 @@ abstract class Goal<A, R, M extends State<A>> {
   public abstract state(actor: A): M;
 
   /**
-   * build global goals, examine rooms
+   * build goals, examine rooms.
+   *
+   * decide which goals are valid based on their initial conditions, prune invalid goals
    *
    * @returns rich plan with all possible candidates assigned
    */
-  public plan(state: M): Plan<R>[] {
+  public plan(parent: Plan<A>, state: M): Plan<R>[] {
     if (state.isPaused() || this.isPaused()) {
       console.log("paused");
       return [];
     }
 
-    return this._identifyResources(state).map((resource) => {
-      const plan = new Plan<R>(this, resource);
+    const resources: R[] = this._identifyResources(state);
+    const bannedGoals: string[] = [];
 
+    console.log(this.toString(), "planning", resources.length, "resources", this._goalPriority().length, "goals");
+
+    // naive, loop thru each resource and enumerate all the goals they could hit
+    return resources.map((resource: R) => {
+      const plan = new Plan<R>(parent, this, resource);
+
+      nextGoal:
       for (const name of this._goalPriority()) {
-        let candidates: any[] = this._buildCandidateActors(name, state);
-
-        for (const actor of candidates) {
-          const goal = this._goalFactory()[name](actor);
-
-          if (goal === undefined) {
-            console.log("no factory output goal=", name, "actor=", actor);
-          } else {
-            plan.addAll( goal.plan(goal.state(actor)) );
-          }
+        if (bannedGoals.indexOf(name) >= 0) {
+          continue nextGoal;
         }
+
+        const factory = this._goalFactory()[name];
+        if (factory === undefined) {
+          console.log("missing factory. goal=", name);
+          bannedGoals.push(name);
+          continue nextGoal;
+        }
+
+        const goal: Goal<R, any, any> = factory(plan);
+        if (goal === undefined) {
+          console.log("no factory output. goal=", name, "resource=", resource);
+          bannedGoals.push(name);
+          continue nextGoal;
+        }
+
+        const resState = goal.state(resource);
+
+        console.log("created", resState, "from", print(resource));
+
+        plan.addAll( goal.plan(plan, resState) );
       }
 
       return plan;
@@ -61,6 +89,8 @@ abstract class Goal<A, R, M extends State<A>> {
 
   /**
    * elect a winning plan
+   *
+   * allocate resources according to goals, order based on optimal velocity not just priority
    *
    * @returns pruned plan structure
    */
@@ -77,6 +107,9 @@ abstract class Goal<A, R, M extends State<A>> {
 
   /**
    * execute plans
+   *
+   * last-minute planning / replanning: interrupt goals steal workers based on velocity and priority
+   *  - if this happens majority of plan will be rejected
    *
    * state and world is modified
    *
@@ -103,7 +136,8 @@ abstract class Goal<A, R, M extends State<A>> {
    *
    * @returns resolution plan root
    */
-  public resolve(failures: Plan<R>[]): Plan<R>[]|any {
+  public resolve(parent: Plan<A>, failures: Plan<R>[]): Plan<R>[]|any {
+    parent = parent;
     failures = failures;
 
     return undefined;
@@ -113,39 +147,48 @@ abstract class Goal<A, R, M extends State<A>> {
     return false;
   }
 
-  protected _buildCandidateActors(goalName: string, state: M): any[] {
-    let factory = this._candidateActorFactory();
-    let goalBuilder = factory[goalName];
-    if (goalBuilder === undefined) {
-      console.log("no builder goal=", goalName, "parentGoal=", this.getGoalKey());
-      return [];
-    }
-
-    let candidates: any[] = goalBuilder(state);
-
-    if (candidates === undefined) {
-      console.log("no candidates goal=", goalName, "parendGoal=", this.getGoalKey());
-      return [];
-    }
-
-    return candidates;
-  }
+  // protected _buildCandidateActors(goalName: string, state: M): any[] {
+  //   let factory = this._candidateActorFactory();
+  //   let goalBuilder = factory[goalName];
+  //   if (goalBuilder === undefined) {
+  //     console.log("no builder goal=", goalName, "parentGoal=", this.getGoalKey());
+  //     return [];
+  //   }
+  //
+  //   let candidates: any[] = goalBuilder(state);
+  //
+  //   if (candidates === undefined) {
+  //     console.log("no candidates goal=", goalName, "parendGoal=", this.getGoalKey());
+  //     return [];
+  //   }
+  //
+  //   return candidates;
+  // }
 
   protected _goalPriority(): string[] {
     // TODO set goal priority
     return [];
   }
 
-  protected _goalFactory(): GoalFactory<any> {
+  protected _goalFactory(): GoalFactory<R> {
     return goals;
   }
 
-  protected abstract _identifyResources(state: M): R[];
-
   /**
-   * plan phase
+   * given the incoming state, what resources can we look at?
    */
-  protected abstract _candidateActorFactory(): CandidateFactory<M>;
+  protected _identifyResources(state: M): R[] {
+    state = state;
+
+    return [];
+  }
+
+  // /**
+  //  * given the incoming state, output candidate actors used to boot up goals
+  //  */
+  // protected _candidateActorFactory(): CandidateFactory<M> {
+  //   return emptyActors;
+  // }
 }
 export default Goal;
 

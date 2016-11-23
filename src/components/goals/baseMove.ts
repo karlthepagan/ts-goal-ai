@@ -45,7 +45,7 @@
 //   }
 //
 //   private dir: number;
-//   constructor(direction: number) {
+//   constructor(plan: Plan<number>) {
 //     this.dir = direction;
 //   }
 //

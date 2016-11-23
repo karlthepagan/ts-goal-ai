@@ -7,13 +7,21 @@ import List = _.List;
  * R resource type
  */
 export default class Plan<R> {
+  public static ROOT: Plan<Game> = new Plan<Game>(undefined, undefined, Game);
+
+  private _parent: Plan<any>|undefined;
   private _goal: Goal<any, R, State<any>>;
   private _resource: R;
   private _next: Plan<any>[] = [];
 
-  constructor(goal: Goal<any, R, State<any>>, resource: R) {
-    this._goal = goal;
+  constructor(parent: Plan<any>|undefined, goal: Goal<any, R, State<any>>|undefined, resource: R) {
+    this._parent = parent;
+    this._goal = goal as Goal<any, R, State<any>>;
     this._resource = resource;
+  }
+
+  public isRoot(): boolean {
+    return this._parent === undefined;
   }
 
   public resource(): R {
@@ -38,5 +46,17 @@ export default class Plan<R> {
 
   public next(): Plan<any>[] {
     return this._next;
+  }
+
+  public parent(): Plan<any> {
+    return this._parent as Plan<any>;
+  }
+
+  public toString() {
+    if (this.isRoot()) {
+      return "*";
+    } else {
+      return this._goal + "." + this._parent;
+    }
   }
 }

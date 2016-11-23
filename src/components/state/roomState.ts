@@ -15,6 +15,10 @@ export default class RoomState extends State<Room> {
     return RoomState._right.wrap(obj, obj.getMemory()) as RoomState;
   }
 
+  // public static remote(name: string): RoomState {
+  //   return new RoomState().wrap(undefined, Memory.rooms[name]) as RoomState;
+  // }
+  //
   private static _left: RoomState = new RoomState();
   private static _right: RoomState = new RoomState();
 
@@ -27,12 +31,13 @@ export default class RoomState extends State<Room> {
       // iterate thru room objects and look up action fitness filter
 
       // not yet owned (usually)
-      if (this._subject.controller !== undefined) {
-        RoomObjectState.left(this._subject.controller);
+      const controller: Controller|undefined = this.subject().controller;
+      if (controller !== undefined) {
+        RoomObjectState.left(controller);
       }
 
-      this._subject.find(FIND_SOURCES).forEach(SourceState.right);
-      this._subject.find(FIND_MINERALS).forEach(MineralState.right);
+      this.subject().find(FIND_SOURCES).forEach(SourceState.right);
+      this.subject().find(FIND_MINERALS).forEach(MineralState.right);
 
       // enumerate per-room resources?
 
@@ -42,22 +47,22 @@ export default class RoomState extends State<Room> {
     return false;
   }
 
-  /**
-   * Candidate resources
-   */
-  public getCandidates(): Creep[] {
-    const candidates: Creep[] = [];
-
-    for (let i in Game.creeps) {
-      let creep = Game.creeps[i];
-
-      creep = creep;
-      // goal.insertCandidate(creep, candidates);
-    }
-
-    return candidates;
-  }
-
+  // /**
+  //  * Candidate resources
+  //  */
+  // public getCandidates(): Creep[] {
+  //   const candidates: Creep[] = [];
+  //
+  //   for (let i in Game.creeps) {
+  //     let creep = Game.creeps[i];
+  //
+  //     creep = creep;
+  //     // goal.insertCandidate(creep, candidates);
+  //   }
+  //
+  //   return candidates;
+  // }
+  //
   /**
    * Assigned resources
    */
@@ -70,5 +75,21 @@ export default class RoomState extends State<Room> {
 
   public parent(): GoalState {
     return GoalState.master();
+  }
+
+  public spawns(): Spawn[] {
+    return this.subject().find(FIND_MY_SPAWNS) as Spawn[];
+  }
+
+  public creeps(): Creep[] {
+    return this.subject().find(FIND_MY_CREEPS) as Creep[];
+  }
+
+  public sources(): Source[] {
+    return this.subject().find(FIND_SOURCES) as Source[];
+  }
+
+  public toString() {
+    return "[RoomState " + this.subject().name + "]";
   }
 }

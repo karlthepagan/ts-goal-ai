@@ -4,6 +4,7 @@ import * as Config from "./config/config";
 import MasterGoal from "./components/goals/highMasterGoal";
 import GoalState from "./components/state/goalState";
 import {bootstrap} from "./components/bootstrap";
+import Plan from "./components/goals/plan";
 
 console.log("loading");
 
@@ -11,7 +12,8 @@ for ( let f of bootstrap ) {
   f();
 }
 
-const goals: MasterGoal = new MasterGoal();
+const goals = new MasterGoal();
+const root = Plan.ROOT;
 
 /**
  * Screeps system expects this "loop" method in main.js to run the
@@ -26,7 +28,7 @@ export function loop() {
   const state = GoalState.boot();
 
   // plan level zero
-  let initialPlan = goals.plan(state);
+  let initialPlan = goals.plan(root, state);
   let iteration = 0;
 
   while (initialPlan !== undefined && initialPlan.length > 0) {
@@ -43,7 +45,7 @@ export function loop() {
     console.log("gen", iteration, "failed", failedPlans.length);
 
     // clean up failed or conflicting goals
-    initialPlan = goals.resolve(failedPlans);
+    initialPlan = goals.resolve(root, failedPlans);
   }
 
   for (let i in Game.rooms) {

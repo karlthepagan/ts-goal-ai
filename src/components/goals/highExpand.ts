@@ -1,8 +1,7 @@
 import Goal from "./goal";
 import GoalState from "../state/goalState";
 import * as High from "./high";
-import {CandidateFactory} from "../filters";
-import {goalStateActors} from "./goals";
+import Plan from "./plan";
 
 /**
  * expand territory
@@ -12,14 +11,12 @@ export default class Expand extends Goal<Game, Room, GoalState> {
     return [ state.subject() ];
   }
 
-  constructor() {
-    super();
-
-    console.log("hello", this.getGoalKey());
+  constructor(plan: Plan<Game>) {
+    super(plan);
   }
 
   public state(actor: Game): GoalState {
-    return GoalState.build(actor, Memory.goals);
+    return GoalState.build(actor);
   }
 
   public getGoalKey(): string {
@@ -31,10 +28,6 @@ export default class Expand extends Goal<Game, Room, GoalState> {
   }
 
   protected _identifyResources(state: GoalState): Room[] {
-    return _.values(state.subject().rooms) as Room[];
-  }
-
-  protected _candidateActorFactory(): CandidateFactory<GoalState> {
-    return goalStateActors;
+    return state.rooms();
   }
 }

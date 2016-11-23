@@ -1,7 +1,6 @@
 import * as Filters from "./filters";
 
 export const tasks: Task[] = [];
-export const NOOP: Task = () => { return 0; };
 
 export function findOpenPositions(pos: RoomPosition, range: number) {
   return (Game.rooms[pos.roomName].lookForAtArea(

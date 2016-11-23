@@ -1,0 +1,69 @@
+@startuml
+
+() main
+package "Master Goal" {
+  [Sticky] <=left= (main)
+  [Expand] <.left. [Sticky]
+  [GlobalControlIncrease] <.left. [Expand]
+
+'export const GOAL_FLAG = "flag"; // TODO
+'export const GOAL_STICKY = "sticky"; // TODO
+'export const GOAL_MASTER = "think";
+'export const GOAL_DEFEND = "defend"; // TODO
+'export const GOAL_ASSASINATE = "assasin"; // TODO
+'export const GOAL_GCL = "gcl";
+'export const GOAL_EXPAND = "expand";
+'export const GOAL_ATTACK = "attack"; // TODO
+'export const GOAL_IDLE = "idle"; // TODO
+
+}
+
+() placeholder <=up= [Expand]
+
+package "any p0" {
+  [StickyCreeps] <|=up= [Sticky]: current task
+  [StickyStructures] <|=up= [Sticky]: current task
+  [StickyStructures] <.left. [StickyCreeps]
+}
+
+package "Room Priority" {
+  [RoomControlLevel] <|=up= [GlobalControlIncrease]: room addresses
+}
+
+package "Room" {
+  [EnergyVelocity] <=up= [RoomControlLevel]: room address
+  [UpgradeController] <.left. [EnergyVelocity]
+  [BuildWorker] <.left. [UpgradeController]
+}
+
+package "Creep" {
+  [GetEnergy] <|=up= [EnergyVelocity]: work sites
+  [StoreEnergy] <|=up= [EnergyVelocity]: energy containers
+  [StoreEnergy] <.left. [GetEnergy]
+}
+
+package "Creep" {
+  [EnergyUpgrade] <|=up= [UpgradeController]: energy containers
+}
+
+package "Spawn" {
+  [SpawnCreep] <=up= [BuildWorker]: worker design
+}
+
+() Move
+() StructWork <.left. Move
+() Work <.left. StructWork
+
+Work <=up= [GetEnergy]
+Move <=up= [GetEnergy]
+
+[Work] <=up= [StickyCreeps]
+[Move] <=up= [StickyCreeps]
+[StructWork] <=up= [StickyStructures]
+[StructWork] <=up= [SpawnCreep]
+[Work] <=up= [StoreEnergy]
+[Move] <=up= [StoreEnergy]
+[Work] <=up= [EnergyUpgrade]
+[Move] <=up= [EnergyUpgrade]
+
+@enduml

@@ -20,4 +20,8 @@ export default class CreepState extends State<Creep> {
 
     return false;
   }
+
+  public toString() {
+    return "[CreepState " + this.subject().id + "]";
+  }
 }
