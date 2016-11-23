@@ -97,7 +97,7 @@ export class Log extends LogLevels {
     }});
   }
 
-  public trace(error: Error): Log {
+  public trace(error: any): Log {
     if (this.level >= Log.ERROR && error.stack) {
       console.log(this.resolveStack(error.stack));
     }
@@ -130,7 +130,7 @@ export class Log extends LogLevels {
   }
 
   public getFileLine(upStack = 4): string {
-    let stack = new Error("").stack;
+    let stack = (new Error("") as any).stack;
     if (stack) {
       let lines = stack.split("\n");
       if (lines.length > upStack) {
