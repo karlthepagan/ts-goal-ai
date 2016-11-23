@@ -1,10 +1,8 @@
-import * as CreepManager from "./components/creeps/creepManager";
-import * as T from "./components/tasks";
 import * as Config from "./config/config";
-import MasterGoal from "./components/goals/highMasterGoal";
 import GoalState from "./components/state/goalState";
 import {bootstrap} from "./components/bootstrap";
 import Plan from "./components/goals/plan";
+import ManualGoal from "./components/goals/zeroManualGoal";
 
 console.log("loading");
 
@@ -12,7 +10,7 @@ for ( let f of bootstrap ) {
   f();
 }
 
-const goals = new MasterGoal();
+const goals = new ManualGoal();
 const root = Plan.ROOT;
 
 /**
@@ -48,17 +46,6 @@ export function loop() {
     initialPlan = goals.resolve(root, failedPlans);
   }
 
-  for (let i in Game.rooms) {
-    let room: Room = Game.rooms[i];
-
-    // legacy procedural ai
-    CreepManager.run(room);
-  }
-
-  for (const fun of T.tasks) {
-    fun();
-  }
-
   // Clears any non-existing creep memory.
   for (let name in Memory.creeps) {
     if (!Game.creeps[name]) {
@@ -66,9 +53,6 @@ export function loop() {
       delete Memory.creeps[name];
     }
   }
-
-  // TODO clear array?
-  T.tasks.splice(0, T.tasks.length);
 
   console.log("CPU: ", Game.cpu.getUsed());
   loading = false;

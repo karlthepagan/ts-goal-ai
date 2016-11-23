@@ -27,5 +27,7 @@ interface Memory {
   delete: boolean;
   reset: boolean;
   pause: boolean;
+  seen: number;
+  index: any;
   init(): void;
 }

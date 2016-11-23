@@ -15,3 +15,20 @@ export function strToRoomPosition(memoized: string[], roomName: string): RoomPos
   }
   return memoized.map((s) => Filters.strAsPos(s, roomName));
 }
+
+export function isSpawnFull(x: Spawn, percent: number): boolean {
+  return x.energy >= (x.energyCapacity * percent);
+}
+
+export function isEnergyFull(x: Creep, percent: number): boolean {
+  const v = x.carry.energy >= (x.carryCapacity * percent);
+  return v;
+}
+
+export function isTired(x: Creep) {
+  return x.fatigue > 0;
+}
+
+export function isReady(x: Creep) {
+  return x.fatigue === 0;
+}

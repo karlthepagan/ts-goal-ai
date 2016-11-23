@@ -3,12 +3,12 @@ import RoomState from "./roomState";
 import * as Filters from "../filters";
 
 export default class RoomObjectState<T extends RoomObject> extends State<T> {
-  public static left<U extends RoomObject>(obj: U): RoomObjectState<U> {
-    return RoomObjectState._left.wrap(obj, obj.getMemory()) as RoomObjectState<U>;
+  public static left<U extends RoomObject & {id: string}>(obj: U): RoomObjectState<U> {
+    return RoomObjectState._left.wrap(obj.id, obj, obj.getMemory()) as RoomObjectState<U>;
   }
 
-  public static right<U extends RoomObject>(obj: U): RoomObjectState<U> {
-    return RoomObjectState._right.wrap(obj, obj.getMemory()) as RoomObjectState<U>;
+  public static right<U extends RoomObject & {id: string}>(obj: U): RoomObjectState<U> {
+    return RoomObjectState._right.wrap(obj.id, obj, obj.getMemory()) as RoomObjectState<U>;
   }
 
   private static _left = new RoomObjectState<RoomObject>();

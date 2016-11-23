@@ -5,11 +5,11 @@ import * as Filters from "../filters";
 
 export default class MineralState extends State<Mineral> {
   public static left(obj: Mineral): MineralState {
-    return MineralState._left.wrap(obj, obj.getMemory()) as MineralState;
+    return MineralState._left.wrap(obj.id, obj, obj.getMemory()) as MineralState;
   }
 
   public static right(obj: Mineral): MineralState {
-    return MineralState._right.wrap(obj, obj.getMemory()) as MineralState;
+    return MineralState._right.wrap(obj.id, obj, obj.getMemory()) as MineralState;
   }
 
   private static _left = new MineralState();

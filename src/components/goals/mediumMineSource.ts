@@ -3,6 +3,7 @@ import * as Low from "./low";
 import Plan from "./plan";
 import SourceState from "../state/sourceState";
 import log from "../log";
+import * as Tasks from "../tasks";
 
 /**
  * exhaust all
@@ -49,7 +50,7 @@ export default class MineSource extends Goal<Source, Creep, SourceState> {
         const p = plan[i];
         const creep = p.resource();
         // TODO better scoring for near capacity
-        if (creep.carry.energy + creep.carry.power > creep.carryCapacity * 0.9) {
+        if (Tasks.isEnergyFull(creep, 0.9)) {
           creep.say("full");
           continue;
         }

@@ -8,11 +8,11 @@ import GoalState from "./goalState";
 
 export default class RoomState extends State<Room> {
   public static left(obj: Room): RoomState {
-    return RoomState._left.wrap(obj, obj.getMemory()) as RoomState;
+    return RoomState._left.wrap(obj.name, obj, obj.getMemory()) as RoomState;
   }
 
   public static right(obj: Room): RoomState {
-    return RoomState._right.wrap(obj, obj.getMemory()) as RoomState;
+    return RoomState._right.wrap(obj.name, obj, obj.getMemory()) as RoomState;
   }
 
   // public static remote(name: string): RoomState {
@@ -31,15 +31,13 @@ export default class RoomState extends State<Room> {
       // iterate thru room objects and look up action fitness filter
 
       // not yet owned (usually)
-      const controller: Controller|undefined = this.subject().controller;
-      if (controller !== undefined) {
-        RoomObjectState.left(controller);
+      if (this.subject().controller !== undefined) {
+        RoomObjectState.left(this.subject().controller as Controller);
       }
 
-      this.subject().find(FIND_SOURCES).forEach(SourceState.right);
-      this.subject().find(FIND_MINERALS).forEach(MineralState.right);
-
-      // enumerate per-room resources?
+      // enumerate per-room resources
+      this.subject().find(FIND_SOURCES).forEach(SourceState.left);
+      this.subject().find(FIND_MINERALS).forEach(MineralState.left);
 
       return true;
     }
@@ -90,6 +88,6 @@ export default class RoomState extends State<Room> {
   }
 
   public toString() {
-    return "[RoomState " + this.subject().name + "]";
+    return "[RoomState " + this._key + "]";
   }
 }

@@ -2,6 +2,7 @@ export const GOAL_DESIGN = "design";
 export const GOAL_FLAG = "flag"; // TODO
 export const GOAL_STICKY = "sticky"; // TODO
 export const GOAL_MASTER = "think";
+export const GOAL_MANUAL = "zero";
 export const GOAL_DEFEND = "defend"; // TODO
 export const GOAL_GCL = "gcl";
 export const GOAL_EXPAND = "expand";

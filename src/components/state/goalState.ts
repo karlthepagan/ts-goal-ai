@@ -1,6 +1,7 @@
 import State from "./abstractState";
 import RoomState from "./roomState";
 import * as Keys from "../keys";
+import SourceState from "./sourceState";
 
 export default class GoalState extends State<Game> {
   public static master(): GoalState {
@@ -16,7 +17,7 @@ export default class GoalState extends State<Game> {
 
   public static memory(game: Game) {
     if (game === Game) {
-      return Memory.goals;
+      return Memory;
     } else {
       return (game as any).memory;
     }
@@ -38,6 +39,8 @@ export default class GoalState extends State<Game> {
       delete Memory.goals;
       delete Memory.rooms;
       delete Memory.log;
+      delete Memory.index;
+      delete Memory.seen;
     }
 
     // Check memory for null or out of bounds custom objects
@@ -57,7 +60,11 @@ export default class GoalState extends State<Game> {
       Memory.log = {};
     }
 
-    GoalState._master = GoalState._build(Game, Memory.goals);
+    if (!Memory.index) {
+      Memory.index = {};
+    }
+
+    GoalState._master = GoalState._build(Game, Memory);
     GoalState._paused = GoalState._build(Game, undefined);
 
     return GoalState.master();
@@ -67,7 +74,7 @@ export default class GoalState extends State<Game> {
   private static _paused: GoalState;
 
   private static _build(game: Game, mem: any): GoalState {
-    return new GoalState().wrap(game, mem) as GoalState;
+    return new GoalState().wrap("Game", game, mem) as GoalState;
   }
 
   public init() {
@@ -76,8 +83,7 @@ export default class GoalState extends State<Game> {
       delete this._memory[Keys.LOCATION_POS];
       delete this._memory[Keys.LOCATION_ROOM];
 
-      for (let name in this.subject().rooms) {
-        let room = this.subject().rooms[name];
+      for (let room of this.rooms()) {
         RoomState.left(room);
       }
 
@@ -89,13 +95,34 @@ export default class GoalState extends State<Game> {
     return false;
   }
 
-  public creeps(): Creep[] {
+  public creeps(f?: (c: Creep) => boolean): Creep[] {
     // TODO lazy
+    if (f) {
+      return (_.values(this.subject().creeps) as Creep[]).filter(f);
+    }
     return _.values(this.subject().creeps) as Creep[];
   }
 
   public rooms(): Room[] {
     return _.values(this.subject().rooms) as Room[];
+  }
+
+  public sourceIds(): string[] {
+    const found = Memory.index.sources;
+    if (found === undefined) {
+      return Memory.index.sources = [];
+    }
+    return found;
+  }
+
+  public forEachSource(f: (s: SourceState) => void) {
+    for (const id of this.sourceIds()) {
+      f(SourceState.vRight(id));
+    }
+  }
+
+  public goals(): any {
+    return this.memory().goals;
   }
 
   public toString() {
