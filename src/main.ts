@@ -1,7 +1,7 @@
-import * as CreepManager from "./components/creeps/creepManager";
 import * as Config from "./config/config";
 
 import { log } from "./components/support/log";
+import GlobalState from "./components/state/globalState";
 
 // Any code written outside the `loop()` method is executed only when the
 // Screeps system reloads your script.
@@ -29,10 +29,15 @@ export function loop() {
     Memory.uuid = 0;
   }
 
+  try {
+    const state = GlobalState.boot();
+    log.debug(state);
+  } catch (err) {
+    this.log("init failed", err, err.stack);
+  }
+
   for (let i in Game.rooms) {
     let room: Room = Game.rooms[i];
-
-    CreepManager.run(room);
 
     // Clears any non-existing creep memory.
     for (let name in Memory.creeps) {
@@ -46,4 +51,6 @@ export function loop() {
       }
     }
   }
+
+  log.info(Game.cpu.getUsed(), "+", Game.cpu.bucket);
 }
