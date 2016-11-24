@@ -145,6 +145,8 @@ abstract class State<T> {
     return Game.getObjectById(id) as T;
   }
 
-  protected abstract _getId(subject: T): string;
+  protected _getId(subject: T): string {
+    return (subject as any).id;
+  }
 }
 export default State;

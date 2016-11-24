@@ -2,6 +2,7 @@ import * as Config from "./config/config";
 
 import { log } from "./components/support/log";
 import GlobalState from "./components/state/globalState";
+import {bootstrap} from "./components/bootstrap";
 
 // Any code written outside the `loop()` method is executed only when the
 // Screeps system reloads your script.
@@ -14,6 +15,10 @@ if (Config.USE_PATHFINDER) {
 }
 
 log.info("load");
+
+for (const f of bootstrap) {
+  f();
+}
 
 /**
  * Screeps system expects this "loop" method in main.js to run the

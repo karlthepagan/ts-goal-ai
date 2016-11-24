@@ -1,6 +1,7 @@
 import State from "./abstractState";
 import {log} from "../support/log";
 import {botMemory} from "../../config/config";
+import * as F from "../functions";
 
 export default class SourceState extends State<Source> {
   public static left(subject: Source) {
@@ -23,11 +24,17 @@ export default class SourceState extends State<Source> {
   public delete() {
     super.delete();
 
+    delete this._memory.nodes;
+
     log.debug("delete", this);
   }
 
-  protected _getId(subject: Source) {
-    return subject.id;
+  public nodeIds(): string[] {
+    return (this._memory.nodes as number[]).map((n) => { return "" + n; });
+  }
+
+  public nodesAsPos(): RoomPosition[] {
+    return (this._memory.nodes as number[]).map(F.dirToPosition(this.subject().pos));
   }
 
   protected init(): boolean {
@@ -37,12 +44,9 @@ export default class SourceState extends State<Source> {
 
     if (!super.init()) {
       if (!this.isVirtual()) {
-        const x = this.pos().x;
-        const y = this.pos().y;
-        this.subject().room.lookForAtArea(LOOK_TERRAIN,
-            y - 1, x - 1, y + 1, x + 1,
-          true);
-        // TODO foreach
+        const subject = this.subject();
+        this._memory.nodes = F.findOpenPositions(subject.room, subject.pos, 1)
+          .map(F.posToDirection(subject.pos));
       }
 
       return false;
