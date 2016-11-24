@@ -17,7 +17,7 @@ export default class MineralState extends State<Mineral> {
   protected _memAddress = ["minerals"];
 
   public toString() {
-    return "[" + this._name + " " + this._id + "]";
+    return "[" + this._name + " " + this.pos() + "]";
   }
 
   public delete() {

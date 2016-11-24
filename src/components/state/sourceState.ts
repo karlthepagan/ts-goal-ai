@@ -17,7 +17,7 @@ export default class SourceState extends State<Source> {
   protected _memAddress = ["sources"];
 
   public toString() {
-    return "[" + this._name + " " + this._id + "]";
+    return "[" + this._name + " " + this.pos() + "]";
   }
 
   public delete() {
