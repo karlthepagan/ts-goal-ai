@@ -26,9 +26,18 @@ function pad(num: any, size: number) {
  * Flyweight objects which wrap memory and object to calculate state
  */
 abstract class State<T> {
+  /**
+   * describes flywight handedness for debugging
+   */
+  protected abstract _memAddress: string[];
+  protected _name: string;
   protected _id: string;
   protected _subject: T|undefined;
   protected _memory: any;
+
+  constructor(name: string) {
+    this._name = name;
+  }
 
   public wrap(subject: T, memory: any): State<T> {
     this._id = this._getId(subject);
@@ -69,6 +78,21 @@ abstract class State<T> {
     return strAsPos(this._memory.room, this._memory.pos);
   }
 
+  public delete() {
+    delete this._memory.seen;
+    delete this._memory.pos;
+    delete this._memory.room;
+  }
+
+  public resolve(): boolean {
+    const subject = this._subject = this._resolve(this._id);
+    if (subject === undefined) {
+      return false;
+    }
+
+    return true;
+  }
+
   public abstract toString(): string;
 
   protected init(): boolean {
@@ -80,6 +104,7 @@ abstract class State<T> {
 
     if (this._memory.seen === undefined) {
       this._memory.seen = 1;
+      this.updatePosition(this._subject);
 
       return true;
     }
@@ -101,13 +126,25 @@ abstract class State<T> {
     }
   }
 
-  protected delete() {
-    delete this._memory.seen;
-    delete this._memory.pos;
-    delete this._memory.room;
+  protected _access(memory: any): any {
+    for (const addr of this._memAddress) {
+      if (memory[addr] === undefined) {
+        memory = memory[addr] = {};
+      } else {
+        memory = memory[addr];
+      }
+    }
+
+    if (memory[this._id] === undefined) {
+      return memory[this._id] = {};
+    }
+    return memory[this._id];
   }
 
-  protected abstract _access(memory: any): any;
+  protected _resolve(id: string): T {
+    return Game.getObjectById(id) as T;
+  }
+
   protected abstract _getId(subject: T): string;
 }
 export default State;
