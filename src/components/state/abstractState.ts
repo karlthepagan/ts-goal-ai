@@ -1,3 +1,7 @@
+import {log} from "../support/log";
+// import * as F from "../functions";
+import * as Config from "../../config/config";
+
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
 
@@ -22,14 +26,77 @@ function pad(num: any, size: number) {
   return ("000000000" + num).substr(-size);
 }
 
+function buildFollow(mem: any, addr: string, value: any): any {
+  if (mem[addr] === undefined) {
+    return mem[addr] = value;
+  } else {
+    return mem[addr];
+  }
+}
+
+function expand(address: string[], memory: any, array?: boolean): any {
+  if (address.length === 0) {
+    return memory;
+  }
+
+  let last = address.length - 1;
+
+  for (let i = 0; i < last; i++) {
+    memory = buildFollow(memory, address[i], {});
+  }
+
+  return buildFollow(memory, address[last], array ? [] : {});
+}
+
+function _register(state: any, rootMemory: any): boolean {
+  if (state._indexAddress === undefined) {
+    return false;
+  }
+  if (state._id === undefined) {
+    return false;
+  }
+
+  let memory = expand(state._indexAddress, rootMemory, true) as string[];
+
+  memory.push(state._id);
+
+  return true;
+}
+
+function _access(state: any, rootMemory: any): any {
+  // log.debug(state, "addressing", ...state._accessAddress);
+
+  let memory = expand(state._accessAddress, rootMemory);
+
+  if (state._id === undefined) {
+    return memory;
+  }
+
+  if (memory[state._id] === undefined) {
+    return memory[state._id] = {};
+  }
+
+  return memory[state._id];
+}
+
 /**
  * Flyweight objects which wrap memory and object to calculate state
+ *
+ * all implementers provide a "left" and "right" objects, as well as virtual left and right
+ *
+ * these handed flyweights allows for nested comparisons if programming rules are enforced
+ *
+ * so... what are those rules anyways? follow C++ calling convention, left / right?
+ *  left - descend into new functions
+ *  right - return from functions
  */
 abstract class State<T> {
+  protected _accessAddress: string[];
+  protected _indexAddress: string[]|undefined;
+
   /**
    * describes flywight handedness for debugging
    */
-  protected abstract _memAddress: string[];
   protected _name: string;
   protected _id: string;
   protected _subject: T|undefined;
@@ -40,20 +107,23 @@ abstract class State<T> {
   }
 
   public wrap(subject: T, memory: any): State<T> {
-    this._id = this._getId(subject);
-    this._subject = subject;
-    this._memory = this._access(memory);
+    this._id = this._getId(subject) as string;
 
-    this.init();
+    this._subject = subject;
+
+    this._memory = _access(this, memory);
+
+    this.init(memory);
 
     return this;
   }
 
   public virtual(id: string, memory: any): State<T> {
     this._id = id;
-    this._memory = this._access(memory);
 
-    this.init();
+    this._memory = _access(this, memory);
+
+    this.init(memory);
 
     return this;
   }
@@ -70,11 +140,15 @@ abstract class State<T> {
     return this._memory === undefined;
   }
 
-  public isVirtual(): boolean {
-    return this._subject === undefined;
+  public isVirtual(reason?: string): boolean {
+    const virtual = this._subject === undefined;
+    if (virtual && reason !== undefined) {
+      log.warning("isVirtual true:", reason);
+    }
+    return virtual;
   }
 
-  public pos() {
+  public pos(): RoomPosition {
     return strAsPos(this._memory.room, this._memory.pos);
   }
 
@@ -86,25 +160,36 @@ abstract class State<T> {
 
   public resolve(): boolean {
     const subject = this._subject = this._resolve(this._id);
-    if (subject === undefined) {
-      return false;
-    }
 
-    return true;
+    return subject !== undefined;
   }
 
-  public abstract toString(): string;
+  public toString() {
+    return "[" + this._name + " " + this._id + " " + this.guid() + "]";
+  }
 
-  protected init(): boolean {
+  protected guid(): number {
+    return this._memory === undefined ? 0 : this._memory.seen;
+  }
+
+  protected init(rootMemory: any): boolean {
     if (this._memory === undefined) {
       return false;
     }
 
-    // console.log("at", this, ":", JSON.stringify(this._memory));
+    // log.debug("at", this, ":", this._memory);
 
     if (this._memory.seen === undefined) {
-      this._memory.seen = 1;
+      const guid = Config.MEMORY_GUID ? (1 + Math.random()) : 1;
+      this._memory.seen = guid;
+      if (Config.MEMORY_GUID) {
+        log.debug(this, "initializing");
+      }
       this.updatePosition(this._subject);
+
+      _register(this, rootMemory);
+
+      // TODO callback promises registered for new memory objects
 
       return true;
     }
@@ -126,26 +211,11 @@ abstract class State<T> {
     }
   }
 
-  protected _access(memory: any): any {
-    for (const addr of this._memAddress) {
-      if (memory[addr] === undefined) {
-        memory = memory[addr] = {};
-      } else {
-        memory = memory[addr];
-      }
-    }
-
-    if (memory[this._id] === undefined) {
-      return memory[this._id] = {};
-    }
-    return memory[this._id];
-  }
-
   protected _resolve(id: string): T {
     return Game.getObjectById(id) as T;
   }
 
-  protected _getId(subject: T): string {
+  protected _getId(subject: T): string|undefined {
     return (subject as any).id;
   }
 }

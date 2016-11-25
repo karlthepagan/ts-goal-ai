@@ -12,14 +12,21 @@ export default class SourceState extends State<Source> {
     return SourceState._right.wrap(subject, botMemory()) as SourceState;
   }
 
+  public static vleft(id: string) {
+    return SourceState._vleft.virtual(id, botMemory()) as SourceState;
+  }
+
+  public static vright(id: string) {
+    return SourceState._vright.virtual(id, botMemory()) as SourceState;
+  }
+
   private static _left: SourceState = new SourceState("SourceStateLeft");
   private static _right: SourceState = new SourceState("SourceStateRight");
+  private static _vleft: SourceState = new SourceState("SourceStateVirtualLeft");
+  private static _vright: SourceState = new SourceState("SourceStateVirtualRight");
 
-  protected _memAddress = ["sources"];
-
-  public toString() {
-    return "[" + this._name + " " + this.pos() + "]";
-  }
+  protected _accessAddress = ["sources"];
+  protected _indexAddress = ["index", "sources"];
 
   public delete() {
     super.delete();
@@ -37,21 +44,17 @@ export default class SourceState extends State<Source> {
     return (this._memory.nodes as number[]).map(F.dirToPosition(this.subject().pos));
   }
 
-  protected init(): boolean {
-    if (this._memory.reset) {
-      this.delete();
-    }
-
-    if (!super.init()) {
+  protected init(rootMemory: any): boolean {
+    if (super.init(rootMemory)) {
       if (!this.isVirtual()) {
         const subject = this.subject();
         this._memory.nodes = F.findOpenPositions(subject.room, subject.pos, 1)
           .map(F.posToDirection(subject.pos));
       }
 
-      return false;
+      return true;
     }
 
-    return true;
+    return false;
   }
 }

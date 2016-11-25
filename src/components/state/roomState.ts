@@ -3,6 +3,7 @@ import {log} from "../support/log";
 import {botMemory} from "../../config/config";
 import SourceState from "./sourceState";
 import MineralState from "./mineralState";
+import SpawnState from "./spawnState";
 
 export default class RoomState extends State<Room> {
   public static left(subject: Room) {
@@ -13,14 +14,21 @@ export default class RoomState extends State<Room> {
     return RoomState._right.wrap(subject, botMemory()) as RoomState;
   }
 
+  public static vleft(id: string) {
+    return RoomState._vleft.virtual(id, botMemory()) as RoomState;
+  }
+
+  public static vright(id: string) {
+    return RoomState._vright.virtual(id, botMemory()) as RoomState;
+  }
+
   private static _left: RoomState = new RoomState("RoomStateLeft");
   private static _right: RoomState = new RoomState("RoomStateRight");
+  private static _vleft: RoomState = new RoomState("RoomStateVirtualLeft");
+  private static _vright: RoomState = new RoomState("RoomStateVirtualRight");
 
-  protected _memAddress = ["rooms"];
-
-  public toString() {
-    return "[" + this._name + " " + this._id + "]";
-  }
+  protected _accessAddress = ["rooms"];
+  protected _indexAddress = ["index", "rooms"];
 
   public delete() {
     super.delete();
@@ -32,24 +40,23 @@ export default class RoomState extends State<Room> {
     return subject.name;
   }
 
-  protected init(): boolean {
-    if (this._memory.reset) {
-      this.delete();
-    }
-
-    if (!super.init()) {
+  protected init(rootMemory: any): boolean {
+    if (super.init(rootMemory)) {
       if (!this.isVirtual()) {
         // sources
         this.subject().find(FIND_SOURCES).forEach(SourceState.left);
 
         // minerals
         this.subject().find(FIND_MINERALS).forEach(MineralState.left);
+
+        // spawns
+        this.subject().find(FIND_MY_SPAWNS).forEach(SpawnState.left);
       }
 
-      return false;
+      return true;
     }
 
-    return true;
+    return false;
   }
 
   protected _resolve(id: string): Room {
