@@ -36,8 +36,8 @@ export default class SourceState extends State<Source> {
     log.debug("delete", this);
   }
 
-  public nodeIds(): string[] {
-    return (this._memory.nodes as number[]).map((n) => { return "" + n; });
+  public nodeIds(): number[] {
+    return this._memory.nodes as number[];
   }
 
   public nodesAsPos(): RoomPosition[] {

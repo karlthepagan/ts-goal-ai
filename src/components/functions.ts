@@ -3,11 +3,20 @@
 // export type CandidateLambda<S, T> = (state: S) => T[];
 // export type CandidateFactory<T> = { [key: string]: CandidateLambda<T, any> };
 
-type Filter<T> = (s: T) => boolean;
-type Task = () => number;
-type XY = {x: number, y: number};
+// import {log} from "./support/log";
+export type Filter<T> = (s: T) => boolean;
+export type Task = () => number;
+export type Func<X, Y> = (x: X) => Y;
+export type Identity<X> = Func<X, X>;
+export type XY = {x: number, y: number};
 
-export const NOOP: Task = () => { return 0; };
+export const NOOP_SCRPS: Task = () => { return 0; };
+export const NOOP: () => any = () => { return undefined; };
+export const IDENTITY: Identity<any> = (a) => { return a; };
+
+export function identity<T>(): Func<T, T> {
+  return IDENTITY;
+}
 
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
@@ -83,8 +92,8 @@ const posToDirMap: number[][] = [
 
 export function posToDirection(origin: XY): (dst: XY) => number {
   return (dst) => {
-    const dirRow = elvis(posToDirMap[1 + origin.y - dst.y], [] as number[]);
-    return dirRow[1 + origin.x - dst.x];
+    const dirRow = elvis(posToDirMap[1 + dst.y - origin.y], [] as number[]);
+    return dirRow[1 + dst.x - origin.x];
   };
 }
 
@@ -132,7 +141,9 @@ export function dirTransform<D extends XY>(origin: D, dir: number): D {
 // http://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript#
 export function dirToPosition<T extends XY>(origin: T) {
   return ((dir) => {
-    return dirTransform(shallowCopy(origin), dir);
+    const result = dirTransform(shallowCopy(origin), dir);
+    // log.debug(origin, "dir", dir, "=", result);
+    return result;
   }) as (dir: number) => T;
 }
 
@@ -153,4 +164,49 @@ export function strAsPos(serialized: string, room: string): RoomPosition {
 
 export function isSource(x: any) {
   return x.ticksToRegeneration !== undefined && x.mineralType === undefined;
+}
+
+export function buildFollow(mem: any, addr: string, value: any): any {
+  if (mem[addr] === undefined) {
+    return mem[addr] = value;
+  } else {
+    return mem[addr];
+  }
+}
+
+export function deleteExpand(address: string[], memory: any, array?: boolean): boolean {
+  if (address.length === 0) {
+    return false;
+  }
+
+  let last = address.length - 1;
+
+  for (let i = 0; i < last; i++) {
+    memory = buildFollow(memory, address[i], {});
+  }
+
+  const key = address[last];
+  if (array) {
+    const list: string[] = memory[last];
+    const i = list.indexOf(key);
+    if (i >= 0) {
+      list.splice(i, 1);
+    }
+    return true;
+  }
+  return delete memory[address[last]];
+}
+
+export function expand(address: string[], memory: any, array?: boolean): any {
+  if (address.length === 0) {
+    return memory;
+  }
+
+  let last = address.length - 1;
+
+  for (let i = 0; i < last; i++) {
+    memory = buildFollow(memory, address[i], {});
+  }
+
+  return buildFollow(memory, address[last], array ? [] : {});
 }

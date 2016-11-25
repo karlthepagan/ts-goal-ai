@@ -1,5 +1,5 @@
 import {log} from "../support/log";
-// import * as F from "../functions";
+import * as F from "../functions";
 import * as Config from "../../config/config";
 
 const POS_DIGITS = 2;
@@ -26,28 +26,6 @@ function pad(num: any, size: number) {
   return ("000000000" + num).substr(-size);
 }
 
-function buildFollow(mem: any, addr: string, value: any): any {
-  if (mem[addr] === undefined) {
-    return mem[addr] = value;
-  } else {
-    return mem[addr];
-  }
-}
-
-function expand(address: string[], memory: any, array?: boolean): any {
-  if (address.length === 0) {
-    return memory;
-  }
-
-  let last = address.length - 1;
-
-  for (let i = 0; i < last; i++) {
-    memory = buildFollow(memory, address[i], {});
-  }
-
-  return buildFollow(memory, address[last], array ? [] : {});
-}
-
 function _register(state: any, rootMemory: any): boolean {
   if (state._indexAddress === undefined) {
     return false;
@@ -56,7 +34,7 @@ function _register(state: any, rootMemory: any): boolean {
     return false;
   }
 
-  let memory = expand(state._indexAddress, rootMemory, true) as string[];
+  let memory = F.expand(state._indexAddress, rootMemory, true) as string[];
 
   memory.push(state._id);
 
@@ -66,7 +44,7 @@ function _register(state: any, rootMemory: any): boolean {
 function _access(state: any, rootMemory: any): any {
   // log.debug(state, "addressing", ...state._accessAddress);
 
-  let memory = expand(state._accessAddress, rootMemory);
+  let memory = F.expand(state._accessAddress, rootMemory);
 
   if (state._id === undefined) {
     return memory;
@@ -107,6 +85,9 @@ abstract class State<T> {
   }
 
   public wrap(subject: T, memory: any): State<T> {
+    if (subject === null) {
+      throw new Error(this._name);
+    }
     this._id = this._getId(subject) as string;
 
     this._subject = subject;
@@ -128,12 +109,31 @@ abstract class State<T> {
     return this;
   }
 
+  public rescore(value?: number): number {
+    if (value === undefined) {
+      value = 0;
+    }
+    return this._memory.score = value;
+  }
+
+  public score(): number {
+    return this._memory.score;
+  }
+
   public subject(): T {
     return this._subject as T;
   }
 
-  public memory(): any {
-    return this._memory;
+  public getId(): string {
+    return this._id;
+  }
+
+  public memory(key?: string, array?: boolean): any {
+    if (key === undefined) {
+      return this._memory;
+    }
+
+    return F.expand([ key ], this._memory, array);
   }
 
   public isPaused(): boolean {
@@ -149,6 +149,9 @@ abstract class State<T> {
   }
 
   public pos(): RoomPosition {
+    if (this._visionSource()) {
+      return (this.subject() as any).pos;
+    }
     return strAsPos(this._memory.room, this._memory.pos);
   }
 
@@ -156,16 +159,21 @@ abstract class State<T> {
     delete this._memory.seen;
     delete this._memory.pos;
     delete this._memory.room;
+    delete this._memory.score;
   }
 
   public resolve(): boolean {
     const subject = this._subject = this._resolve(this._id);
 
-    return subject !== undefined;
+    return subject !== undefined && subject !== null;
   }
 
   public toString() {
     return "[" + this._name + " " + this._id + " " + this.guid() + "]";
+  }
+
+  protected _visionSource() {
+    return false;
   }
 
   protected guid(): number {
@@ -198,7 +206,8 @@ abstract class State<T> {
   }
 
   protected updatePosition(s: any) {
-    if (s === undefined) {
+    if (this._visionSource() || this.isVirtual()) {
+      // vision sources rely on subject for position information
       return;
     }
     if (s.pos !== undefined) {

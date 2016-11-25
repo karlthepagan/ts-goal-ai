@@ -1,36 +1,93 @@
+import * as F from "./functions";
 import GlobalState from "./state/globalState";
 import {log} from "./support/log";
 import RoomState from "./state/roomState";
-export function grind(state: GlobalState) {
-  state = state;
+import CreepState from "./state/creepState";
+import SourceState from "./state/sourceState";
 
-  log.debug("grind");
+export function grind(state: GlobalState) {
+  // discover new rooms
+  _.map(state.subject().rooms, RoomState.left);
 
   // scan existing rooms
-  state.rooms((room) => {
+  state.eachRoom((room) => {
     if (room.resolve()) {
       log.debug("TODO scan for new buildings and enemies", room);
       // TODO identify new buildings, new enemies
     } else {
-      log.warning("resolve failed", room);
+      // TODO buildings and enemies should be identified, bootstrapping tasks done via callback
+      log.debug("TODO logic for remote rooms");
     }
   });
 
-  // discover new rooms
-  _.forEach(state.subject().rooms, RoomState.left);
-  // TODO buildings and enemies should be identified, bootstrapping tasks done via callback
+  state.eachSpawn((spawn) => {
+    const subject = spawn.subject();
 
-  state.spawns((spawn) => {
-    if (spawn.resolve()) {
-      const subject = spawn.subject();
+    if (subject.energy >= 300) {
+      spawnCreeps(state, subject);
+    }
+  });
 
-      if (subject.energy >= 300) {
-        spawnCreeps(state, subject);
+  const tasked: any = {};
+  let failed: any = {};
+
+  state.eachSource((source) => {
+    const sites = source.nodeIds();
+
+    const workers = source.memory("workers");
+
+    const dirToPosition = F.dirToPosition(source.pos());
+
+    for (const site of sites) {
+
+      const pos = dirToPosition(site);
+      const worker = workers[site + ""];
+      if (worker !== undefined) {
+        // log.debug("resolving worker @", site, worker.id);
+        // grab worker and mine!
+        if (tryHarvest(CreepState.vright(worker.id), source, pos, site, tasked, failed)) {
+          // log.debug("mined", site, "next site for", source);
+          continue;
+        }
       }
-    } else {
-      log.warning("resolve failed", spawn);
+
+      let harvested = false;
+      do {
+        // allocate worker, find closest, TODO prefer role=sourcer
+        const creep = pos.findClosestByRange<Creep>(FIND_MY_CREEPS, { filter: (creep: Creep) => {
+          if (creep.fatigue > 0) {
+            // log.debug("tired");
+            return false;
+          }
+          if (tasked[creep.id] !== undefined) {
+            // log.info("already tasked");
+            return false;
+          }
+          if (failed[creep.id] !== undefined) {
+            log.info("failed");
+            return false;
+          }
+          if (CreepState.left(creep).memory().working === undefined) {
+            return true;
+          }
+          // log.debug("already working");
+          return false;
+        }});
+
+        if (creep === null) {
+          // log.error("no worker found");
+          break;
+        }
+
+        const creepState = CreepState.left(creep);
+        creepState.memory().working = source.getId();
+
+        harvested = tryHarvest(creepState, source, pos, site, tasked, failed);
+      } while (!harvested);
     }
   });
+
+  // let creeps = state.creeps();
 
   // let creeps = this._identifyResources(state);
   //
@@ -99,4 +156,49 @@ function spawnCreeps(state: GlobalState, spawn: Spawn) {
   state = state;
 
   spawn.createCreep([WORK, WORK, CARRY, MOVE]);
+}
+
+function tryHarvest(creepState: CreepState, sourceState: SourceState,
+                    pos: RoomPosition, site: number,
+                    tasked: any, failed: any): boolean {
+
+  if (creepState.resolve()) {
+    const range = creepState.pos().getRangeTo(pos);
+    // log.info("harvesting", creepState, creepState.pos(), "to", sourceState, pos, "range", range);
+    const creep = creepState.subject();
+    switch (range) {
+      case 0:
+        if (!sourceState.resolve()) {
+          log.error("failed to resolve", sourceState);
+          return false;
+        }
+        const mineResult = creep.harvest(sourceState.subject());
+        if (mineResult !== 0) {
+          log.debug("harvest failed", sourceState, "moveTo=", mineResult, creepState);
+        }
+        break;
+
+      default:
+        // TODO pathing when range > 1
+        if (creep.fatigue === 0) {
+          const moveResult = creep.moveTo(pos);
+          if (moveResult !== 0) {
+            log.debug("move failed", sourceState, "moveTo=", moveResult, creepState);
+          }
+        } else {
+          log.debug("tired", creepState);
+          failed[creepState.getId()] = sourceState.getId();
+        }
+    }
+
+    const worker = F.expand( [ site + "" ], sourceState.memory("workers") );
+    worker.id = creep.id;
+    tasked[creep.id] = sourceState.getId();
+    return true;
+  } else {
+    log.debug("worker died?");
+    F.deleteExpand( [ site + ""], sourceState.memory("workers") );
+    failed[creepState.getId()] = sourceState.getId();
+    return false;
+  }
 }
