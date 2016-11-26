@@ -36,7 +36,7 @@ export default class SourceState extends State<Source> {
     log.debug("delete", this);
   }
 
-  public nodeIds(): number[] {
+  public nodeDirs(): number[] {
     return this._memory.nodes as number[];
   }
 

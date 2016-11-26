@@ -23,7 +23,7 @@ export function grind(state: GlobalState) {
   state.eachSpawn((spawn) => {
     const subject = spawn.subject();
 
-    if (subject.energy >= 300) {
+    if (subject.room.energyAvailable >= 300) {
       spawnCreeps(state, subject);
     }
   });
@@ -32,7 +32,7 @@ export function grind(state: GlobalState) {
   let failed: any = {};
 
   state.eachSource((source) => {
-    const sites = source.nodeIds();
+    const sites = source.nodeDirs();
 
     const workers = source.memory("workers");
 
@@ -87,6 +87,13 @@ export function grind(state: GlobalState) {
     }
   });
 
+  state.eachCreep((creep) => {
+    if (tasked[creep.getId()] !== undefined) {
+      return;
+    }
+
+    log.warning("idle creep", creep);
+  });
   // let creeps = state.creeps();
 
   // let creeps = this._identifyResources(state);
@@ -155,7 +162,8 @@ export function grind(state: GlobalState) {
 function spawnCreeps(state: GlobalState, spawn: Spawn) {
   state = state;
 
-  spawn.createCreep([WORK, WORK, CARRY, MOVE]);
+  log.info("I want to spawn creeps!", spawn);
+  // spawn.createCreep([WORK, WORK, CARRY, MOVE]);
 }
 
 function tryHarvest(creepState: CreepState, sourceState: SourceState,
