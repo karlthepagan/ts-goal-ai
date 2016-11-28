@@ -10,6 +10,8 @@ export type Func<X, Y> = (x: X) => Y;
 export type Identity<X> = Func<X, X>;
 export type XY = {x: number, y: number};
 
+const ROOM_PATTERN = /([EW])(\d+)([NS])(\d+)/;
+
 export const NOOP_SCRPS: Task = () => { return 0; };
 export const NOOP: () => any = () => { return undefined; };
 export const IDENTITY: Identity<any> = (a) => { return a; };
@@ -47,7 +49,14 @@ function RAMPART(s: any): boolean {
 }
 
 export function elvis<T>(x: T|undefined, y: T): T {
-  return x === undefined ? y : x;
+  return x === undefined || x === null ? y : x;
+}
+
+export function elvisLazy<T>(x: T|undefined, y: T|(() => T)): T {
+  if (typeof y === "function") {
+    return x === undefined || x === null ? y() : x;
+  }
+  return x === undefined || x === null ? y : x;
 }
 
 const movable: { [key: string]: Filter<any> } = {
@@ -97,14 +106,6 @@ export function posToDirection(origin: XY): (dst: XY) => number {
   };
 }
 
-function shallowCopy<U>(obj: U): U {
-  const copy = JSON.parse(JSON.stringify(obj));
-
-  Object.setPrototypeOf(copy, Object.getPrototypeOf(obj));
-
-  return copy;
-}
-
 export function dirTransform<D extends XY>(origin: D, dir: number): D {
   switch (dir) {
     case TOP_RIGHT:
@@ -141,7 +142,7 @@ export function dirTransform<D extends XY>(origin: D, dir: number): D {
 // http://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript#
 export function dirToPosition<T extends XY>(origin: T) {
   return ((dir) => {
-    const result = dirTransform(shallowCopy(origin), dir);
+    const result = dirTransform( _.clone(origin), dir);
     // log.debug(origin, "dir", dir, "=", result);
     return result;
   }) as (dir: number) => T;
@@ -210,3 +211,103 @@ export function expand(address: string[], memory: any, array?: boolean): any {
 
   return buildFollow(memory, address[last], array ? [] : {});
 }
+
+export function parseRoomName(roomName: string): XY {
+  const match = ROOM_PATTERN.exec(roomName);
+  if (match === null) {
+    throw new Error(roomName);
+  }
+  const x = match[1] === "W" ? (-1 - +match[2]) : (+match[2]);
+  const y = match[3] === "N" ? (-1 - +match[4]) : (+match[4]);
+
+  return {x, y};
+}
+
+export function formatRoomName(pos: XY): string {
+  if (pos.x < 0) {
+    if (pos.y < 0) {
+      return "W" + -(pos.x + 1) + "N" + -(pos.y + 1);
+    } else {
+      return "W" + -(pos.x + 1) + "S" + pos.y;
+    }
+  } else {
+    if (pos.y < 0) {
+      return "E" + pos.x + "N" + -(pos.y + 1);
+    } else {
+      return "E" + pos.x + "S" + pos.y;
+    }
+  }
+}
+
+export function rangeScore(a: RoomPosition, b: RoomPosition) {
+  const range = a.getRangeTo(b);
+
+  // TODO minimum score range, translate to pathing?
+  return Math.floor( Math.log2(range) - 1 );
+}
+
+export function byRangeScore(pos: RoomPosition) {
+  return (s: { pos: RoomPosition} ) => { return rangeScore(s.pos, pos); };
+}
+
+export function tee(
+    main: (a?: any, b?: any, c?: any, d?: any) => any,
+    teef: (ret: any, a?: any, b?: any, c?: any, d?: any) => void) {
+
+  return (a?: any, b?: any, c?: any, d?: any) => {
+    const ret = main(a, b, c, d);
+    teef(ret, a, b, c, d);
+    return ret;
+  };
+}
+
+export function wantsEnergy(s: OwnedStructure) {
+  switch (s.structureType) {
+    case STRUCTURE_CONTROLLER:
+    case STRUCTURE_CONTAINER:
+    case STRUCTURE_EXTENSION:
+    case STRUCTURE_SPAWN:
+    case STRUCTURE_STORAGE:
+    case STRUCTURE_TOWER:
+    case STRUCTURE_LINK:
+    case STRUCTURE_TERMINAL:
+      return true;
+    default:
+      return false;
+  }
+}
+
+/* STASH
+ const pos = state.pos();
+ const gridIterator = new RoomIterator(pos.roomName);
+ let result = gridIterator.next();
+ let activeDepth = 0;
+ let foundDepth = Infinity;
+ let found: { [dist: number]: OwnedStructure } = {};
+ let winningScore = Infinity;
+ while (!result.done) {
+ if (result.value.resolve()) {
+ activeDepth = gridIterator.depth();
+ if (activeDepth > foundDepth) {
+ break;
+ }
+ const room = result.value.subject();
+ const closest = _.chain(room.find<OwnedStructure>(FIND_MY_STRUCTURES, {
+ filter: wantsEnergy)
+ .groupBy(F.tee(F.byRangeScore(pos), (ret) => { winningScore = Math.min(winningScore, ret); }))
+ .filter((v, score) => { return score <= winningScore; })
+ .first<OwnedStructure[]>();
+
+ if (closest !== undefined) {
+ foundDepth = activeDepth;
+ found[] = closest;
+ }
+ } else if (activeDepth + 1 < gridIterator.depth()) {
+ break; // giving up
+ }
+
+ result = gridIterator.next();
+ }
+
+ found = _.sortBy(found, F.sortByRangeScore(pos));
+ */

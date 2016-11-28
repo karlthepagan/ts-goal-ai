@@ -6,9 +6,22 @@ import SpawnState from "./spawnState";
 import SourceState from "./sourceState";
 import MineralState from "./mineralState";
 import CreepState from "./creepState";
-// import * as F from "../functions";
+import * as F from "../functions";
 
 export default class GlobalState extends State<Game> {
+    /* TODO game score is sum of
+     - add sum of all RCL * RCL weight
+     - add sum of each room's energy velocity * venergy weight
+     - add sum of all scored minerals * each minieral type weight
+     - add sum of each secured mineral * each mineral type access weight (secured: military minimum score)
+     - add sum of each room's military score minus sum of neighbor military score * military weight
+     -- military score influenced by player military weight
+     */
+    // score all sources
+    // score all minerals
+    // score all creeps
+    // score else?
+
   public static boot() {
     return GlobalState._game = new GlobalState("GlobalState").wrap(Game, botMemory()) as GlobalState;
   }
@@ -17,12 +30,24 @@ export default class GlobalState extends State<Game> {
     return GlobalState._game;
   }
 
-  protected static _survivesDelete: string[] = [];
+  public static addDeleteHandler(key: string, handler: (memory: any) => void) {
+    this._deleteHandler[key] = handler;
+  }
+
+  public static protectMemory(key: string) {
+    this._deleteHandler[key] = F.NOOP();
+  }
+
+  protected static _deleteHandler: { [key: string]: (memory: any) => void } = {};
 
   private static _game: GlobalState;
 
   protected _accessAddress = [];
   protected _indexAddress = undefined;
+
+  public className() {
+    return "GlobalState";
+  }
 
   public delete() {
     super.delete();
@@ -30,8 +55,11 @@ export default class GlobalState extends State<Game> {
     log.debug("deleting", this);
 
     for (const key in this._memory) {
-      if (GlobalState._survivesDelete.indexOf(key) < 0) {
+      const handler = GlobalState._deleteHandler[key];
+      if (handler === undefined) {
         delete this._memory[key];
+      } else {
+        handler(this._memory);
       }
     }
   }
@@ -61,12 +89,21 @@ export default class GlobalState extends State<Game> {
     });
   }
 
-  public rooms(): RoomState[] {
-    // return this.rooms<RoomState>(F.identity<RoomState>());
-    return _.values(this._memory.index.rooms).map(RoomState.vright);
+  public rooms(virtual?: boolean): RoomState[] {
+    if (virtual) {
+      // return this.rooms<RoomState>(F.identity<RoomState>());
+      return _.values(this._memory.index.rooms).map(RoomState.vright);
+    }
+    return _.values(this.subject().rooms).map(RoomState.right);
   }
 
   public eachRoom<T>(f: (room: RoomState) => T): T[] {
+    return _.map(this.subject().rooms, (room: Room) => {
+      return f(RoomState.right(room));
+    });
+  }
+
+  public eachVirtualRoom<T>(f: (room: RoomState) => T): T[] {
     return _.map(this._memory.index.rooms, (id: string) => {
       return f(RoomState.vright(id));
     });
@@ -92,24 +129,6 @@ export default class GlobalState extends State<Game> {
     return _.map(this._memory.index.minerals, (id: string) => {
       return f(MineralState.vright(id));
     });
-  }
-
-  public rescore(value?: number): number {
-
-    /* TODO game score is
-       - add sum of all RCL * RCL weight
-       - add sum of each room's energy velocity * venergy weight
-       - add sum of all scored minerals * each minieral type weight
-       - add sum of each secured mineral * each mineral type access weight (secured: military minimum score)
-       - add sum of each room's military score minus sum of neighbor military score * military weight
-       -- military score influenced by player military weight
-     */
-    if (value === undefined) {
-      value = 0;
-
-      // TODO iterate (last score order) thru non-virtual rooms => creeps, buildings
-    }
-    return this._memory.score = value;
   }
 
   protected _getId(subject: Game) {

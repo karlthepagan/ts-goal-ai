@@ -28,6 +28,10 @@ export default class MineralState extends State<Mineral> {
   protected _accessAddress = ["minerals"];
   protected _indexAddress = ["index", "minerals"];
 
+  public className() {
+    return "MineralState";
+  }
+
   public delete() {
     super.delete();
 

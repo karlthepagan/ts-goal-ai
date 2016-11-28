@@ -28,6 +28,10 @@ export default class SourceState extends State<Source> {
   protected _accessAddress = ["sources"];
   protected _indexAddress = ["index", "sources"];
 
+  public className() {
+    return "SourceState";
+  }
+
   public delete() {
     super.delete();
 

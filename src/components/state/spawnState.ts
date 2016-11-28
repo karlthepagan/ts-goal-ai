@@ -18,6 +18,10 @@ export default class SpawnState extends State<Spawn> {
   protected _accessAddress = ["spawns"];
   protected _indexAddress = ["index", "spawns"];
 
+  public className() {
+    return "SpawnState";
+  }
+
   public delete() {
     super.delete();
 

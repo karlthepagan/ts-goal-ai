@@ -1,24 +1,37 @@
 import * as F from "./functions";
 import GlobalState from "./state/globalState";
 import {log} from "./support/log";
-import RoomState from "./state/roomState";
 import CreepState from "./state/creepState";
 import SourceState from "./state/sourceState";
+import {throttle} from "./util/throttle";
+import {scoreManager} from "./metrics/scoreSingleton";
 
 export function grind(state: GlobalState) {
-  // discover new rooms
-  _.map(state.subject().rooms, RoomState.left);
+  const th = throttle();
+  scoreManager.setContext(state);
 
-  // scan existing rooms
-  state.eachRoom((room) => {
-    if (room.resolve()) {
+  if (th.isRoomscanTime()) {
+    // scan real rooms
+    state.eachRoom((room) => {
       log.debug("TODO scan for new buildings and enemies", room);
       // TODO identify new buildings, new enemies
-    } else {
-      // TODO buildings and enemies should be identified, bootstrapping tasks done via callback
-      log.debug("TODO logic for remote rooms");
-    }
-  });
+    });
+  }
+
+  if (th.isRescoreTime()) {
+    log.info("rescoring game state");
+    scoreManager.rescore(state, state.memory("score"), Game.time);
+  }
+
+  if (th.isVirtualRoomscanTime()) {
+    let count = 0;
+    state.eachVirtualRoom((room) => {
+      if (!room.resolve()) {
+        count++;
+      }
+    });
+    log.debug("rooms without vision:", count);
+  }
 
   state.eachSpawn((spawn) => {
     const subject = spawn.subject();
@@ -29,7 +42,7 @@ export function grind(state: GlobalState) {
   });
 
   const tasked: any = {};
-  let failed: any = {};
+  let failed: any;
 
   state.eachSource((source) => {
     const sites = source.nodeDirs();
@@ -53,26 +66,47 @@ export function grind(state: GlobalState) {
 
       let harvested = false;
       do {
-        // allocate worker, find closest, TODO prefer role=sourcer
-        const creep = pos.findClosestByRange<Creep>(FIND_MY_CREEPS, { filter: (creep: Creep) => {
-          if (creep.fatigue > 0) {
-            // log.debug("tired");
-            return false;
-          }
-          if (tasked[creep.id] !== undefined) {
-            // log.info("already tasked");
-            return false;
-          }
-          if (failed[creep.id] !== undefined) {
-            log.info("failed");
-            return false;
-          }
-          if (CreepState.left(creep).memory().working === undefined) {
-            return true;
-          }
-          // log.debug("already working");
-          return false;
-        }});
+        let creep: Creep|null = null;
+        try {
+          // allocate worker, find closest, TODO prefer role=sourcer
+          creep = pos.findClosestByRange<Creep>(FIND_MY_CREEPS, {
+            filter: (creep: Creep) => {
+              if (creep.fatigue > 0) {
+                // log.debug("tired");
+                return false;
+              }
+              if (tasked[creep.id] !== undefined) {
+                // log.info("already tasked");
+                return false;
+              }
+              if (failed[creep.id] !== undefined) {
+                log.info("failed:", failed[creep.id]);
+                return false;
+              }
+              if (CreepState.left(creep).memory().working === undefined) {
+                return true;
+              }
+              // log.debug("already working");
+              return false;
+          }}); // TODO tslint error, newlines produce a problem
+        } catch (err) {
+          // this is an expected exceptional case, no visibility to this source
+          // TODO virtualFindClosestByRange? replace with a.getRangeTo(b)
+          /*
+           Error: Could not access room E69N17
+           . (~/source-map/lib/util.js:301)
+           .findClosestByRange (null:null)
+           state.eachSource (src/components/grind.ts:57)
+           _.map (src/components/state/globalState.ts:82)
+           arrayMap (~/source-map/lib/array-set.js:6)
+           Function.map (null:null)
+           GlobalState.eachSource (src/components/state/globalState.ts:81)
+           Object.grind (src/components/grind.ts:34)
+           Object.loop (src/main.ts:56)
+           __module (null:null)
+           */
+          // log.debug("findClosestByRange", err);
+        }
 
         if (creep === null) {
           // log.error("no worker found");
@@ -92,7 +126,7 @@ export function grind(state: GlobalState) {
       return;
     }
 
-    log.warning("idle creep", creep);
+    log.info("idle creep", creep);
   });
   // let creeps = state.creeps();
 
@@ -195,7 +229,7 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
           }
         } else {
           log.debug("tired", creepState);
-          failed[creepState.getId()] = sourceState.getId();
+          failed[creepState.getId()] = "fatigue";
         }
     }
 

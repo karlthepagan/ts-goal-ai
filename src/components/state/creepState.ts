@@ -28,6 +28,10 @@ export default class CreepState extends State<Creep> {
   protected _accessAddress = ["creeps"];
   protected _indexAddress = ["index", "creeps"];
 
+  public className() {
+    return "CreepState";
+  }
+
   public delete() {
     super.delete();
 

@@ -4,7 +4,11 @@ import {botMemory} from "../../config/config";
 import SourceState from "./sourceState";
 import MineralState from "./mineralState";
 import SpawnState from "./spawnState";
+import RoomIterable from "../util/roomIterable";
 
+/**
+ * TODO BSP this mofo? https://www.npmjs.com/package/bsp-tree
+ */
 export default class RoomState extends State<Room> {
   public static left(subject: Room) {
     return RoomState._left.wrap(subject, botMemory()) as RoomState;
@@ -30,10 +34,18 @@ export default class RoomState extends State<Room> {
   protected _accessAddress = ["rooms"];
   protected _indexAddress = ["index", "rooms"];
 
+  public className() {
+    return "RoomState";
+  }
+
   public delete() {
     super.delete();
 
     log.debug("delete", this);
+  }
+
+  public grid(): Iterable<RoomState> {
+    return new RoomIterable(this.pos());
   }
 
   protected _getId(subject: Room) {

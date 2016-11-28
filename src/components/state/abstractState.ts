@@ -1,6 +1,7 @@
 import {log} from "../support/log";
 import * as F from "../functions";
 import * as Config from "../../config/config";
+import Named from "../named";
 
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
@@ -68,7 +69,7 @@ function _access(state: any, rootMemory: any): any {
  *  left - descend into new functions
  *  right - return from functions
  */
-abstract class State<T> {
+abstract class State<T> implements Named {
   protected _accessAddress: string[];
   protected _indexAddress: string[]|undefined;
 
@@ -83,6 +84,8 @@ abstract class State<T> {
   constructor(name: string) {
     this._name = name;
   }
+
+  public abstract className(): string;
 
   public wrap(subject: T, memory: any): State<T> {
     if (subject === null) {
@@ -107,17 +110,6 @@ abstract class State<T> {
     this.init(memory);
 
     return this;
-  }
-
-  public rescore(value?: number): number {
-    if (value === undefined) {
-      value = 0;
-    }
-    return this._memory.score = value;
-  }
-
-  public score(): number {
-    return this._memory.score;
   }
 
   public subject(): T {
@@ -159,7 +151,6 @@ abstract class State<T> {
     delete this._memory.seen;
     delete this._memory.pos;
     delete this._memory.room;
-    delete this._memory.score;
   }
 
   public resolve(): boolean {
