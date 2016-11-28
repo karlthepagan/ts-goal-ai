@@ -1,13 +1,15 @@
 import State from "./abstractState";
 import {log} from "../support/log";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
-// import * as F from "../functions";
+import * as F from "../functions";
 
 export default class CreepState extends State<Creep> {
-  public static CLASS_NAMES = [
-    "CreepState",
-    "CreepState(enemy)",
-  ];
+  public static CLASS_NAMES = { // TODO dirty as fuck
+    CE: "CreepState(enemy)",
+    CS: "CreepState",
+    CreepEnemyLeft: "CreepState(enemy)",
+    CreepEnemyRight: "CreepState(enemy)",
+  };
 
   public static left(subject: Creep) {
     return (FLYWEIGHTS ? CreepState._left : new CreepState("CS") ).wrap(subject, botMemory()) as CreepState;
@@ -25,16 +27,26 @@ export default class CreepState extends State<Creep> {
     return (FLYWEIGHTS ? CreepState._vright : new CreepState("CS") ).wrapRemote(id, botMemory()) as CreepState;
   }
 
+  public static eleft(id: string) {
+    return (FLYWEIGHTS ? CreepState._eleft : new CreepState("CE") ).wrapRemote(id, botMemory()) as CreepState;
+  }
+
+  public static eright(id: string) {
+    return (FLYWEIGHTS ? CreepState._eright : new CreepState("CE") ).wrapRemote(id, botMemory()) as CreepState;
+  }
+
   private static _left: CreepState = new CreepState("CreepStateLeft");
   private static _right: CreepState = new CreepState("CreepStateRight");
   private static _vleft: CreepState = new CreepState("CreepStateVirtualLeft");
   private static _vright: CreepState = new CreepState("CreepStateVirtualRight");
+  private static _eleft: CreepState = new CreepState("CreepEnemyLeft");
+  private static _eright: CreepState = new CreepState("CreepEnemyLeft");
 
   protected _accessAddress = ["creeps"];
   protected _indexAddress = ["index", "creeps"];
 
   public className() {
-    return "CreepState";
+    return F.elvis(CreepState.CLASS_NAMES[this._name], "CreepState");
   }
 
   public delete() {

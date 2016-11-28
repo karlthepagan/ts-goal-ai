@@ -7,11 +7,6 @@ import {throttle} from "./util/throttle";
 import {scoreManager} from "./metrics/scoreSingleton";
 import {SCORE_KEY} from "./metrics/scoreManager";
 
-export function resetAssignments(state: GlobalState) {
-  state.sources().filter((s) => delete s.memory().workers).value();
-  state.creeps().filter((s) => delete s.memory().working).value();
-}
-
 export function grind(state: GlobalState) {
   const commands = state.memory() as Commands;
   const opts = state.memory("config") as Options;
@@ -35,10 +30,15 @@ export function grind(state: GlobalState) {
   doSpawn(state, opts);
 
   const creeps = _.values<Creep|null>(Game.creeps);
+  // tasked is useful for double-checking my accounting
   const tasked: { [creepIdToSourceId: string]: string } = {};
 
   doHarvest(state, creeps, tasked);
 
+  doIdle(state, opts, creeps, tasked);
+}
+
+function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[], tasked: any) {
   state.eachCreep((creep) => {
     if (tasked[creep.getId()] !== undefined) {
       return;
@@ -50,8 +50,10 @@ export function grind(state: GlobalState) {
 
 function doHarvest(state: GlobalState,
                    creeps: (Creep|null)[],
-                   tasked: { [creepIdToSourceId: string]: string }): SourceState[] {
-  return state.sources().sortBy(scoreManager.byScore("tenergy")).map((source: SourceState) => {
+                   tasked: { [creepIdToSourceId: string]: string }): (SourceState|null)[] {
+
+  // TODO compact<SourceState> should remove null|undefined
+  return state.sources().sortBy(scoreManager.byScore("energy")).map((source: SourceState) => {
     let failed: any = {};
     const sites = source.nodeDirs();
 
@@ -123,7 +125,7 @@ function doHarvest(state: GlobalState,
     }
 
     return null;
-  }).compact<SourceState>().value();
+  }).compact().value();
 }
 
 function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remoteRoomScan: boolean) {
@@ -214,4 +216,9 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
     failed[creepState.getId()] = sourceState.getId();
     return false;
   }
+}
+
+function resetAssignments(state: GlobalState) {
+  state.sources().filter((s) => delete s.memory().workers).value();
+  state.creeps().filter((s) => delete s.memory().working).value();
 }

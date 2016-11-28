@@ -19,9 +19,9 @@ export default class ScoreManager<C> {
 
   private _context: C;
 
-  public addMetric(type: Named, metric: string) {
+  public addMetric(name: string, metric: string) {
     if (metric !== SCORE_KEY) {
-      F.expand([ type.className() ], this._metricKeys, true).push(metric);
+      F.expand([ name ], this._metricKeys, true).push(metric);
     }
     if (metric === TIME_KEY) {
       throw new Error("illegal argument");
@@ -31,11 +31,11 @@ export default class ScoreManager<C> {
     }
   }
 
-  public addHandler<T extends Named>(type: T, handlers: { [key: string]: ScoreHandler<T, C> }) {
+  public addHandler<T extends Named>(name: string, handlers: { [key: string]: ScoreHandler<T, C> }) {
     for (const key in handlers) {
-      this.addMetric(type, key);
+      this.addMetric(name, key);
 
-      this._metrics[key][type.className()] = handlers[key];
+      this._metrics[key][name] = handlers[key];
     }
   }
 

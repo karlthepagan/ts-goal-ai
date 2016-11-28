@@ -14,17 +14,28 @@ import {SCORE_KEY} from "./scoreManager";
 type StateScoreImpl<T> = { [key: string]: ScoreHandler<T, GlobalState> };
 
 export default function registerStateScoreProvider() {
-  scoreManager.addHandler(new CreepState("proto"), impl.creepState);
-  scoreManager.addHandler(new GlobalState("proto"), impl.globalState);
-  scoreManager.addHandler(new MineralState("proto"), impl.mineralState);
-  scoreManager.addHandler(new RoomState("proto"), impl.roomState);
-  scoreManager.addHandler(new SourceState("proto"), impl.sourceState);
-  scoreManager.addHandler(new SpawnState("proto"), impl.spawnState);
+  scoreManager.addHandler(new CreepState("proto").className(), impl.creepState);
+  scoreManager.addHandler(CreepState.CLASS_NAMES.CE, impl.enemyCreep);
+  scoreManager.addHandler(new GlobalState("proto").className(), impl.globalState);
+  scoreManager.addHandler(new MineralState("proto").className(), impl.mineralState);
+  scoreManager.addHandler(new RoomState("proto").className(), impl.roomState);
+  scoreManager.addHandler(new SourceState("proto").className(), impl.sourceState);
+  scoreManager.addHandler(new SpawnState("proto").className(), impl.spawnState);
+}
+
+function scoreMove(state: CreepState, score: ScoreManager<GlobalState>, time: number): number {
+  return 0;
 }
 
 const impl = {
   // CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS
   creepState: {
+    move: scoreMove as ScoreHandler<CreepState, GlobalState>,
+  } as StateScoreImpl<CreepState>,
+
+  // ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY
+  enemyCreep: {
+    move: scoreMove as ScoreHandler<CreepState, GlobalState>,
   } as StateScoreImpl<CreepState>,
 
   // GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL
@@ -72,10 +83,6 @@ const impl = {
         return rval;
       });
     }) as ScoreHandler<GlobalState, GlobalState>,
-  } as StateScoreImpl<GlobalState>,
-
-  hostileCreep: {
-
   } as StateScoreImpl<GlobalState>,
 
   // MINERALS MINERALS MINERALS MINERALS MINERALS MINERALS MINERALS MINERALS MINERALS MINERALS MINERALS MINERALS
