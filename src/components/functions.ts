@@ -1,9 +1,11 @@
+import {log} from "./support/log";
+import State from "./state/abstractState";
+
 // export type GoalLambda<T> = (resource: Plan<T>) => Goal<any, T, State<any>>;
 // export type GoalFactory<T> = { [key: string]: GoalLambda<T> };
 // export type CandidateLambda<S, T> = (state: S) => T[];
 // export type CandidateFactory<T> = { [key: string]: CandidateLambda<T, any> };
 
-// import {log} from "./support/log";
 export type Filter<T> = (s: T) => boolean;
 export type Task = () => number;
 export type Func<X, Y> = (x: X) => Y;
@@ -69,7 +71,10 @@ export function isMovable(lookAt: LookAtResultWithPos): boolean {
   return elvis(movable[lookAt.terrain as string], FALSE as Filter<any>)(lookAt);
 }
 
-export function pad(num: any, size: number) {
+export function pad(num: number, size: number) {
+  if (num === undefined || num === null) {
+    throw new Error(num + "");
+  }
   return ("000000000" + num).substr(-size);
 }
 
@@ -78,19 +83,31 @@ export function xyAsStr(x: number, y: number): string {
 }
 
 export function rposAsStr(pos?: {x: number, y: number, roomName: string}): string {
-  if (pos === undefined) {
-    return "";
+  if (pos === undefined || pos.x === undefined || pos.y === undefined) {
+    throw new Error("no pos");
   }
 
   return pos.roomName + " " + xyAsStr(pos.x, pos.y);
 }
 
 export function posAsStr(pos?: XY): string {
-  if (pos === undefined) {
-    return "";
+  if (pos === undefined || pos.x === undefined || pos.y === undefined) {
+    debugger;
+    throw new Error("no pos");
   }
 
   return xyAsStr(pos.x, pos.y);
+}
+
+export function strAsPos(serialized: string, room: string): RoomPosition {
+  if (serialized === "" || serialized === undefined) {
+    throw new Error("no pos");
+  }
+
+  return new RoomPosition(
+    +serialized.substring(0, POS_DIGITS),
+    +serialized.substring(POS_DIGITS, POS_DIGITS_X_2),
+    room);
 }
 
 const posToDirMap: number[][] = [
@@ -138,14 +155,16 @@ export function dirTransform<D extends XY>(origin: D, dir: number): D {
   return origin;
 }
 
-// TODO consider options
+// TODO consider options for clone
 // http://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript#
-export function dirToPosition<T extends XY>(origin: T) {
-  return ((dir) => {
-    const result = dirTransform( _.clone(origin), dir);
+export function dirToPosition(origin: RoomPosition) {
+  debugger;
+  return (dir: number) => {
+    debugger;
+    const result = new RoomPosition(origin.x, origin.y, origin.roomName);
     // log.debug(origin, "dir", dir, "=", result);
-    return result;
-  }) as (dir: number) => T;
+    return dirTransform( result, dir);
+  };
 }
 
 export function room(subject: any): string {
@@ -154,13 +173,6 @@ export function room(subject: any): string {
   }
 
   return subject.room.name as string;
-}
-
-export function strAsPos(serialized: string, room: string): RoomPosition {
-  return new RoomPosition(
-    +serialized.substring(0, POS_DIGITS),
-    +serialized.substring(POS_DIGITS, POS_DIGITS_X_2),
-    room);
 }
 
 export function isSource(x: any) {
@@ -247,7 +259,30 @@ export function rangeScore(a: RoomPosition, b: RoomPosition) {
 }
 
 export function byRangeScore(pos: RoomPosition) {
-  return (s: { pos: RoomPosition} ) => { return rangeScore(s.pos, pos); };
+  return (s: { pos: RoomPosition} ) => rangeScore(s.pos, pos);
+}
+
+// TODO reconcile these 2 flavors
+export function byRangeTo(pos: RoomPosition) {
+  return (s: { pos: RoomPosition} ) => {
+    const range = pos.getRangeTo(s.pos);
+    if (range === null || isNaN(range)) {
+      log.error("no pos on", s);
+      throw new Error(range + "");
+    }
+    return range;
+  };
+}
+
+export function byStateRangeTo(pos: RoomPosition) {
+  return (s: { pos: () => RoomPosition} ) => {
+    const range = pos.getRangeTo(s.pos());
+    if (range === null || isNaN(range)) {
+      log.error("no pos() on", s);
+      throw new Error(range + "");
+    }
+    return range;
+  };
 }
 
 export function tee(
@@ -261,7 +296,7 @@ export function tee(
   };
 }
 
-export function wantsEnergy(s: OwnedStructure) {
+export function wantsEnergy(s: OwnedStructure|ConstructionSite) {
   switch (s.structureType) {
     case STRUCTURE_CONTROLLER:
     case STRUCTURE_CONTAINER:
@@ -271,12 +306,33 @@ export function wantsEnergy(s: OwnedStructure) {
     case STRUCTURE_TOWER:
     case STRUCTURE_LINK:
     case STRUCTURE_TERMINAL:
+      // log.debug(s, "wants energy");
       return true;
     default:
       return false;
   }
 }
 
+export function lock(s: any): boolean {
+  s.lock();
+  return true;
+}
+
+export function release(s: any): boolean {
+  s.release();
+  return true;
+}
+
+export function lockAnd<T extends State<any>, U>(s: T, f: (s: T) => U) {
+  s.lock();
+  const result = f(s);
+  s.release();
+  return result;
+}
+
+export function dummy() {
+  log.debug("don't warn me about unused imports");
+}
 /* STASH
  const pos = state.pos();
  const gridIterator = new RoomIterator(pos.roomName);

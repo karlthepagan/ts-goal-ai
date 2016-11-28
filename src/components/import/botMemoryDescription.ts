@@ -1,5 +1,6 @@
-export default class BotMemoryDescription {
-  public toString() {
-    return "hello bot memory descriptions!";
-  }
+interface BotMemoryDescription {
+  getRoomCostmatrix(roomName: string): CostMatrix|undefined;
+  detect(): boolean;
 }
+
+export default BotMemoryDescription;

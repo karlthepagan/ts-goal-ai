@@ -55,7 +55,7 @@ export function loop() {
     const state = GlobalState.boot();
 
     if (!imported) {
-      importManager.importData("tooAngel", Memory, state);
+      log.info("detected bots:", importManager.detect());
       imported = true;
     }
 

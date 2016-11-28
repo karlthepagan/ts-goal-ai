@@ -1,23 +1,28 @@
 import State from "./abstractState";
 import {log} from "../support/log";
-import {botMemory} from "../../config/config";
+import {botMemory, FLYWEIGHTS} from "../../config/config";
 // import * as F from "../functions";
 
 export default class CreepState extends State<Creep> {
+  public static CLASS_NAMES = [
+    "CreepState",
+    "CreepState(enemy)",
+  ];
+
   public static left(subject: Creep) {
-    return CreepState._left.wrap(subject, botMemory()) as CreepState;
+    return (FLYWEIGHTS ? CreepState._left : new CreepState("CS") ).wrap(subject, botMemory()) as CreepState;
   }
 
   public static right(subject: Creep) {
-    return CreepState._right.wrap(subject, botMemory()) as CreepState;
+    return (FLYWEIGHTS ? CreepState._right : new CreepState("CS") ).wrap(subject, botMemory()) as CreepState;
   }
 
   public static vleft(id: string) {
-    return CreepState._vleft.virtual(id, botMemory()) as CreepState;
+    return (FLYWEIGHTS ? CreepState._vleft : new CreepState("CS") ).wrapRemote(id, botMemory()) as CreepState;
   }
 
   public static vright(id: string) {
-    return CreepState._vright.virtual(id, botMemory()) as CreepState;
+    return (FLYWEIGHTS ? CreepState._vright : new CreepState("CS") ).wrapRemote(id, botMemory()) as CreepState;
   }
 
   private static _left: CreepState = new CreepState("CreepStateLeft");
@@ -46,7 +51,7 @@ export default class CreepState extends State<Creep> {
 
   protected init(rootMemory: any): boolean {
     if (super.init(rootMemory)) {
-      // if (!this.isVirtual()) {
+      // if (!this.isRemote()) {
       //   const subject = this.subject();
       // }
 

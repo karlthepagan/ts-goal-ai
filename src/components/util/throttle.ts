@@ -7,13 +7,13 @@ export class Throttle {
   private _cpuWarn: number;
   private _rescoreTicks: number;
   private _roomscanTicks: number;
-  private _virtualRoomscanTicks: number;
+  private _remoteRoomscanTicks: number;
 
   constructor(mem: any) {
     this._cpuOut = F.elvis(mem.cpuOut, 150);
     this._cpuWarn = F.elvis(mem.cpuWarn, 3000);
     this._rescoreTicks = F.elvis(mem.rescoreTicks, 10);
-    this._virtualRoomscanTicks = F.elvis(mem.virtualRoomscanTicks, 10);
+    this._remoteRoomscanTicks = F.elvis(mem.remoteRoomscanTicks, 10);
     this._roomscanTicks = F.elvis(mem.roomscanTicks, 5);
   }
 
@@ -25,7 +25,7 @@ export class Throttle {
     } else if (bucket < this._cpuWarn) {
       log.warning("CPU bucket low", bucket);
     }
-    return false;
+    return true;
   }
 
   public isRescoreTime() {
@@ -36,12 +36,18 @@ export class Throttle {
     return Game.time % this._roomscanTicks === 0;
   }
 
-  public isVirtualRoomscanTime() {
-    return Game.time % this._virtualRoomscanTicks === 0;
+  public isRemoteRoomScanTime() {
+    return Game.time % this._remoteRoomscanTicks === 0;
   }
 }
 
-let throttleCache: Throttle;
+let throttleCache: Throttle|undefined;
 export const throttle = () => {
-  return throttleCache = F.elvis(throttleCache, new Throttle(F.expand([ "config" ], botMemory())));
+  if (botMemory().commit) {
+    throttleCache = undefined;
+    delete botMemory().commit;
+  }
+  return throttleCache = F.elvisLazy(throttleCache, () => {
+    return new Throttle(F.expand([ "config" ], botMemory()));
+  });
 };

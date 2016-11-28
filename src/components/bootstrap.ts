@@ -1,7 +1,8 @@
 import {log} from "./support/log";
 import {importManager} from "./import/importSingleton";
-import BotMemoryDescription from "./import/botMemoryDescription";
 import registerStateScoreProvider from "./metrics/stateScoreProvider";
+import GlobalState from "./state/globalState";
+import TooAngelMemory from "./import/tooAngelMemory";
 
 export const bootstrap: (() => void)[] = [];
 
@@ -10,9 +11,13 @@ bootstrap.push(() => {
 });
 
 bootstrap.push(() => {
+  GlobalState.protectMemory("config");
+});
+
+bootstrap.push(() => {
   registerStateScoreProvider();
 });
 
 bootstrap.push(() => {
-  importManager.addMemoryDescription("tooAngel", new BotMemoryDescription());
+  importManager.addMemoryDescription("tooAngel", new TooAngelMemory());
 });

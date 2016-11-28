@@ -1,6 +1,4 @@
 import BotMemoryDescription from "./botMemoryDescription";
-import {log} from "../support/log";
-import GlobalState from "../state/globalState";
 export default class ImportManager {
   private _handlers: { [key: string]: BotMemoryDescription } = {};
 
@@ -8,11 +6,7 @@ export default class ImportManager {
     this._handlers[botName] = handler;
   }
 
-  public importData(botName: string, rootMemory: any, state: GlobalState) {
-    rootMemory = rootMemory;
-    state = state;
-
-    log.info("importing", botName);
+  public detect(): string[] {
+    return _.chain(this._handlers).pick((v: BotMemoryDescription) => v.detect()).keys().value();
   }
-
 }

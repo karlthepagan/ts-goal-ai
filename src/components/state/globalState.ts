@@ -7,6 +7,7 @@ import SourceState from "./sourceState";
 import MineralState from "./mineralState";
 import CreepState from "./creepState";
 import * as F from "../functions";
+import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 
 export default class GlobalState extends State<Game> {
     /* TODO game score is sum of
@@ -64,59 +65,56 @@ export default class GlobalState extends State<Game> {
     }
   }
 
-  public spawns(): SpawnState[] {
-    return _.values<Spawn>(this.subject().spawns).map(SpawnState.right);
-  }
-
   // TODO filter functions
   // TODO sort functions, precompute sorts?
   public eachSpawn<T>(f: (spawn: SpawnState) => T): T[] {
     // TODO lodash functional pipelines
     // spawns are always literal
     return _.map(this.subject().spawns, (s) => {
-      return f( SpawnState.right(s) );
+      return F.lockAnd( SpawnState.right(s), f);
     });
   }
 
-  public creeps(): CreepState[] {
-    return _.values<Creep>(this.subject().creeps).map(CreepState.right);
+  public creeps(): LoDashExplicitArrayWrapper<CreepState> {
+    // return this.sources<SourceState>(F.identity<SourceState>());
+    return _.chain(this.subject().creeps).values().map(CreepState.right);
   }
 
   public eachCreep<T>(f: (creep: CreepState) => T): T[] {
     // creeps are always literal
     return _.map(this.subject().creeps, (c) => {
-      return f( CreepState.right(c) );
+      return F.lockAnd( CreepState.right(c), f );
     });
   }
 
-  public rooms(virtual?: boolean): RoomState[] {
-    if (virtual) {
-      // return this.rooms<RoomState>(F.identity<RoomState>());
-      return _.values(this._memory.index.rooms).map(RoomState.vright);
-    }
-    return _.values(this.subject().rooms).map(RoomState.right);
+  public rooms(): LoDashExplicitArrayWrapper<RoomState> {
+    return _.chain(this.subject().rooms).values().map(RoomState.right);
+  }
+
+  public remoteRooms(): LoDashExplicitArrayWrapper<RoomState> {
+    return _.chain(this._memory.index.rooms).map(RoomState.vright);
   }
 
   public eachRoom<T>(f: (room: RoomState) => T): T[] {
     return _.map(this.subject().rooms, (room: Room) => {
-      return f(RoomState.right(room));
+      return F.lockAnd( RoomState.right(room), f);
     });
   }
 
-  public eachVirtualRoom<T>(f: (room: RoomState) => T): T[] {
+  public eachRemoteRoom<T>(f: (room: RoomState) => T): T[] {
     return _.map(this._memory.index.rooms, (id: string) => {
-      return f(RoomState.vright(id));
+      return F.lockAnd( RoomState.vright(id), f);
     });
   }
 
-  public sources(): SourceState[] {
+  public sources(): LoDashExplicitArrayWrapper<SourceState> {
     // return this.sources<SourceState>(F.identity<SourceState>());
-    return _.values(this._memory.index.sources).map(SourceState.vright);
+    return _.chain(this._memory.index.sources).map(SourceState.vright);
   }
 
   public eachSource<T>(f: (room: SourceState) => T): T[] {
     return _.map(this._memory.index.sources, (id: string) => {
-      return f(SourceState.vright(id));
+      return F.lockAnd( SourceState.vright(id), f);
     });
   }
 
@@ -143,7 +141,7 @@ export default class GlobalState extends State<Game> {
     }
 
     if (super.init(rootMemory)) {
-      if (!this.isVirtual()) {
+      if (!this.isRemote()) {
         // rooms
         _.values(this.subject().rooms).forEach(RoomState.left);
       }

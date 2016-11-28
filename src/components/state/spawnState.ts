@@ -1,15 +1,15 @@
 import State from "./abstractState";
 import {log} from "../support/log";
-import {botMemory} from "../../config/config";
+import {botMemory, FLYWEIGHTS} from "../../config/config";
 // import * as F from "../functions";
 
 export default class SpawnState extends State<Spawn> {
   public static left(subject: Spawn) {
-    return SpawnState._left.wrap(subject, botMemory()) as SpawnState;
+    return (FLYWEIGHTS ? SpawnState._left : new SpawnState("SS") ).wrap(subject, botMemory()) as SpawnState;
   }
 
   public static right(subject: Spawn) {
-    return SpawnState._right.wrap(subject, botMemory()) as SpawnState;
+    return (FLYWEIGHTS ? SpawnState._right : new SpawnState("SS") ).wrap(subject, botMemory()) as SpawnState;
   }
 
   private static _left: SpawnState = new SpawnState("SpawnStateLeft");
@@ -36,7 +36,7 @@ export default class SpawnState extends State<Spawn> {
 
   protected init(rootMemory: any): boolean {
     if (super.init(rootMemory)) {
-      // if (!this.isVirtual()) {
+      // if (!this.isRemote()) {
       //   const subject = this.subject();
       // }
 

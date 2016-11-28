@@ -80,6 +80,7 @@ abstract class State<T> implements Named {
   protected _id: string;
   protected _subject: T|undefined;
   protected _memory: any;
+  protected _locked: boolean = false;
 
   constructor(name: string) {
     this._name = name;
@@ -88,6 +89,10 @@ abstract class State<T> implements Named {
   public abstract className(): string;
 
   public wrap(subject: T, memory: any): State<T> {
+    if (this._locked) {
+      throw new Error(this.toString());
+    }
+
     if (subject === null) {
       throw new Error(this._name);
     }
@@ -102,7 +107,11 @@ abstract class State<T> implements Named {
     return this;
   }
 
-  public virtual(id: string, memory: any): State<T> {
+  public wrapRemote(id: string, memory: any): State<T> {
+    if (this._locked) {
+      throw new Error(this.toString());
+    }
+
     this._id = id;
 
     this._memory = _access(this, memory);
@@ -110,6 +119,14 @@ abstract class State<T> implements Named {
     this.init(memory);
 
     return this;
+  }
+
+  public lock() {
+    this._locked = true;
+  }
+
+  public release() {
+    this._locked = false;
   }
 
   public subject(): T {
@@ -132,10 +149,10 @@ abstract class State<T> implements Named {
     return this._memory === undefined;
   }
 
-  public isVirtual(reason?: string): boolean {
+  public isRemote(reason?: string): boolean {
     const virtual = this._subject === undefined;
     if (virtual && reason !== undefined) {
-      log.warning("isVirtual true:", reason);
+      log.warning("isRemote true:", reason);
     }
     return virtual;
   }
@@ -197,7 +214,7 @@ abstract class State<T> implements Named {
   }
 
   protected updatePosition(s: any) {
-    if (this._visionSource() || this.isVirtual()) {
+    if (this._visionSource() || this.isRemote()) {
       // vision sources rely on subject for position information
       return;
     }

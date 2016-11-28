@@ -1,23 +1,23 @@
 import State from "./abstractState";
 import {log} from "../support/log";
-import {botMemory} from "../../config/config";
+import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 
 export default class SourceState extends State<Source> {
   public static left(subject: Source) {
-    return SourceState._left.wrap(subject, botMemory()) as SourceState;
+    return (FLYWEIGHTS ? SourceState._left : new SourceState("SS") ).wrap(subject, botMemory()) as SourceState;
   }
 
   public static right(subject: Source) {
-    return SourceState._right.wrap(subject, botMemory()) as SourceState;
+    return (FLYWEIGHTS ? SourceState._right : new SourceState("SS") ).wrap(subject, botMemory()) as SourceState;
   }
 
   public static vleft(id: string) {
-    return SourceState._vleft.virtual(id, botMemory()) as SourceState;
+    return (FLYWEIGHTS ? SourceState._vleft : new SourceState("SS") ).wrapRemote(id, botMemory()) as SourceState;
   }
 
   public static vright(id: string) {
-    return SourceState._vright.virtual(id, botMemory()) as SourceState;
+    return (FLYWEIGHTS ? SourceState._vright : new SourceState("SS") ).wrapRemote(id, botMemory()) as SourceState;
   }
 
   private static _left: SourceState = new SourceState("SourceStateLeft");
@@ -50,7 +50,7 @@ export default class SourceState extends State<Source> {
 
   protected init(rootMemory: any): boolean {
     if (super.init(rootMemory)) {
-      if (!this.isVirtual()) {
+      if (!this.isRemote()) {
         const subject = this.subject();
         this._memory.nodes = F.findOpenPositions(subject.room, subject.pos, 1)
           .map(F.posToDirection(subject.pos));
