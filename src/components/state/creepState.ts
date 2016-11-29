@@ -2,7 +2,7 @@ import State from "./abstractState";
 import {log} from "../support/log";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 // import * as F from "../functions";
-// import BiMap = require("bimap");
+// const BiMap = require("bimap"); // TODO BiMap
 
 const BODY_CHAR_BODY: { [body: string]: string } = {
   A: ATTACK,

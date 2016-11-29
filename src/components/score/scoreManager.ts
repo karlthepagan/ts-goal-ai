@@ -162,6 +162,10 @@ export default class ScoreManager<C> {
   }
 
   public byScore<T extends Named>(metric?: string, time?: number|undefined): (object: T) => number {
-    return (mem: any) => F.elvis(this.getScore(mem, metric, time), -1);
+    return (mem: any) => {
+      const score = this.getScore(mem, metric, time);
+      // log.info("got", metric, "score", score);
+      return F.elvis(score, -1);
+    };
   }
 }

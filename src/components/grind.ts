@@ -27,15 +27,17 @@ export function grind(state: GlobalState) {
     doScans(state, th.isRoomscanTime(), th.isRescoreTime(), th.isRemoteRoomScanTime());
   }
 
-  doSpawn(state, opts);
-
   const creeps = _.values<Creep|null>(Game.creeps);
   // tasked is useful for double-checking my accounting
   const tasked: { [creepIdToSourceId: string]: string } = {};
 
-  doHarvest(state, creeps, tasked);
+  if (!commands.pause) {
+    doSpawn(state, opts);
 
-  doIdle(state, opts, creeps, tasked);
+    doHarvest(state, creeps, tasked);
+
+    doIdle(state, opts, creeps, tasked);
+  }
 }
 
 function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[], tasked: any) {
@@ -48,45 +50,44 @@ function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[], taske
   }).value();
 }
 
-function filterLte<T>(value: number, score: (object: T) => number) {
-  return _.flow(score, _.curry(_.lte, value)) as (o: T) => boolean;
-}
-
 function doHarvest(state: GlobalState,
                    creeps: (Creep|null)[],
                    tasked: { [creepIdToSourceId: string]: string }): (SourceState|null)[] {
 
-  const tenergyScore = scoreManager.byScore("tenergy");
+  const tenergyScore = _.flow(
+    (s: SourceState) => s.memory(SCORE_KEY),
+    scoreManager.byScore("tenergy")
+  ) as (s: SourceState) => number;
 
   // TODO compact<SourceState> should remove null|undefined
-  return state.sources().reject(filterLte(0, tenergyScore)).sortBy(tenergyScore).map((source: SourceState) => {
+  return state.sources()
+      .groupBy(tenergyScore).pairs().filter((it) => +it[0] > 0).map((it) => it[1]).flatten()
+    // TODO - CRITICAL - memoize statement thus far until closer source or destination is discovered
+      .map((source: SourceState) => {
     let failed: any = {};
     const sites = source.nodeDirs();
 
-    const workers = source.memory("workers");
+    const workers = source.memory("workers", true);
 
     const dirToPosition = F.dirToPosition(source.pos());
-
-    if (!source.resolve()) {
-      log.error("failed to resolve", source);
-      return source;
-    }
 
     for (const site of sites) {
 
       const pos = dirToPosition(site);
       const byRangeToSite = F.byStateRangeTo(pos);
-      const worker = workers[site + ""];
+      const worker = workers[ site ];
       if (worker !== undefined) {
-        // log.debug("resolving worker @", site, worker.id);
+        // log.debug("resolving worker @", site, worker);
         // grab worker and mine!
-        if (tryHarvest(CreepState.vright(worker.id), source, pos, site, tasked, failed)) {
+        const creep = CreepState.vright(worker);
+        if (tryHarvest(creep, source, pos, site, tasked, failed)) {
           // log.debug("mined", site, "next site for", source);
+          creeps[creeps.indexOf(creep.subject())] = null;
           continue;
         }
       }
 
-      log.info("allocating", source, "site", site);
+      // log.info("allocating", source, "site", site);
 
       let harvested = false;
       do {
@@ -94,10 +95,11 @@ function doHarvest(state: GlobalState,
         // find only in same room for now
 
         // TODO switch to list of untasked creeps which we null out assigned
-        log.debug(_.chain(creeps).compact().size().valueOf(), "left");
+        log.debug(_.chain(creeps).compact().size().value(), "left");
         let creep = _.chain(creeps).compact().map(CreepState.right).filter((cs: CreepState) => {
           const creep = cs.subject();
-          if (tasked[creep.id] !== source.getId()) {
+          const taskId = tasked[creep.id];
+          if (taskId !== undefined && taskId !== source.getId()) {
             log.warning("already tasked", cs);
             return false;
           }
@@ -119,6 +121,11 @@ function doHarvest(state: GlobalState,
         }
 
         creep.lock();
+        if (creep.memory().working !== undefined) {
+          // free current source
+          const oldsite: string[] = SourceState.vleft(creep.memory().working).memory("workers", true);
+          delete oldsite[oldsite.indexOf(creep.getId())];
+        }
         creep.memory().working = source.getId();
 
         harvested = tryHarvest(creep, source, pos, site, tasked, failed);
@@ -207,24 +214,26 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
             log.debug("move failed", sourceState, "moveTo=", moveResult, creepState);
           }
         } else {
-          log.debug("tired", creepState);
+          // log.debug("tired", creepState);
           failed[creepState.getId()] = "fatigue";
         }
     }
 
-    const worker = F.expand( [ site + "" ], sourceState.memory("workers") );
-    worker.id = creep.id;
+    sourceState.memory("workers", true)[ site ] = creep.id;
     tasked[creep.id] = sourceState.getId();
+    // log.debug("tasked", creep.id, "to", sourceState.getId());
     return true;
   } else {
-    log.error("died?", creepState);
-    F.deleteExpand( [ site + ""], sourceState.memory("workers") );
+    // TODO release task and send another worker
+    log.info("died?", creepState);
+    delete sourceState.memory("workers", true)[ site ];
     failed[creepState.getId()] = sourceState.getId();
     return false;
   }
 }
 
 function resetAssignments(state: GlobalState) {
+  log.warning("resetting creep assignments");
   state.sources().filter((s) => delete s.memory().workers).value();
   state.creeps().filter((s) => delete s.memory().working).value();
 }

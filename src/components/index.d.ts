@@ -8,6 +8,11 @@ interface Commands {
    * reload memoized configurations
    */
   commit: boolean;
+
+  /**
+   * don't process work logic until cleared
+   */
+  pause: boolean;
 }
 
 interface Options {
