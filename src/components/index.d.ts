@@ -31,4 +31,24 @@ interface Options {
    * cpu exhaustion threshold
    */
   cpuOut: number;
+
+  /**
+   * cpu warning threshold
+   */
+  cpuWarn: number;
+
+  /**
+   * number of ticks between gamestate rescoring
+   */
+  rescoreTicks: number;
+
+  /**
+   * number of ticket between remote room thinks
+   */
+  remoteRoomscanTicks: number;
+
+  /**
+   * number of ticks between visible room discovery and think
+   */
+  roomscanTicks: number;
 }

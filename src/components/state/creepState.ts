@@ -46,7 +46,8 @@ export default class CreepState extends State<Creep> {
   protected _indexAddress = ["index", "creeps"];
 
   public className() {
-    return F.elvis(CreepState.CLASS_NAMES[this._name], "CreepState");
+    const className = (CreepState.CLASS_NAMES as { [name: string]: string })[this._name];
+    return F.elvis(className, "CreepState");
   }
 
   public delete() {

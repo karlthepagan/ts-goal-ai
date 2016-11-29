@@ -9,7 +9,7 @@ export class Throttle {
   private _roomscanTicks: number;
   private _remoteRoomscanTicks: number;
 
-  constructor(mem: any) {
+  constructor(mem: Options) {
     this._cpuOut = F.elvis(mem.cpuOut, 150);
     this._cpuWarn = F.elvis(mem.cpuWarn, 3000);
     this._rescoreTicks = F.elvis(mem.rescoreTicks, 10);

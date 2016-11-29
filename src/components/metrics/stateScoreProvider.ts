@@ -24,6 +24,11 @@ export default function registerStateScoreProvider() {
 }
 
 function scoreMove(state: CreepState, score: ScoreManager<GlobalState>, time: number): number {
+  state = state;
+  score = score;
+  time = time;
+
+  // TODO calculate X / log2 non-move body ratio (so that 1:1 gets score of 0.5, 1:3 gets score of 1)
   return 0;
 }
 

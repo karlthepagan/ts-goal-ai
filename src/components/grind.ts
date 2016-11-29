@@ -39,21 +39,27 @@ export function grind(state: GlobalState) {
 }
 
 function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[], tasked: any) {
-  state.eachCreep((creep) => {
-    if (tasked[creep.getId()] !== undefined) {
-      return;
-    }
+  state = state;
+  opts = opts;
+  tasked = tasked;
 
-    creep.subject().say("?", false);
-  });
+  _.chain(creeps).compact().map((creep: Creep) => {
+    creep.say("?", false);
+  }).value();
+}
+
+function filterLte<T>(value: number, score: (object: T) => number) {
+  return _.flow(score, _.curry(_.lte, value)) as (o: T) => boolean;
 }
 
 function doHarvest(state: GlobalState,
                    creeps: (Creep|null)[],
                    tasked: { [creepIdToSourceId: string]: string }): (SourceState|null)[] {
 
+  const tenergyScore = scoreManager.byScore("tenergy");
+
   // TODO compact<SourceState> should remove null|undefined
-  return state.sources().sortBy(scoreManager.byScore("energy")).map((source: SourceState) => {
+  return state.sources().reject(filterLte(0, tenergyScore)).sortBy(tenergyScore).map((source: SourceState) => {
     let failed: any = {};
     const sites = source.nodeDirs();
 
