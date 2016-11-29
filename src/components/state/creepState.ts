@@ -2,6 +2,7 @@ import State from "./abstractState";
 import {log} from "../support/log";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
+import BiMap = require("bimap");
 
 export default class CreepState extends State<Creep> {
   public static CLASS_NAMES = { // TODO dirty as fuck
@@ -9,6 +10,7 @@ export default class CreepState extends State<Creep> {
     CS: "CreepState",
     CreepEnemyLeft: "CreepState(enemy)",
     CreepEnemyRight: "CreepState(enemy)",
+    bimap: new BiMap(), // testing TODO REMOVE
   };
 
   public static left(subject: Creep) {

@@ -19,11 +19,10 @@
   },
   "author": "",
   "license": "MIT",
-  "bundledDependencies": [
-    "bimap"
-  ],
+  "dependencies": {
+    "bimap": "^0.0.15"
+  },
   "devDependencies": {
-    "bimap": "^0.0.15",
     "deep-equal": "^1.0.1",
     "gulp": "github:gulpjs/gulp#4.0",
     "gulp-clean": "^0.3.2",
