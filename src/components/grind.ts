@@ -100,7 +100,7 @@ function doHarvest(state: GlobalState,
 
   // TODO compact<SourceState> should remove null|undefined
   return state.sources()
-      .groupBy(tenergyScore).pairs().filter((it) => +it[0] > 0).sortBy(0).map((it) => it[1]).flatten()
+      .groupBy(tenergyScore).pairs().filter((it) => +it[0] > 0).sortBy(0).map(1).flatten()
     // TODO - CRITICAL - memoize statement thus far until closer source or destination is discovered
     // this is called an election!
       .map((source: SourceState) => {
@@ -115,7 +115,7 @@ function doHarvest(state: GlobalState,
 
       const pos = dirToPosition(site);
       const energyScore = distanceEnergyFitness(pos);
-      const byRangeToSite = _.flow( (s: State<any> ) => s.pos(), F.byStateRangeTo(pos) ) as (s: State<any>) => number;
+      const byRangeToSite = _.flow( _.method("pos"), F.byStateRangeTo(pos) ) as (s: State<any>) => number;
       const worker = workers[ site ];
       if (worker !== undefined) {
         // log.debug("resolving worker @", site, worker);
@@ -156,7 +156,7 @@ function doHarvest(state: GlobalState,
           return true;
         })
           // first score by fitness (body + distance)
-          .groupBy(energyScore).pairs().sortBy(0).last<LoDashExplicitArrayWrapper<any>>().map<CreepState>((p) => p[1])
+          .groupBy(energyScore).pairs().sortBy(0).last<LoDashExplicitArrayWrapper<any>>().map<CreepState>("1")
           // then tie-break by range to site
           .sortBy(byRangeToSite).first().valueOf() as CreepState;
 
