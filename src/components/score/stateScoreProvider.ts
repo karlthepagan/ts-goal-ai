@@ -10,12 +10,13 @@ import ScoreHandler from "./scoreHandler";
 import {log} from "../support/log";
 import * as F from "../functions";
 import {SCORE_KEY} from "./scoreManager";
+import EnemyCreepState from "../state/enemyCreepState";
 
 type StateScoreImpl<T> = { [key: string]: ScoreHandler<T, GlobalState> };
 
 export default function registerStateScoreProvider() {
   scoreManager.addHandler(new CreepState("proto").className(), impl.creepState);
-  scoreManager.addHandler(CreepState.CLASS_NAMES.CE, impl.enemyCreep);
+  scoreManager.addHandler(new EnemyCreepState("proto").className(), impl.enemyCreep);
   scoreManager.addHandler(new GlobalState("proto").className(), impl.globalState);
   scoreManager.addHandler(new MineralState("proto").className(), impl.mineralState);
   scoreManager.addHandler(new RoomState("proto").className(), impl.roomState);
@@ -40,8 +41,8 @@ const impl = {
 
   // ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY
   enemyCreep: {
-    move: scoreMove as ScoreHandler<CreepState, GlobalState>,
-  } as StateScoreImpl<CreepState>,
+    move: scoreMove as ScoreHandler<EnemyCreepState, GlobalState>,
+  } as StateScoreImpl<EnemyCreepState>,
 
   // GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL
   globalState: {

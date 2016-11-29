@@ -1,6 +1,6 @@
 import {log} from "./support/log";
 import {importManager} from "./import/importSingleton";
-import registerStateScoreProvider from "./metrics/stateScoreProvider";
+import registerStateScoreProvider from "./score/stateScoreProvider";
 import GlobalState from "./state/globalState";
 import TooAngelMemory from "./import/tooAngelMemory";
 

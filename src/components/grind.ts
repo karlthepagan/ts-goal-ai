@@ -4,8 +4,8 @@ import {log} from "./support/log";
 import CreepState from "./state/creepState";
 import SourceState from "./state/sourceState";
 import {throttle} from "./util/throttle";
-import {scoreManager} from "./metrics/scoreSingleton";
-import {SCORE_KEY} from "./metrics/scoreManager";
+import {scoreManager} from "./score/scoreSingleton";
+import {SCORE_KEY} from "./score/scoreManager";
 
 export function grind(state: GlobalState) {
   const commands = state.memory() as Commands;
