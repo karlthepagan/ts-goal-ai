@@ -1,3 +1,5 @@
+var bimap = require("bimap");
+
 module.exports = {
   devtool: "source-map",
   entry: "./src/main.ts",
@@ -29,6 +31,8 @@ module.exports = {
     {
         // webpack will not try to rewrite require("main.js.map")
         "main.js.map": "./main.js.map",
+      // libraries
+      "bimap": "bimap",
     },
   ],
 
