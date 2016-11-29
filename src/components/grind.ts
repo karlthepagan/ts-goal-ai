@@ -6,6 +6,9 @@ import SourceState from "./state/sourceState";
 import {throttle} from "./util/throttle";
 import {scoreManager} from "./score/scoreSingleton";
 import {SCORE_KEY} from "./score/scoreManager";
+import State from "./state/abstractState";
+import {DISTANCE_WEIGHT} from "./score/stateScoreProvider";
+import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 
 export function grind(state: GlobalState) {
   const commands = state.memory() as Commands;
@@ -50,19 +53,56 @@ function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[], taske
   }).value();
 }
 
+/**
+ * transform State -> memory -> extract score -> decorate score using State
+ */
+function byScore<T extends State<any>>(score: string, decorator?: (acc: number, s: T) => number) {
+
+  // DRY is a nontrivial cost
+  if (decorator === undefined) {
+    return (s: T) => {
+      const mem = s.memory(SCORE_KEY);
+      return scorer(mem);
+    };
+  }
+
+  const scorer = scoreManager.byScore(score);
+
+  /* TODO functional? more expressive, why not just use comments? :P
+   _.flow(
+   (s: T) => s.memory(SCORE_KEY),
+   scoreManager.byScore(score)
+   ) as (s: T) => number;
+   */
+  return (s: T) => {
+    const mem = s.memory(SCORE_KEY);
+    return decorator( scorer(mem), s);
+  };
+}
+
+// state/tenergy
+const tenergyScore = byScore("tenergy");
+
+// creep/venergy + rangeScore
+const distanceEnergyFitness = (pos: RoomPosition) => {
+  return byScore("venergy", (score: number, s: State<any>) => {
+    // do not give venergy: 0 creeps any distance score
+    if (score === 0) {
+      return 0;
+    }
+    return score + DISTANCE_WEIGHT / F.rangeScore(s.pos(), pos);
+  });
+};
+
 function doHarvest(state: GlobalState,
                    creeps: (Creep|null)[],
                    tasked: { [creepIdToSourceId: string]: string }): (SourceState|null)[] {
 
-  const tenergyScore = _.flow(
-    (s: SourceState) => s.memory(SCORE_KEY),
-    scoreManager.byScore("tenergy")
-  ) as (s: SourceState) => number;
-
   // TODO compact<SourceState> should remove null|undefined
   return state.sources()
-      .groupBy(tenergyScore).pairs().filter((it) => +it[0] > 0).map((it) => it[1]).flatten()
+      .groupBy(tenergyScore).pairs().filter((it) => +it[0] > 0).sortBy(0).map((it) => it[1]).flatten()
     // TODO - CRITICAL - memoize statement thus far until closer source or destination is discovered
+    // this is called an election!
       .map((source: SourceState) => {
     let failed: any = {};
     const sites = source.nodeDirs();
@@ -74,7 +114,8 @@ function doHarvest(state: GlobalState,
     for (const site of sites) {
 
       const pos = dirToPosition(site);
-      const byRangeToSite = F.byStateRangeTo(pos);
+      const energyScore = distanceEnergyFitness(pos);
+      const byRangeToSite = _.flow( (s: State<any> ) => s.pos(), F.byStateRangeTo(pos) ) as (s: State<any>) => number;
       const worker = workers[ site ];
       if (worker !== undefined) {
         // log.debug("resolving worker @", site, worker);
@@ -113,7 +154,11 @@ function doHarvest(state: GlobalState,
             return false;
           }
           return true;
-        }).sortBy(byRangeToSite).first().valueOf() as CreepState;
+        })
+          // first score by fitness (body + distance)
+          .groupBy(energyScore).pairs().sortBy(0).last<LoDashExplicitArrayWrapper<any>>().map<CreepState>((p) => p[1])
+          // then tie-break by range to site
+          .sortBy(byRangeToSite).first().valueOf() as CreepState;
 
         if (creep === null || creep === undefined) {
           log.error("no worker found");

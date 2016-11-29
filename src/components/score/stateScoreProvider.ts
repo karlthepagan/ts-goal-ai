@@ -14,6 +14,10 @@ import EnemyCreepState from "../state/enemyCreepState";
 
 type StateScoreImpl<T> = { [key: string]: ScoreHandler<T, GlobalState> };
 
+// TODO distance weight in genome
+// TODO distance weight relates to creep movement capability
+export const DISTANCE_WEIGHT = 9;
+
 export default function registerStateScoreProvider() {
   scoreManager.addHandler(new CreepState("proto").className(), impl.creepState);
   scoreManager.addHandler(new EnemyCreepState("proto").className(), impl.enemyCreep);
@@ -154,7 +158,7 @@ const impl = {
         log.warning("did not resolve", ownRoom);
       }
 
-      return 9 / distanceScore; // TODO distance weight
+      return DISTANCE_WEIGHT / distanceScore; // TODO distance weight
     }) as ScoreHandler<SourceState, GlobalState>,
     venergy: ((state: SourceState) => {
       // venergy - number of potential workers
