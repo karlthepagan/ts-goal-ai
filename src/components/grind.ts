@@ -8,15 +8,15 @@ import {scoreManager} from "./score/scoreSingleton";
 import {SCORE_KEY} from "./score/scoreManager";
 import State from "./state/abstractState";
 import {DISTANCE_WEIGHT} from "./score/stateScoreProvider";
-import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 
 export function grind(state: GlobalState) {
   const commands = state.memory() as Commands;
   const opts = state.memory("config") as Options;
 
-  if (commands.shuffle) {
+  if (commands.shuffle || commands.last === undefined
+      || (Game.time - commands.last) > F.elvis(opts.failedTicksToShuffle, 5)) {
+    resetAssignments(state, commands.shuffle);
     delete commands.shuffle;
-    resetAssignments(state);
   }
 
   const th = throttle();
@@ -41,6 +41,8 @@ export function grind(state: GlobalState) {
 
     doIdle(state, opts, creeps, tasked);
   }
+
+  commands.last = Game.time;
 }
 
 function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[], tasked: any) {
@@ -56,17 +58,20 @@ function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[], taske
 /**
  * transform State -> memory -> extract score -> decorate score using State
  */
-function byScore<T extends State<any>>(score: string, decorator?: (acc: number, s: T) => number) {
+function byScore<T extends State<any>>(metric: string, decorator?: (acc: number, s: T) => number) {
+
+  const scorer = scoreManager.byScore(metric);
 
   // DRY is a nontrivial cost
   if (decorator === undefined) {
     return (s: T) => {
+      // log.info("byScore input", s);
       const mem = s.memory(SCORE_KEY);
-      return scorer(mem);
+      const score = scorer(mem);
+      // log.info("byScore result", score);
+      return score;
     };
   }
-
-  const scorer = scoreManager.byScore(score);
 
   /* TODO functional? more expressive, why not just use comments? :P
    _.flow(
@@ -75,8 +80,13 @@ function byScore<T extends State<any>>(score: string, decorator?: (acc: number, 
    ) as (s: T) => number;
    */
   return (s: T) => {
+    // log.info("byScore input", s);
     const mem = s.memory(SCORE_KEY);
-    return decorator( scorer(mem), s);
+    const score = scorer(mem);
+    // log.info("byScore middle", score);
+    const decorated = decorator(score, s);
+    // log.info("byScore result", decorated);
+    return decorated;
   };
 }
 
@@ -94,9 +104,44 @@ const distanceEnergyFitness = (pos: RoomPosition) => {
   });
 };
 
+// function tapLog<T>(message: string): (s: T) => T {
+//   return (s) => {
+//     log.info(message, s);
+//     return s;
+//   };
+// }
+
+function isTrue(prev: number, curr: any) {
+  return curr ? (prev + 1) : prev;
+}
+
+// TODO - you don't need _.chain, lodash says that flow/flowRight avoids intermediates / "shortcut fusion" even with FP
+const compactSize = _.curryRight(_.foldl, 3)(0)(isTrue) as (x: any[]) => number;
+
+function str(x: any, f: (x: any) => string|number): {} {
+  return {
+    toString: () => f(x),
+  };
+}
+
 function doHarvest(state: GlobalState,
                    creeps: (Creep|null)[],
                    tasked: { [creepIdToSourceId: string]: string }): (SourceState|null)[] {
+
+  // TODO well shit
+  /*
+   TypeError: Cannot read property '1' of undefined
+   state.sources.groupBy.pairs.filter.sortBy.map.flatten.map (src/components/grind.ts:189)
+   at arrayMap (E:\SteamLibrary\steamapps\common\Screeps\server\node_modules\lodash\index.js:1406:25)
+   at map (E:\SteamLibrary\steamapps\common\Screeps\server\node_modules\lodash\index.js:6710:14)
+   at interceptor (E:\SteamLibrary\steamapps\common\Screeps\server\node_modules\lodash\index.js:12240:26)
+   at thru (E:\SteamLibrary\steamapps\common\Screeps\server\node_modules\lodash\index.js:5927:26)
+   at baseWrapperValue (E:\SteamLibrary\steamapps\common\Screeps\server\node_modules\lodash\index.js:2768:30)
+   at LazyWrapper.lazyValue [as value] (E:\SteamLibrary\steamapps\common\Screeps\server\node_modules\lodash\index.js:
+   at baseWrapperValue (E:\SteamLibrary\steamapps\common\Screeps\server\node_modules\lodash\index.js:2761:25)
+   at LodashWrapper.wrapperValue (E:\SteamLibrary\steamapps\common\Screeps\server\node_modules\lodash\index.js:6124:14)
+   doHarvest (src/components/grind.ts:214)
+   */
 
   // TODO compact<SourceState> should remove null|undefined
   return state.sources()
@@ -115,7 +160,7 @@ function doHarvest(state: GlobalState,
 
       const pos = dirToPosition(site);
       const energyScore = distanceEnergyFitness(pos);
-      const byRangeToSite = _.flow( _.method("pos"), F.byStateRangeTo(pos) ) as (s: State<any>) => number;
+      const byRangeToSite = F.byStateRangeTo(pos);
       const worker = workers[ site ];
       if (worker !== undefined) {
         // log.debug("resolving worker @", site, worker);
@@ -129,15 +174,12 @@ function doHarvest(state: GlobalState,
       }
 
       // log.info("allocating", source, "site", site);
-
       let harvested = false;
       do {
-        // allocate worker, find closest, TODO prefer role=sourcer
-        // find only in same room for now
+        // allocate worker, find closest, TODO prefer role=sourcer? look up bot compat?
 
-        // TODO switch to list of untasked creeps which we null out assigned
-        log.debug(_.chain(creeps).compact().size().value(), "left");
-        let creep = _.chain(creeps).compact().map(CreepState.right).filter((cs: CreepState) => {
+        log.debug(str(creeps, compactSize), "left");
+        let candidates = _.chain(creeps).compact().map(CreepState.right).filter((cs: CreepState) => {
           const creep = cs.subject();
           const taskId = tasked[creep.id];
           if (taskId !== undefined && taskId !== source.getId()) {
@@ -154,11 +196,12 @@ function doHarvest(state: GlobalState,
             return false;
           }
           return true;
-        })
-          // first score by fitness (body + distance)
-          .groupBy(energyScore).pairs().sortBy(0).last<LoDashExplicitArrayWrapper<any>>().map<CreepState>("1")
-          // then tie-break by range to site
-          .sortBy(byRangeToSite).first().valueOf() as CreepState;
+        }).groupBy(energyScore).pairs().sortBy(0).last().valueOf() as any[];
+        // first score by fitness (body + distance)
+
+        // log.debug(candidates[1].length, "creep candidates score:", candidates[0]);
+        // then tie-break by range to site
+        let creep = _.chain(candidates[1] as CreepState[]).sortBy(byRangeToSite).first().valueOf() as CreepState;
 
         if (creep === null || creep === undefined) {
           log.error("no worker found");
@@ -277,8 +320,12 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
   }
 }
 
-function resetAssignments(state: GlobalState) {
-  log.warning("resetting creep assignments");
+function resetAssignments(state: GlobalState, shuffled: boolean) {
+  if (shuffled) {
+    log.warning("resetting creep assignments");
+  } else {
+    log.error("recovering from failing activity or foreign branch");
+  }
   state.sources().filter((s) => delete s.memory().workers).value();
   state.creeps().filter((s) => delete s.memory().working).value();
 }

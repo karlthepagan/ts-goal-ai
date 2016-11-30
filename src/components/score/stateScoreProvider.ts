@@ -33,19 +33,30 @@ function scoreMove(state: CreepState, score: ScoreManager<GlobalState>, time: nu
   score = score;
   time = time;
 
-  // TODO calculate X / log2 non-move body ratio (so that 1:1 gets score of 0.5, 1:3 gets score of 1)
+  // TODO calculate X / log2 fatigue body ratio (so that 1:1 gets score of 0.5, 1:3 gets score of 1)
+  // TODO include how full creep's carry is!
+  return 0;
+}
+
+function scoreWork(state: CreepState, score: ScoreManager<GlobalState>, time: number): number {
+  state = state;
+  score = score;
+  time = time;
+
+  // TODO count number of living work parts
   return 0;
 }
 
 const impl = {
   // CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS
   creepState: {
-    move: scoreMove as ScoreHandler<CreepState, GlobalState>,
+    move: scoreMove,
+    venergy: scoreWork,
   } as StateScoreImpl<CreepState>,
 
   // ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY
   enemyCreep: {
-    move: scoreMove as ScoreHandler<EnemyCreepState, GlobalState>,
+    move: scoreMove,
   } as StateScoreImpl<EnemyCreepState>,
 
   // GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL GLOBAL

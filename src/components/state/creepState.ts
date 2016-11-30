@@ -4,7 +4,17 @@ import {botMemory, FLYWEIGHTS} from "../../config/config";
 // import * as F from "../functions";
 // const BiMap = require("bimap"); // TODO BiMap
 
-const BODY_CHAR_BODY: { [body: string]: string } = {
+const MOVE_KEYS = {
+  // yes i'm being clever here, don't change constants
+  ROAD: 1,
+  ROAD_LOAD: 0,
+  PLAIN: 2,
+  PLAIN_LOAD: 3,
+  SWAMP: 5,
+  SWAMP_LOAD: 4,
+};
+
+const BODY_CHAR_BODY: { [key: string]: string } = {
   A: ATTACK,
   attack: "A",
   C: CARRY,
@@ -12,7 +22,7 @@ const BODY_CHAR_BODY: { [body: string]: string } = {
   claim: "L",
   H: HEAL,
   heal: "H",
-  L: "claim",
+  L: CLAIM,
   M: MOVE,
   move: "M",
   R: RANGED_ATTACK,
@@ -23,6 +33,12 @@ const BODY_CHAR_BODY: { [body: string]: string } = {
   work: "W",
 };
 
+const CARRY_RECIPROCAL = 1 / 50;
+
+function isZero(n: number) {
+  return n === 0;
+}
+
 export default class CreepState extends State<Creep> {
   public static calculateBody(body: BodyPartDefinition[], max?: boolean): string {
     // bimap: new BiMap(), // testing TODO REMOVE
@@ -31,7 +47,59 @@ export default class CreepState extends State<Creep> {
     if (!max) {
       filtered = filtered.filter((s: BodyPartDefinition) => s.hits > 0);
     }
-    return filtered.sortBy().map((s: string) => BODY_CHAR_BODY[s]).join().value();
+    return filtered.map((s: BodyPartDefinition) => BODY_CHAR_BODY[s.type]).sortBy().join("").value();
+  }
+
+  public static calculateArmorAndHull(body: BodyPartDefinition[]) {
+    let i = 0;
+
+    let armor = 99;
+    while (i < body.length) {
+      if (body[i++].type !== TOUGH) {
+        break;
+      }
+      armor += 100;
+    }
+
+    let hull = armor;
+    while (i < body.length) {
+      if (body[i++].type === MOVE) {
+        break;
+      }
+      hull += 100;
+    }
+    return { armor, hull };
+  }
+
+  public static calculateFatigue(body: BodyPartDefinition[], terrain: number, carry: number): number {
+    const moveDiscount = 2 / terrain;
+    let sum = 0;
+    for (let i = body.length - 1; i >= 0; i--) {
+      const b = body[i];
+      switch (b.type) {
+        case CARRY:
+          carry -= 50;
+          if (carry < 0) {
+            break; // empty, no cost
+          }
+          // fall thru!
+        default:
+          sum++;
+          break;
+
+        case MOVE:
+          if (b.hits > 0) {
+            sum -= moveDiscount;
+          }
+          break;
+      }
+      // TODO validate the shortcut
+      // if (sum < -i) {
+      //   return 0;
+      // }
+    }
+
+    return Math.round(sum * terrain);
   }
 
   public static left(subject: Creep) {
@@ -70,25 +138,76 @@ export default class CreepState extends State<Creep> {
     log.debug("delete", this);
   }
 
-  public body() {
-    if (this.resolve() ) {
+  /**
+   * a hit creep is loging functionality
+   */
+  public isHit(): boolean {
+    const creep = this.subject();
+    return creep.hitsMax - creep.hits > this.memory().armor;
+  }
+
+  /**
+   * a wounded creep is losing movement
+   */
+  public isWounded(): boolean {
+    const creep = this.subject();
+    return creep.hitsMax - creep.hits > this.memory().hull;
+  }
+
+  public isCarrying(): boolean {
+    return _.chain(this.subject().carry).values().all(isZero).value();
+  }
+
+  public getCarrying(): number {
+    return _.sum(this.subject().carry);
+  }
+
+  public body(): string {
+    if (this.resolve() && this.isWounded()) {
       return CreepState.calculateBody(this.subject().body);
     }
     return this.maxBody();
   }
 
-  public maxBody() {
-    return this.memory().maxBody;
+  public maxBody(): string {
+    return this.memory().okBody;
   }
 
-  public moveFatigue(terrain: string, carry?: boolean|undefined) {
-    terrain = terrain;
-    carry = carry;
-    // plain: 2
-    // swamp: 5
-    // road: 1
-    // TODO fatigue per non-empty part
-    return 1;
+  public minMoveFatigue(terrain: number) {
+    return this.memory().move[terrain];
+  }
+
+  public maxMovePenalty(terrain: number) {
+    if (terrain === MOVE_KEYS.PLAIN) { // MAGIC
+      terrain++;
+    } else {
+      terrain--;
+    }
+    return this.memory().move[terrain];
+  }
+
+  public maxMoveFatigue(terrain: number) {
+    return this.maxMovePenalty(terrain) + this.minMoveFatigue(terrain);
+  }
+
+  public moveFatigue(terrain?: number, carry?: number) {
+    if (terrain === undefined) {
+      terrain = 2;
+    }
+
+    if (this.resolve() || this.isWounded()) {
+      if (carry === undefined) {
+        carry = this.getCarrying();
+      }
+      return CreepState.calculateFatigue(this.subject().body, terrain, carry);
+    }
+
+    if (carry === undefined) {
+      return this.minMoveFatigue(terrain);
+    }
+
+    // TODO is this valid for move penalty?
+    return Math.ceil(this.maxMovePenalty(terrain) * CARRY_RECIPROCAL) + this.minMoveFatigue(terrain);
   }
 
   protected _visionSource() {
@@ -99,13 +218,19 @@ export default class CreepState extends State<Creep> {
     if (super.init(rootMemory)) {
       if (this.resolve()) {
         const creep = this.subject();
-        this.memory().maxBody = CreepState.calculateBody(creep.body, true);
-        this.memory().maxPlain = this.moveFatigue("plain", true);
-        this.memory().maxRoad = this.moveFatigue("road", true);
-        this.memory().maxSwamp = this.moveFatigue("swamp", true);
-        this.memory().minPlain = this.moveFatigue("plain", false);
-        this.memory().minRoad = this.moveFatigue("road", false);
-        this.memory().minSwamp = this.moveFatigue("swamp", false);
+        this.memory().okBody = CreepState.calculateBody(creep.body, true);
+
+        const move = this.memory("move", true);
+        const okRoad = move[MOVE_KEYS.ROAD] = CreepState.calculateFatigue(creep.body, 1, 0);
+        move[MOVE_KEYS.ROAD_LOAD] = CreepState.calculateFatigue(creep.body, 1, this.subject().carryCapacity) - okRoad;
+        const okMove = move[MOVE_KEYS.PLAIN] = CreepState.calculateFatigue(creep.body, 2, 0);
+        move[MOVE_KEYS.PLAIN_LOAD] = CreepState.calculateFatigue(creep.body, 2, this.subject().carryCapacity) - okMove;
+        const okSwamp = move[MOVE_KEYS.SWAMP] = CreepState.calculateFatigue(creep.body, 5, 0);
+        move[MOVE_KEYS.SWAMP_LOAD] = CreepState.calculateFatigue(creep.body, 5, this.subject().carryCapacity) - okSwamp;
+
+        const {armor, hull} = CreepState.calculateArmorAndHull(creep.body);
+        this.memory().armor = armor;
+        this.memory().hull = hull;
       }
 
       return true;

@@ -255,7 +255,7 @@ export function rangeScore(a: RoomPosition, b: RoomPosition) {
   const range = a.getRangeTo(b);
 
   // TODO minimum score range, translate to pathing?
-  return Math.floor( Math.log2(range + 1) );
+  return Math.floor( Math.log2(range + 2) );
 }
 
 export function byRangeScore(pos: RoomPosition) {

@@ -1,5 +1,6 @@
 import BotMemoryDescription from "./botMemoryDescription";
 import {log} from "../support/log";
+import {CreepDescription} from "./botMemoryDescription";
 
 export default class TooAngelMemory implements BotMemoryDescription {
   constructor() {
@@ -20,5 +21,9 @@ export default class TooAngelMemory implements BotMemoryDescription {
     return _.chain(Game.creeps).values()
         .filter((c: Creep) => c.memory.role === "sourcer")
         .first().valueOf() !== undefined;
+  }
+
+  public describeCreep(creep: Creep): CreepDescription {
+    return creep.memory.role;
   }
 }

@@ -13,6 +13,11 @@ interface Commands {
    * don't process work logic until cleared
    */
   pause: boolean;
+
+  /**
+   * last think time
+   */
+  last: number;
 }
 
 interface Options {
@@ -56,4 +61,9 @@ interface Options {
    * number of ticks between visible room discovery and think
    */
   roomscanTicks: number;
+
+  /**
+   * number of incomplete (bot) think ticks before we need to shuffle
+   */
+  failedTicksToShuffle: number;
 }
