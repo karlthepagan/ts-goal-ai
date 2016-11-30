@@ -3,10 +3,10 @@ import RoomState from "../state/roomState";
 import XYIterator from "./xyIterator";
 
 export default class RoomIterator implements Iterator<RoomState> {
-  private _xyIter: XYIterator;
+  private _xyIter: XYIterator<F.XY>;
 
   constructor(roomName: string) { // TODO borders
-    this._xyIter = new XYIterator(F.parseRoomName(roomName));
+    this._xyIter = new XYIterator<F.XY>(F.parseRoomName(roomName));
   }
 
   public depth(): number {

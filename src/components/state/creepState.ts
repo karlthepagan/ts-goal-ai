@@ -143,6 +143,17 @@ export default class CreepState extends State<Creep> {
     return (FLYWEIGHTS ? CreepState._vright : new CreepState("CS") ).wrapRemote(id, botMemory()) as CreepState;
   }
 
+  public static build(creep: Creep): CreepState {
+    return new CreepState("CS").wrap(creep, botMemory()) as CreepState;
+  }
+
+  public static copy(creep: CreepState): CreepState {
+    if (creep.isRemote()) {
+      return new CreepState("CS").wrapRemote(creep.getId(), botMemory()) as CreepState;
+    }
+    return CreepState.build(creep.subject());
+  }
+
   protected static _left: CreepState = new CreepState("CreepStateLeft");
   protected static _right: CreepState = new CreepState("CreepStateRight");
   protected static _vleft: CreepState = new CreepState("CreepStateVirtualLeft");

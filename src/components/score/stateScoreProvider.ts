@@ -18,6 +18,7 @@ type StateScoreImpl<T> = { [key: string]: ScoreHandler<T, GlobalState> };
 // TODO distance weight relates to creep movement capability
 export const DISTANCE_WEIGHT = 9;
 export const FATIGUE_WEIGHT = 4;
+export const WORK_WEIGHT = 2;
 
 export default function registerStateScoreProvider() {
   scoreManager.addHandler(new CreepState("proto").className(), impl.creepState);
@@ -44,7 +45,7 @@ function scoreWork(state: CreepState): number {
     return 0;
   }
 
-  return _.sum(creep.body, (s: BodyPartDefinition) => s.type === WORK ? 1 : 0);
+  return WORK_WEIGHT * _.sum(creep.body, (s: BodyPartDefinition) => s.type === WORK ? 1 : 0);
 }
 
 const impl = {

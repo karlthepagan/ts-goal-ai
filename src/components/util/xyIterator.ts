@@ -11,14 +11,14 @@ import * as F from "../functions";
  *  15 L  6  5  4  F
  *  14 K  J  I  H  G
  */
-export default class XYIterator implements Iterator<F.XY> {
+export default class XYIterator<T extends F.XY> implements Iterator<T> {
   public y: number;
   public x: number;
   public _ring = 0;
   private _dir = TOP; // dir of next step
   private _step = 2;
 
-  constructor(xy: F.XY) { // TODO borders
+  constructor(xy: T) { // TODO borders
     this.x = xy.x;
     this.y = xy.y + 1; // debit y's position accounting for first step
   }
@@ -30,7 +30,7 @@ export default class XYIterator implements Iterator<F.XY> {
     return this._ring;
   }
 
-  public next(): IteratorResult<F.XY> {
+  public next(): IteratorResult<T> {
     F.dirTransform(this, this._dir);
 
     --this._step;
@@ -61,6 +61,6 @@ export default class XYIterator implements Iterator<F.XY> {
     return {
       done: false,
       value: {x: this.x, y: this.y},
-    };
+    } as IteratorResult<T>;
   }
 }

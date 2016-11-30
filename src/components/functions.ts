@@ -330,6 +330,12 @@ export function lockAnd<T extends State<any>, U>(s: T, f: (s: T) => U) {
   return result;
 }
 
+export function str(x: any, f: (x: any) => string|number): {} {
+  return {
+    toString: () => f(x),
+  };
+}
+
 export function dummy() {
   log.debug("don't warn me about unused imports");
 }

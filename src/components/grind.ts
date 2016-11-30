@@ -8,6 +8,7 @@ import {scoreManager} from "./score/scoreSingleton";
 import {SCORE_KEY} from "./score/scoreManager";
 import State from "./state/abstractState";
 import {DISTANCE_WEIGHT} from "./score/stateScoreProvider";
+import PositionIterable from "./util/positionIterable";
 
 export function grind(state: GlobalState) {
   const commands = state.memory() as Commands;
@@ -35,22 +36,111 @@ export function grind(state: GlobalState) {
   const tasked: { [creepIdToSourceId: string]: string } = {};
 
   if (!commands.pause) {
-    doSpawn(state, opts);
+    // doSpawn(state, opts);
 
     doHarvest(state, creeps, tasked);
 
-    doIdle(state, opts, creeps, tasked);
+    // doIdle(state, opts, creeps, tasked);
   }
 
   commands.last = Game.time;
 }
 
-function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[], tasked: any) {
+function energy(creep: Creep) {
+  return F.elvis(creep.carry.energy, 0);
+}
+
+export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[], tasked: any) {
   state = state;
   opts = opts;
   tasked = tasked;
 
+  // _.chain(creeps).compact().map((creep: Creep) => {
+  //   // keep moving
+  //   if (creep.memory._move !== undefined) {
+  //     const dest = creep.memory._move.dest;
+  //     creep.moveTo(new RoomPosition(dest.x, dest.y, dest.name));
+  //
+  //     creeps[creeps.indexOf(creep)] = null;
+  //   }
+  // }).value();
+
+  _.chain(creeps).compact().sortBy(energy).map((creep: Creep) => {
+
+    const endY = creep.pos.y - 4;
+    const itr = new PositionIterable(creep.pos);
+    itr.next();
+    let pos = itr.next().value;
+    while (pos.y > endY) {
+      for (let res of pos.look()) {
+        switch (res.type) {
+          case LOOK_CREEPS:
+            const other = res.creep as Creep;
+            if (CreepState.left(other).memory().working !== undefined) {
+              other.transfer(creep, RESOURCE_ENERGY);
+              continue;
+            } else {
+              other.transfer(creep, RESOURCE_ENERGY, Math.ceil(other.carry.energy * 0.2));
+              continue;
+            }
+
+          case LOOK_ENERGY:
+            creep.pickup(res.energy as Resource);
+            break;
+
+          default:
+            continue;
+        }
+
+        creeps[creeps.indexOf(creep)] = null;
+      }
+    }
+    return creep;
+  }).value();
+
+  _.chain(creeps).compact().sortBy(energy).reverse().map((creep: Creep) => {
+    // look for energy to take
+    const endY = creep.pos.y - 4;
+    const itr = new PositionIterable(creep.pos);
+    itr.next();
+    let pos = itr.next().value;
+    while (pos.y > endY) {
+      for (let res of pos.look()) {
+        switch (res.type) {
+          case LOOK_CONSTRUCTION_SITES:
+            creep.build(res.constructionSite as ConstructionSite);
+            if (!creep.pos.isNearTo(pos)) {
+              creep.move(creep.pos.getDirectionTo(pos));
+            }
+            break;
+
+          case LOOK_STRUCTURES:
+            const structure = res.structure as Structure;
+            if (structure.hits < structure.hitsMax) {
+              creep.repair(structure);
+              break;
+            }
+
+          // case LOOK_STRUCTURES: TODO transfer out
+          //
+          //   switch (structure.structureType) {
+          //     case STRUCTURE_CONTAINER:
+          //   }
+          //   creep.build(res.constructionSite as ConstructionSite);
+          //   break;
+
+          default:
+            continue;
+        }
+
+        creeps[creeps.indexOf(creep)] = null;
+      }
+    }
+    return creep;
+  }).value();
+
   _.chain(creeps).compact().map((creep: Creep) => {
+    // dunno
     creep.say("?", false);
   }).value();
 }
@@ -118,15 +208,9 @@ function isTrue(prev: number, curr: any) {
 // TODO - you don't need _.chain, lodash says that flow/flowRight avoids intermediates / "shortcut fusion" even with FP
 const compactSize = _.curryRight(_.foldl, 3)(0)(isTrue) as (x: any[]) => number;
 
-function str(x: any, f: (x: any) => string|number): {} {
-  return {
-    toString: () => f(x),
-  };
-}
-
-function doHarvest(state: GlobalState,
-                   creeps: (Creep|null)[],
-                   tasked: { [creepIdToSourceId: string]: string }): (SourceState|null)[] {
+export function doHarvest(state: GlobalState,
+                          creeps: (Creep|null)[],
+                          tasked: { [creepIdToSourceId: string]: string }): (SourceState|null)[] {
 
   // TODO compact<SourceState> should remove null|undefined
   return state.sources()
@@ -163,19 +247,20 @@ function doHarvest(state: GlobalState,
       do {
         // allocate worker, find closest, TODO prefer role=sourcer? look up bot compat?
 
-        log.debug(str(creeps, compactSize), "left");
-        let candidates = _.chain(creeps).compact().map(CreepState.right).filter((cs: CreepState) => {
-          const creep = cs.subject();
+        log.debug(F.str(creeps, compactSize), "left");
+        let candidates = _.chain(creeps).compact().filter((creep: Creep) => {
           const taskId = tasked[creep.id];
           if (taskId !== undefined && taskId !== source.getId()) {
-            log.warning("already tasked", cs);
+            log.warning("already tasked", creep);
             return false;
           }
           if (failed[creep.id] !== undefined) {
             log.info("failed:", failed[creep.id], creep.name);
             return false;
           }
-          const working = CreepState.left(creep).memory().working;
+          return true;
+        }).map(CreepState.build).filter((cs: CreepState) => {
+          const working = cs.memory().working;
           if (working !== undefined && working !== source.getId()) {
             // log.debug("already working", creep.name);
             return false;
@@ -201,10 +286,8 @@ function doHarvest(state: GlobalState,
         creep.lock();
         if (creep.memory().working !== undefined) {
           // free current source
-          const oldsite: string[] = SourceState.vleft(creep.memory().working).memory("workers", true);
-          delete oldsite[oldsite.indexOf(creep.getId())];
+          freeCreep(creep);
         }
-        creep.memory().working = source.getId();
 
         harvested = tryHarvest(creep, source, pos, site, tasked, failed);
         creep.release();
@@ -245,7 +328,7 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
   }
 }
 
-function doSpawn(state: GlobalState, commands: Options) {
+export function doSpawn(state: GlobalState, commands: Options) {
   commands = commands;
 
   state.eachSpawn((spawn) => {
@@ -287,6 +370,8 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
       default:
         // TODO pathing when range > 1
         if (creep.fatigue === 0) {
+          creep.drop(RESOURCE_ENERGY); // DROP ENERGY before moving TODO conditional
+
           const moveResult = creep.moveTo(pos);
           if (moveResult !== 0) {
             log.debug("move failed", sourceState, "moveTo=", moveResult, creepState);
@@ -297,17 +382,35 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
         }
     }
 
-    sourceState.memory("workers", true)[ site ] = creep.id;
+    allocate(sourceState, site, creep);
     tasked[creep.id] = sourceState.getId();
     // log.debug("tasked", creep.id, "to", sourceState.getId());
     return true;
   } else {
     // TODO release task and send another worker
     log.info("died?", creepState);
-    delete sourceState.memory("workers", true)[ site ];
+    freeSite(sourceState, site);
     failed[creepState.getId()] = sourceState.getId();
     return false;
   }
+}
+
+function allocate(source: SourceState, site: number, creep: Creep) {
+  CreepState.left(creep).memory().working = source.getId();
+  source.memory("workers", true)[ site ] = creep.id;
+}
+
+function freeSite(sourceState: SourceState, site: number) {
+  const workers: string[] = sourceState.memory("workers", true);
+  const creep = CreepState.vleft(workers[ site ]);
+
+  delete creep.memory().working;
+  delete workers[ site ];
+}
+
+function freeCreep(creep: CreepState) {
+  const oldsite: string[] = SourceState.vleft(creep.memory().working).memory("workers", true);
+  delete oldsite[oldsite.indexOf(creep.getId())];
 }
 
 function resetAssignments(state: GlobalState, shuffled: boolean) {
