@@ -17,6 +17,7 @@ type StateScoreImpl<T> = { [key: string]: ScoreHandler<T, GlobalState> };
 // TODO distance weight in genome
 // TODO distance weight relates to creep movement capability
 export const DISTANCE_WEIGHT = 9;
+export const FATIGUE_WEIGHT = 4;
 
 export default function registerStateScoreProvider() {
   scoreManager.addHandler(new CreepState("proto").className(), impl.creepState);
@@ -29,22 +30,21 @@ export default function registerStateScoreProvider() {
 }
 
 function scoreMove(state: CreepState, score: ScoreManager<GlobalState>, time: number): number {
-  state = state;
   score = score;
   time = time;
 
-  // TODO calculate X / log2 fatigue body ratio (so that 1:1 gets score of 0.5, 1:3 gets score of 1)
-  // TODO include how full creep's carry is!
-  return 0;
+  // TODO get context from room and score move accordingly
+  return FATIGUE_WEIGHT / state.moveFatigue(2);
 }
 
-function scoreWork(state: CreepState, score: ScoreManager<GlobalState>, time: number): number {
-  state = state;
-  score = score;
-  time = time;
+function scoreWork(state: CreepState): number {
 
-  // TODO count number of living work parts
-  return 0;
+  const creep = state.subject();
+  if (creep === undefined) {
+    return 0;
+  }
+
+  return _.sum(creep.body, (s: BodyPartDefinition) => s.type === WORK ? 1 : 0);
 }
 
 const impl = {

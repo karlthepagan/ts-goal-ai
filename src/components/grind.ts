@@ -128,21 +128,6 @@ function doHarvest(state: GlobalState,
                    creeps: (Creep|null)[],
                    tasked: { [creepIdToSourceId: string]: string }): (SourceState|null)[] {
 
-  // TODO well shit
-  /*
-   TypeError: Cannot read property '1' of undefined
-   state.sources.groupBy.pairs.filter.sortBy.map.flatten.map (src/components/grind.ts:189)
-   at arrayMap (E:\SteamLibrary\steamapps\common\Screeps\server\node_modules\lodash\index.js:1406:25)
-   at map (E:\SteamLibrary\steamapps\common\Screeps\server\node_modules\lodash\index.js:6710:14)
-   at interceptor (E:\SteamLibrary\steamapps\common\Screeps\server\node_modules\lodash\index.js:12240:26)
-   at thru (E:\SteamLibrary\steamapps\common\Screeps\server\node_modules\lodash\index.js:5927:26)
-   at baseWrapperValue (E:\SteamLibrary\steamapps\common\Screeps\server\node_modules\lodash\index.js:2768:30)
-   at LazyWrapper.lazyValue [as value] (E:\SteamLibrary\steamapps\common\Screeps\server\node_modules\lodash\index.js:
-   at baseWrapperValue (E:\SteamLibrary\steamapps\common\Screeps\server\node_modules\lodash\index.js:2761:25)
-   at LodashWrapper.wrapperValue (E:\SteamLibrary\steamapps\common\Screeps\server\node_modules\lodash\index.js:6124:14)
-   doHarvest (src/components/grind.ts:214)
-   */
-
   // TODO compact<SourceState> should remove null|undefined
   return state.sources()
       .groupBy(tenergyScore).pairs().filter((it) => +it[0] > 0).sortBy(0).map(1).flatten()
@@ -198,6 +183,11 @@ function doHarvest(state: GlobalState,
           return true;
         }).groupBy(energyScore).pairs().sortBy(0).last().valueOf() as any[];
         // first score by fitness (body + distance)
+
+        if (candidates === undefined) {
+          // no creeps to harvest this source!
+          return source;
+        }
 
         // log.debug(candidates[1].length, "creep candidates score:", candidates[0]);
         // then tie-break by range to site
