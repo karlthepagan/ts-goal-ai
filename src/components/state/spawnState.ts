@@ -1,8 +1,7 @@
 import State from "./abstractState";
-import {log} from "../support/log";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
-import GlobalState from "./globalState";
 import CreepState from "./creepState";
+import GlobalState from "./globalState";
 // import * as F from "../functions";
 
 export default class SpawnState extends State<Spawn> {
@@ -28,12 +27,15 @@ export default class SpawnState extends State<Spawn> {
     if (typeof result === "number") {
       return result as number;
     }
+    const creepName = result as string;
 
     // TODO register per class?
     State.events.schedule(time)
-      .onSpawn(this.getId(), i => i.setMemory, mem)
-      .onSpawn(result as string, CreepState.vright)
-      .onSpawn(undefined);
+      .onSpawn(this, mem)
+      .onSpawn(CreepState.vright(creepName))
+      .onSpawn(GlobalState.game());
+
+    return 0;
   }
 
   protected _accessAddress() {

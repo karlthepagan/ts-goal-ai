@@ -1,10 +1,12 @@
 import {log} from "../support/log";
 import * as F from "../functions";
 import {SchedulableRegistry, EventRegistry} from "./index";
+import Named from "../named";
 
 const ON_SPAWN = "spawn";
 
 interface Tick {
+  spawn: {name: string, id: string, args: any[]}[];
 }
 
 interface EventMemory {
@@ -20,14 +22,16 @@ interface EventMemory {
 }
 
 class ScheduleManager implements SchedulableRegistry {
-  private _tick: any;
+  private _tick: Tick;
 
-  constructor(tick: any) {
+  constructor(tick: Tick) {
     this._tick = tick;
   }
 
-  public onSpawn<T>(instance: T, callback?: (i: T, args: any[]) => void, ...args: any[]) {
-    F.expand([ON_SPAWN], this._tick, true).push([instance, callback, args]);
+  public onSpawn<T extends Named>(instance: T, ...args: any[]) {
+    const name = instance.className();
+    const id = instance.getId();
+    F.expand([ON_SPAWN], this._tick, true).push({name, id, args});
     return this;
   }
 }
@@ -47,7 +51,7 @@ export default class EventManager implements EventRegistry {
     let last = this._memory.lastTick;
 
     while (last < time) {
-      let events = this._memory.timeline[last + 1];
+      let events = this._memory.timeline[last + 1 + ""];
       events = events;
       // TODO callbacks
 

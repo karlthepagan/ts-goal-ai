@@ -1,8 +1,10 @@
-interface SchedulableRegistry {
-  onSpawn<T>(instanceId: string, callback?: (i: T, args: any[]) => void, ...args: any[]): SchedulableRegistry;
+import Named from "../named";
+
+export interface SchedulableRegistry {
+  onSpawn<T extends Named>(instance: T, ...args: any[]): SchedulableRegistry;
 }
 
-interface EventRegistry {
+export interface EventRegistry {
   schedule(relativeTime: number): SchedulableRegistry;
 }
 export default EventRegistry;
