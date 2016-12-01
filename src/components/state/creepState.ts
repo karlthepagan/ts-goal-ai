@@ -159,9 +159,6 @@ export default class CreepState extends State<Creep> {
   protected static _vleft: CreepState = new CreepState("CreepStateVirtualLeft");
   protected static _vright: CreepState = new CreepState("CreepStateVirtualRight");
 
-  protected _accessAddress = ["creeps"];
-  protected _indexAddress = ["index", "creeps"];
-
   public className() {
     return "CreepState";
   }
@@ -249,6 +246,14 @@ export default class CreepState extends State<Creep> {
 
     // TODO is this valid for move penalty?
     return Math.ceil(this.maxMovePenalty(terrain) * CARRY_RECIPROCAL) + this.minMoveFatigue(terrain);
+  }
+
+  protected _accessAddress() {
+    return ["creeps"];
+  }
+
+  protected _indexAddress() {
+    return ["index", "creeps"];
   }
 
   protected _visionSource() {

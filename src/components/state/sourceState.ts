@@ -25,9 +25,6 @@ export default class SourceState extends State<Source> {
   private static _vleft: SourceState = new SourceState("SourceStateVirtualLeft");
   private static _vright: SourceState = new SourceState("SourceStateVirtualRight");
 
-  protected _accessAddress = ["sources"];
-  protected _indexAddress = ["index", "sources"];
-
   public className() {
     return "SourceState";
   }
@@ -48,6 +45,14 @@ export default class SourceState extends State<Source> {
     return (this._memory.nodes as number[]).map(F.dirToPosition(this.subject().pos));
   }
 
+  protected _accessAddress() {
+    return ["sources"];
+  }
+
+  protected _indexAddress() {
+    return ["index", "sources"];
+  }
+
   protected init(rootMemory: any): boolean {
     if (super.init(rootMemory)) {
       if (!this.isRemote()) {
@@ -62,3 +67,8 @@ export default class SourceState extends State<Source> {
     return false;
   }
 }
+
+/*
+behaviors:
+
+ */

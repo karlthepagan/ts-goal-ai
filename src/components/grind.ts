@@ -13,7 +13,7 @@ import LookForIterator from "./util/lookForIterator";
 import {FindCallback} from "./util/lookForIterator";
 import SpawnState from "./state/spawnState";
 
-const cachedIdleActions: { [id: string]: FindCallback } = {};
+const cachedIdleActions: { [id: string]: FindCallback<any> } = {};
 
 export function grind(state: GlobalState) {
   const commands = state.memory() as Commands;
@@ -89,32 +89,33 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
 
     LookForIterator.search<Creep>(creep.pos, 3, creep, [{
       key: LOOK_CREEPS,
-      value: (other: Creep, range: number) => {
+      value: (other: Creep, range: number, caller: Creep) => {
         if (range < 0) {
           return true;
         }
         if (CreepState.left(other).memory().working !== undefined) {
-          const result = other.transfer(this, RESOURCE_ENERGY);
+          const result = other.transfer(caller, RESOURCE_ENERGY);
           log.debug("transfer", result);
         } else if (energy(other) > 5) {
-          const result = other.transfer(this, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
+          const result = other.transfer(caller, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
           log.debug("transfer", result);
         }
         return true;
       },
     }, {
       key: LOOK_ENERGY,
-      value: (resource: Resource) => {
-        if (this.pickup(resource) === 0) {
-          this.say("🔆", false);
+      value: (resource: Resource, range: number, caller: Creep) => {
+        range = range;
+        if (caller.pickup(resource) === 0) {
+          caller.say("🔆", false);
           return false;
         }
         return true;
       },
-    }], (found: any, callback: FindCallback) => {
+    }], (found: any, callback: FindCallback<Creep>) => {
 
       callback.target = found.id as string;
-      cachedIdleActions[creep.id] = callback;
+      cachedIdleActions[creep.id] = callback as FindCallback<any>;
       creeps[creeps.indexOf(creep)] = null;
       return false;
     });
@@ -125,7 +126,7 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
   // spend energy
   _.chain(creeps).compact().filter(energyEmpty(10)).sortBy(energy).reverse().map((creep: Creep) => {
 
-    LookForIterator.search(creep.pos, 3, creep, [{
+    LookForIterator.search<Creep>(creep.pos, 3, creep, [{
       key: LOOK_CONSTRUCTION_SITES,
       value: (site: ConstructionSite) => {
         if (!site.my) {
@@ -149,10 +150,10 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
         }
         return true;
       },
-    }], (found: any, callback: FindCallback) => {
+    }], (found: any, callback: FindCallback<Creep>) => {
 
       callback.target = found;
-      cachedIdleActions[creep.id] = callback;
+      cachedIdleActions[creep.id] = callback as FindCallback<any>;
       creeps[creeps.indexOf(creep)] = null;
       return false;
     });
@@ -215,15 +216,15 @@ export function doTransfers(state: GlobalState,
       // energy hungry, feed me!
       LookForIterator.search<OwnedStructure>(spawn.pos, 3, spawn, [{
         key: LOOK_CREEPS,
-        value: (other: Creep, range: number) => {
+        value: (other: Creep, range: number, caller: OwnedStructure) => {
           if (range < 0) {
             return true;
           }
           if (CreepState.left(other).memory().working !== undefined) {
-            const result = other.transfer(this, RESOURCE_ENERGY);
+            const result = other.transfer(caller, RESOURCE_ENERGY);
             log.debug("transfer", result);
           } else if (energy(other) > 5) {
-            const result = other.transfer(this, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
+            const result = other.transfer(caller, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
             log.debug("transfer", result);
           }
           return true;

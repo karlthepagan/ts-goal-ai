@@ -28,14 +28,14 @@ function pad(num: any, size: number) {
 }
 
 function _register(state: any, rootMemory: any): boolean {
-  if (state._indexAddress === undefined) {
+  if (state._indexAddress() === undefined) {
     return false;
   }
   if (state._id === undefined) {
     return false;
   }
 
-  let memory = F.expand(state._indexAddress, rootMemory, true) as string[];
+  let memory = F.expand(state._indexAddress(), rootMemory, true) as string[];
 
   memory.push(state._id);
 
@@ -43,9 +43,9 @@ function _register(state: any, rootMemory: any): boolean {
 }
 
 function _access(state: any, rootMemory: any): any {
-  // log.debug(state, "addressing", ...state._accessAddress);
+  // log.debug(state, "addressing", ...state._accessAddress());
 
-  let memory = F.expand(state._accessAddress, rootMemory);
+  let memory = F.expand(state._accessAddress(), rootMemory);
 
   if (state._id === undefined) {
     return memory;
@@ -70,9 +70,6 @@ function _access(state: any, rootMemory: any): any {
  *  right - return from functions
  */
 abstract class State<T> implements Named {
-  protected _accessAddress: string[];
-  protected _indexAddress: string[]|undefined;
-
   /**
    * describes flywight handedness for debugging
    */
@@ -183,6 +180,9 @@ abstract class State<T> implements Named {
   public toString() {
     return "[" + this._name + " " + this._id + " " + this.guid() + "]";
   }
+
+  protected abstract _accessAddress(): string[];
+  protected abstract _indexAddress(): string[]|undefined;
 
   protected _visionSource() {
     return false;

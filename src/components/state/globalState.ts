@@ -43,9 +43,6 @@ export default class GlobalState extends State<Game> {
 
   private static _game: GlobalState;
 
-  protected _accessAddress = [];
-  protected _indexAddress = undefined;
-
   public className() {
     return "GlobalState";
   }
@@ -123,6 +120,14 @@ export default class GlobalState extends State<Game> {
     return _.map(this._memory.index.minerals, (id: string) => {
       return f(MineralState.vright(id));
     });
+  }
+
+  protected _accessAddress() {
+    return [];
+  }
+
+  protected _indexAddress() {
+    return undefined;
   }
 
   protected _getId(subject: Game) {

@@ -25,9 +25,6 @@ export default class MineralState extends State<Mineral> {
   private static _vleft: MineralState = new MineralState("MineralStateVirtualLeft");
   private static _vright: MineralState = new MineralState("MineralStateVirtualRight");
 
-  protected _accessAddress = ["minerals"];
-  protected _indexAddress = ["index", "minerals"];
-
   public className() {
     return "MineralState";
   }
@@ -46,6 +43,14 @@ export default class MineralState extends State<Mineral> {
 
   public nodesAsPos(): RoomPosition[] {
     return (this._memory.nodes as number[]).map(F.dirToPosition(this.subject().pos));
+  }
+
+  protected _accessAddress() {
+    return ["minerals"];
+  }
+
+  protected _indexAddress() {
+    return ["index", "minerals"];
   }
 
   protected init(rootMemory: any): boolean {

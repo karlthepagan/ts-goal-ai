@@ -32,6 +32,14 @@ export default class EnemyCreepState extends CreepState {
     return "CreepState";
   }
 
+  protected _accessAddress() {
+    return ["enemies"];
+  }
+
+  protected _indexAddress() {
+    return ["index", "enemies"];
+  }
+
   protected _visionSource() {
     return false;
   }

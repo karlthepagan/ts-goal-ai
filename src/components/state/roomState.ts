@@ -32,9 +32,6 @@ export default class RoomState extends State<Room> {
   private static _vleft: RoomState = new RoomState("RoomStateVirtualLeft");
   private static _vright: RoomState = new RoomState("RoomStateVirtualRight");
 
-  protected _accessAddress = ["rooms"];
-  protected _indexAddress = ["index", "rooms"];
-
   public className() {
     return "RoomState";
   }
@@ -61,6 +58,14 @@ export default class RoomState extends State<Room> {
       .map(MineralState.vright)
       .map(f)
       .value();
+  }
+
+  protected _accessAddress() {
+    return ["rooms"];
+  }
+
+  protected _indexAddress() {
+    return ["index", "rooms"];
   }
 
   protected _getId(subject: Room) {

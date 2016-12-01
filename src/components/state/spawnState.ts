@@ -15,9 +15,6 @@ export default class SpawnState extends State<Spawn> {
   private static _left: SpawnState = new SpawnState("SpawnStateLeft");
   private static _right: SpawnState = new SpawnState("SpawnStateRight");
 
-  protected _accessAddress = ["spawns"];
-  protected _indexAddress = ["index", "spawns"];
-
   public className() {
     return "SpawnState";
   }
@@ -28,6 +25,14 @@ export default class SpawnState extends State<Spawn> {
     delete this._memory.nodes;
 
     log.debug("delete", this);
+  }
+
+  protected _accessAddress() {
+    return ["spawns"];
+  }
+
+  protected _indexAddress() {
+    return ["index", "spawns"];
   }
 
   protected _visionSource() {

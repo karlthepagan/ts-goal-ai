@@ -1,13 +1,16 @@
 import PositionIterable from "./positionIterable";
-import ListIterator = _.ListIterator;
 
-export type FindCallback = {key: string, value?: ListIterator<any, boolean>, target?: string};
+export interface FindCallback<T> {
+  key: string;
+  value?: (value: any, index: number, thisArg?: T) => boolean;
+  target?: string;
+}
 
 export default class LookForIterator<T> implements Iterable<boolean>, Iterator<boolean> {
   public static search<T>(pos: RoomPosition, maxDistance: number,
                           thisArg: undefined|T,
-                          findCallbacks: FindCallback[], // TODO everything past distance is optional
-                          callbackFailure?: (found: any, callback?: FindCallback) => boolean ) {
+                          findCallbacks: FindCallback<T>[], // TODO everything past distance is optional
+                          callbackFailure?: (found: any, callback?: FindCallback<T>) => boolean ) {
     if (_.values(findCallbacks).length === 0) {
       return;
     }
@@ -21,14 +24,14 @@ export default class LookForIterator<T> implements Iterable<boolean>, Iterator<b
   private _start: RoomPosition;
   private _itr: PositionIterable;
   private _minY: number;
-  private _findCallbacks: FindCallback[];
+  private _findCallbacks: FindCallback<T>[];
   private _thisArg: undefined|T;
-  private _callbackFailure?: (found: any, callback?: FindCallback) => boolean;
+  private _callbackFailure?: (found: any, callback?: FindCallback<T>) => boolean;
 
   constructor(pos: RoomPosition, maxDistance: number,
               thisArg: undefined|T,
-              findCallbacks: FindCallback[],
-              callbackFailure?: (found: any, callback?: FindCallback) => boolean ) {
+              findCallbacks: FindCallback<T>[],
+              callbackFailure?: (found: any, callback?: FindCallback<T>) => boolean ) {
     this._start = pos;
     this._itr = new PositionIterable(pos);
     this._minY = pos.y - maxDistance - 1;
@@ -49,12 +52,12 @@ export default class LookForIterator<T> implements Iterable<boolean>, Iterator<b
       const res = pos.lookFor(find.key);
       if (find.value && this._callbackFailure) {
         for (const found of res) {
-          const callbackSuccess = find.value.call(this._thisArg, found, dist, []);
+          const callbackSuccess = find.value(found, dist, this._thisArg);
           doContinue = doContinue && (callbackSuccess || this._callbackFailure(found, find));
         }
       } else if (find.value) {
         for (const found of res) {
-          const callbackSuccess = find.value.call(this._thisArg, found, dist, []);
+          const callbackSuccess = find.value(found, dist, this._thisArg);
           doContinue = doContinue && callbackSuccess;
         }
       } else if (this._callbackFailure) {
