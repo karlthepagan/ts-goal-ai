@@ -220,9 +220,11 @@ export function doTransfers(state: GlobalState,
             return true;
           }
           if (CreepState.left(other).memory().working !== undefined) {
-            other.transfer(this, RESOURCE_ENERGY);
+            const result = other.transfer(this, RESOURCE_ENERGY);
+            log.debug("transfer", result);
           } else if (energy(other) > 5) {
-            other.transfer(this, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
+            const result = other.transfer(this, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
+            log.debug("transfer", result);
           }
           return true;
         },
