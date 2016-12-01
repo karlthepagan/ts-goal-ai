@@ -2,6 +2,7 @@ import {log} from "../support/log";
 import * as F from "../functions";
 import * as Config from "../../config/config";
 import Named from "../named";
+import {botMemory} from "../../config/config";
 
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
@@ -42,13 +43,17 @@ function _register(state: any, rootMemory: any): boolean {
   return true;
 }
 
-function _access(state: any, rootMemory: any): any {
+function _access(state: any, rootMemory: any, writeValue?: any): any {
   // log.debug(state, "addressing", ...state._accessAddress());
 
   let memory = F.expand(state._accessAddress(), rootMemory);
 
   if (state._id === undefined) {
     return memory;
+  }
+
+  if (writeValue !== undefined) {
+    return memory[state._id] = writeValue;
   }
 
   if (memory[state._id] === undefined) {
@@ -179,6 +184,10 @@ abstract class State<T> implements Named {
 
   public toString() {
     return "[" + this._name + " " + this._id + " " + this.guid() + "]";
+  }
+
+  public setMemory(mem: any) {
+    this._memory = _access(this, botMemory(), mem);
   }
 
   protected abstract _accessAddress(): string[];

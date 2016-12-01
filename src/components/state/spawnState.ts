@@ -19,12 +19,10 @@ export default class SpawnState extends State<Spawn> {
     return "SpawnState";
   }
 
-  public delete() {
-    super.delete();
+  public createCreep(body: string[], name?: string, mem?: any) {
+    this.subject().createCreep(body, name);
 
-    delete this._memory.nodes;
-
-    log.debug("delete", this);
+    // TODO schedule(body.length * 3).onSpawn(this, j => j.setMemory, mem)
   }
 
   protected _accessAddress() {
