@@ -1,6 +1,8 @@
 import State from "./abstractState";
 import {log} from "../support/log";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
+import GlobalState from "./globalState";
+import CreepState from "./creepState";
 // import * as F from "../functions";
 
 export default class SpawnState extends State<Spawn> {
@@ -19,10 +21,19 @@ export default class SpawnState extends State<Spawn> {
     return "SpawnState";
   }
 
-  public createCreep(body: string[], name?: string, mem?: any) {
-    this.subject().createCreep(body, name);
+  public createCreep(body: string[], name?: string, mem?: any): number {
+    const result = this.subject().createCreep(body, name);
+    const time = body.length * 3;
 
-    // TODO schedule(body.length * 3).onSpawn(this, j => j.setMemory, mem)
+    if (typeof result === "number") {
+      return result as number;
+    }
+
+    // TODO register per class?
+    State.events.schedule(time)
+      .onSpawn(this.getId(), i => i.setMemory, mem)
+      .onSpawn(result as string, CreepState.vright)
+      .onSpawn(undefined);
   }
 
   protected _accessAddress() {
@@ -35,6 +46,10 @@ export default class SpawnState extends State<Spawn> {
 
   protected _visionSource() {
     return true;
+  }
+
+  protected _getId(subject: Spawn) {
+    return subject.name;
   }
 
   protected init(rootMemory: any): boolean {

@@ -260,6 +260,10 @@ export default class CreepState extends State<Creep> {
     return true;
   }
 
+  protected _getId(subject: Creep) {
+    return subject.name;
+  }
+
   protected init(rootMemory: any): boolean {
     if (super.init(rootMemory)) {
       if (this.resolve()) {

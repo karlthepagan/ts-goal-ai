@@ -20,7 +20,7 @@ export function grind(state: GlobalState) {
   const opts = state.memory("config") as Options;
 
   if (commands.shuffle || commands.last === undefined
-      || (Game.time - commands.last) > F.elvis(opts.failedTicksToShuffle, 5)) {
+      || (Game.time - commands.last) > F.elvis(opts.failedTicksToShuffle, 5)) { // TODO integrate into event manager
     resetAssignments(state, commands.shuffle);
     delete commands.shuffle;
   }
@@ -388,12 +388,12 @@ export function doSpawn(state: GlobalState, commands: Options) {
     const spawn = spawnState.subject();
 
     if (spawn.room.energyAvailable >= 200) {
-      spawnCreeps(state, spawn);
+      spawnCreeps(state, spawnState);
     }
   }).value();
 }
 
-function spawnCreeps(state: GlobalState, spawn: Spawn) {
+function spawnCreeps(state: GlobalState, spawn: SpawnState) {
   state = state;
 
   // log.info("I want to spawn creeps!", spawn);
