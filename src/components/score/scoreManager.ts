@@ -8,7 +8,7 @@ export const TIME_KEY = "time";
 
 function defaultScore(state: any, score: ScoreManager<any>, time: number) {
   const memory = state.memory(SCORE_KEY);
-  return _.sum(score.getMetricKeys(state), (key) => {
+  return _.sum(score.getMetricKeys(state), key => {
     return score.getOrRescore(state, memory, key, time);
   });
 }
@@ -68,10 +68,10 @@ export default class ScoreManager<C> {
     return value;
   }
 
-  // TODO higher order sum? call like: return score.sum("venergy", state.eachSource, (s) => s.memory(SCORE_KEY));
+  // TODO higher order sum? call like: return score.sum("venergy", state.eachSource, s => s.memory(SCORE_KEY));
   // public sum<T extends Named>(time: number, metric: string,
   // visitor: (callback: (o: T) => any) => any[], mem: (o: T) => any): number {
-  //   return _(visitor((object) => {
+  //   return _(visitor(object => {
   //     return this.getOrRescore(object, mem(object), time, metric);
   //   })).sum();
   // }

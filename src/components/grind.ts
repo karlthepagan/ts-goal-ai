@@ -8,7 +8,12 @@ import {scoreManager} from "./score/scoreSingleton";
 import {SCORE_KEY} from "./score/scoreManager";
 import State from "./state/abstractState";
 import {DISTANCE_WEIGHT} from "./score/stateScoreProvider";
-import PositionIterable from "./util/positionIterable";
+import MemoIterator = _.MemoIterator;
+import LookForIterator from "./util/lookForIterator";
+import {FindCallback} from "./util/lookForIterator";
+import SpawnState from "./state/spawnState";
+
+const cachedIdleActions: { [id: string]: FindCallback } = {};
 
 export function grind(state: GlobalState) {
   const commands = state.memory() as Commands;
@@ -36,24 +41,38 @@ export function grind(state: GlobalState) {
   const tasked: { [creepIdToSourceId: string]: string } = {};
 
   if (!commands.pause) {
-    // doSpawn(state, opts);
+    doSpawn(state, opts);
+
+    doTransfers(state, creeps, tasked);
 
     doHarvest(state, creeps, tasked);
 
-    // doIdle(state, opts, creeps, tasked);
+    doIdle(state, opts, creeps, tasked);
   }
 
   commands.last = Game.time;
-}
-
-function energy(creep: Creep) {
-  return F.elvis(creep.carry.energy, 0);
 }
 
 export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[], tasked: any) {
   state = state;
   opts = opts;
   tasked = tasked;
+
+  _.chain(creeps).compact().map((creep: Creep) => {
+    const action = cachedIdleActions[creep.id];
+    if (action !== undefined) {
+      let result = false;
+      if (action.value !== undefined) {
+        const target = Game.getObjectById(action.target as string);
+        result = target === undefined ? false : action.value.bind(creep)(target);
+      }
+      if (result) {
+        delete cachedIdleActions[creep.id];
+      } else {
+        creeps[creeps.indexOf(creep)] = null;
+      }
+    }
+  });
 
   // _.chain(creeps).compact().map((creep: Creep) => {
   //   // keep moving
@@ -65,77 +84,79 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
   //   }
   // }).value();
 
-  _.chain(creeps).compact().sortBy(energy).map((creep: Creep) => {
+  // gather energy
+  _.chain(creeps).compact().filter(energyFull(0.8)).sortBy(energy).map((creep: Creep) => {
 
-    const endY = creep.pos.y - 4;
-    const itr = new PositionIterable(creep.pos);
-    itr.next();
-    let pos = itr.next().value;
-    while (pos.y > endY) {
-      for (let res of pos.look()) {
-        switch (res.type) {
-          case LOOK_CREEPS:
-            const other = res.creep as Creep;
-            if (CreepState.left(other).memory().working !== undefined) {
-              other.transfer(creep, RESOURCE_ENERGY);
-              continue;
-            } else {
-              other.transfer(creep, RESOURCE_ENERGY, Math.ceil(other.carry.energy * 0.2));
-              continue;
-            }
-
-          case LOOK_ENERGY:
-            creep.pickup(res.energy as Resource);
-            break;
-
-          default:
-            continue;
+    LookForIterator.search<Creep>(creep.pos, 3, creep, [{
+      key: LOOK_CREEPS,
+      value: (other: Creep, range: number) => {
+        if (range < 0) {
+          return true;
         }
+        if (CreepState.left(other).memory().working !== undefined) {
+          const result = other.transfer(this, RESOURCE_ENERGY);
+          log.debug("transfer", result);
+        } else if (energy(other) > 5) {
+          const result = other.transfer(this, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
+          log.debug("transfer", result);
+        }
+        return true;
+      },
+    }, {
+      key: LOOK_ENERGY,
+      value: (resource: Resource) => {
+        if (this.pickup(resource) === 0) {
+          this.say("🔆", false);
+          return false;
+        }
+        return true;
+      },
+    }], (found: any, callback: FindCallback) => {
 
-        creeps[creeps.indexOf(creep)] = null;
-      }
-    }
+      callback.target = found.id as string;
+      cachedIdleActions[creep.id] = callback;
+      creeps[creeps.indexOf(creep)] = null;
+      return false;
+    });
+
     return creep;
   }).value();
 
-  _.chain(creeps).compact().sortBy(energy).reverse().map((creep: Creep) => {
-    // look for energy to take
-    const endY = creep.pos.y - 4;
-    const itr = new PositionIterable(creep.pos);
-    itr.next();
-    let pos = itr.next().value;
-    while (pos.y > endY) {
-      for (let res of pos.look()) {
-        switch (res.type) {
-          case LOOK_CONSTRUCTION_SITES:
-            creep.build(res.constructionSite as ConstructionSite);
-            if (!creep.pos.isNearTo(pos)) {
-              creep.move(creep.pos.getDirectionTo(pos));
-            }
-            break;
+  // spend energy
+  _.chain(creeps).compact().filter(energyEmpty(10)).sortBy(energy).reverse().map((creep: Creep) => {
 
-          case LOOK_STRUCTURES:
-            const structure = res.structure as Structure;
-            if (structure.hits < structure.hitsMax) {
-              creep.repair(structure);
-              break;
-            }
-
-          // case LOOK_STRUCTURES: TODO transfer out
-          //
-          //   switch (structure.structureType) {
-          //     case STRUCTURE_CONTAINER:
-          //   }
-          //   creep.build(res.constructionSite as ConstructionSite);
-          //   break;
-
-          default:
-            continue;
+    LookForIterator.search(creep.pos, 3, creep, [{
+      key: LOOK_CONSTRUCTION_SITES,
+      value: (site: ConstructionSite) => {
+        if (!site.my) {
+          return true; // TODO fight?
         }
 
-        creeps[creeps.indexOf(creep)] = null;
-      }
-    }
+        creep.build(site);
+        if (!creep.pos.isNearTo(site.pos)) {
+          creep.move(creep.pos.getDirectionTo(site.pos));
+        }
+        creep.say("📐", false);
+        return false;
+      },
+    }, {
+      key: LOOK_STRUCTURES,
+      value: (structure: OwnedStructure) => {
+        if (structure.hits < structure.hitsMax) {
+          creep.repair(structure);
+          creep.say("🔨", false);
+          return false;
+        }
+        return true;
+      },
+    }], (found: any, callback: FindCallback) => {
+
+      callback.target = found;
+      cachedIdleActions[creep.id] = callback;
+      creeps[creeps.indexOf(creep)] = null;
+      return false;
+    });
+
     return creep;
   }).value();
 
@@ -148,18 +169,18 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
 /**
  * transform State -> memory -> extract score -> decorate score using State
  */
-function byScore<T extends State<any>>(metric: string, decorator?: (acc: number, s: T) => number) {
+function byScore<T extends State<any>>(metric: string, decorator?: MemoIterator<any, number> ): ScoreFunc<T> {
 
   const scorer = scoreManager.byScore(metric);
 
   // DRY is a nontrivial cost
   if (decorator === undefined) {
-    return (s: T) => {
+    return (value: T) => {
       // log.info("byScore input", s);
-      const mem = s.memory(SCORE_KEY);
+      const mem = value.memory(SCORE_KEY);
       const score = scorer(mem);
       // log.info("byScore result", score);
-      return score;
+      return {value, score};
     };
   }
 
@@ -169,143 +190,172 @@ function byScore<T extends State<any>>(metric: string, decorator?: (acc: number,
    scoreManager.byScore(score)
    ) as (s: T) => number;
    */
-  return (s: T) => {
+  return (value: T) => {
     // log.info("byScore input", s);
-    const mem = s.memory(SCORE_KEY);
-    const score = scorer(mem);
+    const mem = value.memory(SCORE_KEY);
+    let score = scorer(mem);
     // log.info("byScore middle", score);
-    const decorated = decorator(score, s);
+    score = decorator(score, value);
     // log.info("byScore result", decorated);
-    return decorated;
+    return {value, score};
   };
 }
 
-// state/tenergy
-const tenergyScore = byScore("tenergy");
+export function doTransfers(state: GlobalState,
+                            creeps: (Creep|null)[],
+                            tasked: { [creepIdToSourceId: string]: string }): (SpawnState|null)[] {
+  if (compactSize(creeps) === 0) {
+    return [];
+  }
+  tasked = tasked;
 
-// creep/venergy + rangeScore
-const distanceEnergyFitness = (pos: RoomPosition) => {
-  return byScore("venergy", (score: number, s: State<any>) => {
-    // do not give venergy: 0 creeps any distance score
-    if (score === 0) {
-      return 0;
+  return state.spawns().map(spawnState => {
+    const spawn = spawnState.subject();
+    if (spawn.energy < 0.7 * spawn.energyCapacity) {
+      // energy hungry, feed me!
+      LookForIterator.search<OwnedStructure>(spawn.pos, 3, spawn, [{
+        key: LOOK_CREEPS,
+        value: (other: Creep, range: number) => {
+          if (range < 0) {
+            return true;
+          }
+          if (CreepState.left(other).memory().working !== undefined) {
+            other.transfer(this, RESOURCE_ENERGY);
+          } else if (energy(other) > 5) {
+            other.transfer(this, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
+          }
+          return true;
+        },
+      }]);
     }
-    return score + DISTANCE_WEIGHT / F.rangeScore(s.pos(), pos);
-  });
-};
-
-// function tapLog<T>(message: string): (s: T) => T {
-//   return (s) => {
-//     log.info(message, s);
-//     return s;
-//   };
-// }
-
-function isTrue(prev: number, curr: any) {
-  return curr ? (prev + 1) : prev;
+    return spawnState;
+  }).value();
 }
-
-// TODO - you don't need _.chain, lodash says that flow/flowRight avoids intermediates / "shortcut fusion" even with FP
-const compactSize = _.curryRight(_.foldl, 3)(0)(isTrue) as (x: any[]) => number;
 
 export function doHarvest(state: GlobalState,
                           creeps: (Creep|null)[],
                           tasked: { [creepIdToSourceId: string]: string }): (SourceState|null)[] {
 
-  // TODO compact<SourceState> should remove null|undefined
-  return state.sources()
-      .groupBy(tenergyScore).pairs().filter((it) => +it[0] > 0).sortBy(0).map(1).flatten()
+  if (compactSize(creeps) === 0) {
+    return [];
+  }
+  // TODO compact<SourceState> should remove null|undefined in the parameterized type
+  return state.sources().map(scoreTEnergy).filter(it => it.score > 0).sortBy("score").reverse()
     // TODO - CRITICAL - memoize statement thus far until closer source or destination is discovered
     // this is called an election!
-      .map((source: SourceState) => {
-    let failed: any = {};
-    const sites = source.nodeDirs();
+    .map(({value, score}) => {
 
-    const workers = source.memory("workers", true);
+      score = score;
+      const source: SourceState = value;
+      let failed: any = {};
 
-    const dirToPosition = F.dirToPosition(source.pos());
+      const dirToPosition = F.dirToPosition(source.pos());
+      const scoreEnergy = distanceEnergyFitness(source.pos());
 
-    for (const site of sites) {
+      const workers = source.memory("workers", true);
+      for (let site = workers.length - 1; site >= 0; site--) {
+        const worker = workers[site];
+        if (worker) {
+          const pos = dirToPosition(site);
 
-      const pos = dirToPosition(site);
-      const energyScore = distanceEnergyFitness(pos);
-      const byRangeToSite = F.byStateRangeTo(pos);
-      const worker = workers[ site ];
-      if (worker !== undefined) {
-        // log.debug("resolving worker @", site, worker);
-        // grab worker and mine!
-        const creep = CreepState.vright(worker);
-        if (tryHarvest(creep, source, pos, site, tasked, failed)) {
-          // log.debug("mined", site, "next site for", source);
-          creeps[creeps.indexOf(creep.subject())] = null;
-          continue;
+          // grab worker and mine!
+          const creep = CreepState.vright(worker);
+          if (tryHarvest(creep, source, pos, site, tasked, failed)) {
+            // log.debug("mined", site, "next site for", source);
+            creeps[creeps.indexOf(creep.subject())] = null;
+          } else {
+            // TODO clean up assignment codes
+            delete workers[site];
+          }
         }
       }
 
-      // log.info("allocating", source, "site", site);
-      let harvested = false;
-      do {
-        // allocate worker, find closest, TODO prefer role=sourcer? look up bot compat?
+      log.debug(F.str(creeps, compactSize), "left");
 
-        log.debug(F.str(creeps, compactSize), "left");
-        let candidates = _.chain(creeps).compact().filter((creep: Creep) => {
-          const taskId = tasked[creep.id];
-          if (taskId !== undefined && taskId !== source.getId()) {
-            log.warning("already tasked", creep);
-            return false;
+      let candidates = _.chain(creeps).compact().filter((creep: Creep) => {
+        const taskId = tasked[creep.id];
+        if (taskId !== undefined && taskId !== source.getId()) {
+          log.warning("already tasked", creep);
+          return false;
+        }
+        if (failed[creep.id] !== undefined) {
+          log.info("failed:", failed[creep.id], creep.name);
+          return false;
+        }
+        return true;
+      }).map(CreepState.build).filter((cs: CreepState) => {
+        const working = cs.memory().working;
+        if (working !== undefined && working !== source.getId()) {
+          // log.debug("already working", creep.name);
+          return false;
+        }
+        return true;
+      }).map(scoreEnergy).sortBy(it => it.score).reverse().value();
+      // highest score by fitness (body + distance)
+
+      if (candidates === undefined || candidates.length === 0) {
+        // no creeps to harvest this source!
+        return source;
+      }
+
+      let sites = source.nodeDirs();
+      // special quick start ranking!
+      if (creeps.length === 1 && _.size(Game.spawns) === 1) {
+        sites = _.chain(source.nodeDirs())
+          .map(dirToPosition)
+          .sortBy(F.byPosRangeTo(_.values<Spawn>(Game.spawns)[0].pos))
+          .map(F.posToDirection(source.pos())).value();
+      }
+
+      for (const site of sites) {
+
+        const worker = workers[site];
+        if (worker) {
+          continue;
+        }
+
+        const pos = dirToPosition(site);
+        const byRangeToSite = F.byStateRangeTo(pos);
+
+        // log.info("allocating", source, "site", site);
+        let harvested = false;
+        do {
+          // allocate worker, find closest, TODO prefer role=sourcer? look up bot compat?
+
+          // log.debug(candidates[1].length, "creep candidates score:", candidates[0]);
+          // then tie-break by range to site
+          let creep = _.chain(candidates).map(it => it.value).sortBy(byRangeToSite).first().valueOf() as CreepState;
+
+          if (creep === null || creep === undefined) {
+            log.error("no worker found");
+            return source;
           }
-          if (failed[creep.id] !== undefined) {
-            log.info("failed:", failed[creep.id], creep.name);
-            return false;
+
+          creep.lock();
+          if (creep.memory().working !== undefined) {
+            // free current source
+            freeCreep(creep);
           }
-          return true;
-        }).map(CreepState.build).filter((cs: CreepState) => {
-          const working = cs.memory().working;
-          if (working !== undefined && working !== source.getId()) {
-            // log.debug("already working", creep.name);
-            return false;
+
+          harvested = tryHarvest(creep, source, pos, site, tasked, failed);
+          creep.release();
+
+          if (harvested) {
+            creeps[creeps.indexOf(creep.subject())] = null;
+            return null;
           }
-          return true;
-        }).groupBy(energyScore).pairs().sortBy(0).last().valueOf() as any[];
-        // first score by fitness (body + distance)
+        } while (!harvested);
+      }
 
-        if (candidates === undefined) {
-          // no creeps to harvest this source!
-          return source;
-        }
-
-        // log.debug(candidates[1].length, "creep candidates score:", candidates[0]);
-        // then tie-break by range to site
-        let creep = _.chain(candidates[1] as CreepState[]).sortBy(byRangeToSite).first().valueOf() as CreepState;
-
-        if (creep === null || creep === undefined) {
-          log.error("no worker found");
-          return source;
-        }
-
-        creep.lock();
-        if (creep.memory().working !== undefined) {
-          // free current source
-          freeCreep(creep);
-        }
-
-        harvested = tryHarvest(creep, source, pos, site, tasked, failed);
-        creep.release();
-
-        if (harvested) {
-          creeps[creeps.indexOf(creep.subject())] = null;
-        }
-      } while (!harvested);
+      return null;
     }
-
-    return null;
-  }).compact().value();
+  ).compact().value();
 }
 
 function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remoteRoomScan: boolean) {
   if (roomScan) {
     // scan real rooms
-    state.eachRoom((room) => {
+    state.eachRoom(room => {
       // room.subject().find(FIND_HOSTILE_CREEPS)
       log.debug("TODO scan for new buildings and enemies", room);
       // TODO identify new buildings, new enemies
@@ -319,7 +369,7 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
 
   if (remoteRoomScan) {
     let count = 0;
-    state.eachRemoteRoom((room) => {
+    state.eachRemoteRoom(room => {
       if (!room.resolve()) {
         count++;
       }
@@ -331,20 +381,20 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
 export function doSpawn(state: GlobalState, commands: Options) {
   commands = commands;
 
-  state.eachSpawn((spawn) => {
-    const subject = spawn.subject();
+  return state.spawns().map(spawnState => {
+    const spawn = spawnState.subject();
 
-    if (subject.room.energyAvailable >= 300) {
-      spawnCreeps(state, subject);
+    if (spawn.room.energyAvailable >= 200) {
+      spawnCreeps(state, spawn);
     }
-  });
+  }).value();
 }
 
 function spawnCreeps(state: GlobalState, spawn: Spawn) {
   state = state;
 
-  log.info("I want to spawn creeps!", spawn);
-  // spawn.createCreep([WORK, WORK, CARRY, MOVE]);
+  // log.info("I want to spawn creeps!", spawn);
+  spawn.createCreep([WORK, CARRY, MOVE]);
 }
 
 function tryHarvest(creepState: CreepState, sourceState: SourceState,
@@ -370,7 +420,9 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
       default:
         // TODO pathing when range > 1
         if (creep.fatigue === 0) {
-          creep.drop(RESOURCE_ENERGY); // DROP ENERGY before moving TODO conditional
+          if (creep.drop(RESOURCE_ENERGY) === 0) { // DROP ENERGY before moving TODO conditional
+            creep.say("💩", false); // poo
+          }
 
           const moveResult = creep.moveTo(pos);
           if (moveResult !== 0) {
@@ -382,7 +434,7 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
         }
     }
 
-    allocate(sourceState, site, creep);
+    assignCreep(sourceState, site, creep);
     tasked[creep.id] = sourceState.getId();
     // log.debug("tasked", creep.id, "to", sourceState.getId());
     return true;
@@ -395,17 +447,21 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
   }
 }
 
-function allocate(source: SourceState, site: number, creep: Creep) {
+function assignCreep(source: SourceState, site: number, creep: Creep) {
   CreepState.left(creep).memory().working = source.getId();
+  if (creep.id === null) {
+    throw new Error("bad creep");
+  }
   source.memory("workers", true)[ site ] = creep.id;
 }
 
 function freeSite(sourceState: SourceState, site: number) {
   const workers: string[] = sourceState.memory("workers", true);
-  const creep = CreepState.vleft(workers[ site ]);
-
-  delete creep.memory().working;
-  delete workers[ site ];
+  const id = workers[ site ];
+  if (id) {
+    delete CreepState.vleft(id).memory().working;
+    delete workers[ site ];
+  }
 }
 
 function freeCreep(creep: CreepState) {
@@ -419,6 +475,49 @@ function resetAssignments(state: GlobalState, shuffled: boolean) {
   } else {
     log.error("recovering from failing activity or foreign branch");
   }
-  state.sources().filter((s) => delete s.memory().workers).value();
-  state.creeps().filter((s) => delete s.memory().working).value();
+  state.sources().filter(s => delete s.memory().workers).value();
+  state.creeps().filter(s => delete s.memory().working).value();
 }
+
+function energy(creep: Creep) {
+  return F.elvis(creep.carry.energy, 0);
+}
+
+function energyFull(percent: number) {
+  return (creep: Creep): boolean => energy(creep) > percent * creep.carryCapacity;
+}
+
+function energyEmpty(abs: number) {
+  return (creep: Creep): boolean => energy(creep) < abs;
+}
+
+type ScoreFunc<T> = (value: T) => Scored<T>;
+type Scored<T> = { value: T, score: number };
+
+// state/tenergy
+const scoreTEnergy = byScore<SourceState>("tenergy");
+
+// creep/venergy + rangeScore
+function distanceEnergyFitness(pos: RoomPosition): ScoreFunc<CreepState> {
+  return byScore<CreepState>("venergy", (score, s) => {
+    // do not give venergy: 0 creeps any distance score
+    if (score === 0) {
+      return 0;
+    }
+    return score + DISTANCE_WEIGHT / F.rangeScore(s.pos(), pos);
+  });
+}
+
+// function tapLog<T>(message: string): (s: T) => T {
+//   return s => {
+//     log.info(message, s);
+//     return s;
+//   };
+// }
+
+const isTrue: MemoIterator<any, number> = (prev, curr) => {
+  return curr ? (prev + 1) : prev;
+};
+
+// TODO - you don't need _.chain, lodash says that flow/flowRight avoids intermediates / "shortcut fusion" even with FP
+const compactSize = _.curryRight(_.foldl, 3)(0)(isTrue) as (x: any[]) => number;

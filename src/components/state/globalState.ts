@@ -67,12 +67,8 @@ export default class GlobalState extends State<Game> {
 
   // TODO filter functions
   // TODO sort functions, precompute sorts?
-  public eachSpawn<T>(f: (spawn: SpawnState) => T): T[] {
-    // TODO lodash functional pipelines
-    // spawns are always literal
-    return _.map(this.subject().spawns, (s) => {
-      return F.lockAnd( SpawnState.right(s), f);
-    });
+  public spawns(): LoDashExplicitArrayWrapper<SpawnState> {
+    return _.chain(this.subject().spawns).values().map(SpawnState.right);
   }
 
   public creeps(): LoDashExplicitArrayWrapper<CreepState> {
@@ -82,7 +78,7 @@ export default class GlobalState extends State<Game> {
 
   public eachCreep<T>(f: (creep: CreepState) => T): T[] {
     // creeps are always literal
-    return _.map(this.subject().creeps, (c) => {
+    return _.map(this.subject().creeps, c => {
       return F.lockAnd( CreepState.right(c), f );
     });
   }

@@ -16,7 +16,7 @@ const ROOM_PATTERN = /([EW])(\d+)([NS])(\d+)/;
 
 export const NOOP_SCRPS: Task = () => { return 0; };
 export const NOOP: () => any = () => { return undefined; };
-export const IDENTITY: Identity<any> = (a) => { return a; };
+export const IDENTITY: Identity<any> = a => a;
 
 export function identity<T>(): Func<T, T> {
   return IDENTITY;
@@ -35,7 +35,7 @@ export function strToRoomPosition(memoized: string[], roomName: string): RoomPos
   if (memoized === undefined) {
     return []; // TODO remove
   }
-  return memoized.map((s) => strAsPos(s, roomName));
+  return memoized.map(s => strAsPos(s, roomName));
 }
 
 function TRUE() {
@@ -92,7 +92,7 @@ export function rposAsStr(pos?: {x: number, y: number, roomName: string}): strin
 
 export function posAsStr(pos?: XY): string {
   if (pos === undefined || pos.x === undefined || pos.y === undefined) {
-    debugger;
+    debugger; // posAsStr error
     throw new Error("no pos");
   }
 
@@ -117,7 +117,7 @@ const posToDirMap: number[][] = [
 ];
 
 export function posToDirection(origin: XY): (dst: XY) => number {
-  return (dst) => {
+  return dst => {
     const dirRow = elvis(posToDirMap[1 + dst.y - origin.y], [] as number[]);
     return dirRow[1 + dst.x - origin.x];
   };
@@ -158,9 +158,7 @@ export function dirTransform<D extends XY>(origin: D, dir: number): D {
 // TODO consider options for clone
 // http://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript#
 export function dirToPosition(origin: RoomPosition) {
-  debugger;
   return (dir: number) => {
-    debugger;
     const result = new RoomPosition(origin.x, origin.y, origin.roomName);
     // log.debug(origin, "dir", dir, "=", result);
     return dirTransform( result, dir);
@@ -262,7 +260,17 @@ export function byRangeScore(pos: RoomPosition) {
   return (s: { pos: RoomPosition} ) => rangeScore(s.pos, pos);
 }
 
-// TODO reconcile these 2 flavors
+// TODO reconcile these 3 flavors
+export function byPosRangeTo(src: RoomPosition) {
+  return (dst: RoomPosition) => {
+    const range = src.getRangeTo(dst);
+    if (range === null || isNaN(range)) {
+      throw new Error(range + "");
+    }
+    return range;
+  };
+}
+
 export function byRangeTo(pos: RoomPosition) {
   return (s: { pos: RoomPosition} ) => {
     const range = pos.getRangeTo(s.pos);
@@ -356,7 +364,7 @@ export function dummy() {
  const room = result.value.subject();
  const closest = _.chain(room.find<OwnedStructure>(FIND_MY_STRUCTURES, {
  filter: wantsEnergy)
- .groupBy(F.tee(F.byRangeScore(pos), (ret) => { winningScore = Math.min(winningScore, ret); }))
+ .groupBy(F.tee(F.byRangeScore(pos), ret => { winningScore = Math.min(winningScore, ret); }))
  .filter((v, score) => { return score <= winningScore; })
  .first<OwnedStructure[]>();
 

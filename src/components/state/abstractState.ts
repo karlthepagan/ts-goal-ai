@@ -90,7 +90,8 @@ abstract class State<T> implements Named {
 
   public wrap(subject: T, memory: any): State<T> {
     if (this._locked) {
-      throw new Error(this.toString());
+      const s = subject as any;
+      throw new Error(s ? (s.id + " " + s.name) : "unknown");
     }
 
     if (subject === null) {
@@ -109,9 +110,12 @@ abstract class State<T> implements Named {
 
   public wrapRemote(id: string, memory: any): State<T> {
     if (this._locked) {
-      throw new Error(this.toString());
+      throw new Error(id);
     }
 
+    if (id === null || id === undefined) {
+      throw new Error("bad id");
+    }
     this._id = id;
 
     this._memory = _access(this, memory);

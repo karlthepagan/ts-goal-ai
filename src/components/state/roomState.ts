@@ -73,13 +73,13 @@ export default class RoomState extends State<Room> {
         // sources
         const sources = this.subject().find(FIND_SOURCES)
           .map(SourceState.left) // side-effect, source states initialized
-          .map((s) => [ F.posAsStr(s.pos()), s.getId() ] );
+          .map(s => [ F.posAsStr(s.pos()), s.getId() ] );
         this.memory().sources = _.object(sources);
 
         // minerals
         const minerals = this.memory().minerals = this.subject().find(FIND_MINERALS)
           .map(MineralState.left) // side-effect, mineral states initialized
-          .map((s) => [ F.posAsStr(s.pos()), s.getId() ] );
+          .map(s => [ F.posAsStr(s.pos()), s.getId() ] );
         this.memory().minerals = _.object(minerals);
 
         // spawns

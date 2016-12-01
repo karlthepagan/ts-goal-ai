@@ -1,6 +1,24 @@
 import BotMemoryDescription from "./botMemoryDescription";
-import {log} from "../support/log";
 import {CreepDescription} from "./botMemoryDescription";
+
+export const ROLES = [
+  "sourcer",
+  "harvester",
+  "repairer",
+  "storagefiller",
+  "builder",
+  "carry",
+  "defendemelee",
+  "builder",
+  "planer",
+  "nextroomer",
+  "worldplanner",
+  "atkeepermelee",
+  "resourcecleaner",
+  "energytransporter",
+  "powerattacker",
+  "squadsiege",
+];
 
 export default class TooAngelMemory implements BotMemoryDescription {
   constructor() {
@@ -17,10 +35,27 @@ export default class TooAngelMemory implements BotMemoryDescription {
   }
 
   public detect(): boolean {
-    log.debug("detecting tooAngel");
-    return _.chain(Game.creeps).values()
-        .filter((c: Creep) => c.memory.role === "sourcer")
-        .first().valueOf() !== undefined;
+    const mem = Memory as any;
+    if (!Array.isArray(mem.myRooms)) {
+      return false;
+    }
+
+    for (let r of mem.myRooms) {
+      if (typeof r !== "string") {
+        return false;
+      }
+      break;
+    }
+
+    if (typeof mem.username !== "string") {
+      return false;
+    }
+
+    return true;
+    // TODO creep role detection?
+    // return _.chain(Game.creeps).values()
+    //     .filter((c: Creep) => c.memory.role === "sourcer" || c.mem)
+    //     .first().valueOf() !== undefined;
   }
 
   public describeCreep(creep: Creep): CreepDescription {

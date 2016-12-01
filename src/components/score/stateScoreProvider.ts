@@ -65,14 +65,14 @@ const impl = {
     // TODO intellij enhancement? ((state, score, time) => {
     control: ((state: GlobalState, score: ScoreManager<GlobalState>, time: number) => {
       // sum of control for all rooms
-      return _.sum(state.subject().rooms, (room) => {
+      return _.sum(state.subject().rooms, room => {
         return F.lockAnd(RoomState.right(room),
-          (s) => score.getOrRescore(s, s.memory(SCORE_KEY), "control", time));
+          s => score.getOrRescore(s, s.memory(SCORE_KEY), "control", time));
       });
     }) as ScoreHandler<GlobalState, GlobalState>,
     energy: ((state: GlobalState, score: ScoreManager<GlobalState>, time: number) => {
       // log.debug("scoring global energy");
-      return _(state.eachSource((source) => {
+      return _(state.eachSource(source => {
         let rval = 0;
         // TODO source access bonus
         // energy velocity for each source
@@ -92,7 +92,7 @@ const impl = {
       return 0;
     }) as ScoreHandler<GlobalState, GlobalState>,
     minerals: ((state: GlobalState, score: ScoreManager<GlobalState>, time: number) => {
-      return _.sum(state.minerals(), (source) => {
+      return _.sum(state.minerals(), source => {
         let rval = 0;
         // TODO weights per mineral type
         // TODO mineral access bonus
@@ -130,12 +130,12 @@ const impl = {
       return 0;
     }) as ScoreHandler<RoomState, GlobalState>,
     venergy: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) => {
-      return _(state.eachSource((source) => {
+      return _(state.eachSource(source => {
         return score.getOrRescore(source, source.memory(SCORE_KEY), "venergy", time);
       })).sum();
     }) as ScoreHandler<RoomState, GlobalState>,
     vminerals: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) => {
-      return _(state.eachMineral((minerals) => {
+      return _(state.eachMineral(minerals => {
         return score.getOrRescore(minerals, minerals.memory(SCORE_KEY), "venergy", time);
       })).sum();
     }) as ScoreHandler<RoomState, GlobalState>,

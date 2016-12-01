@@ -36,7 +36,7 @@ function _loadCreeps(room: Room) {
   creepCount = _.size(creeps);
 
   // Iterate through each creep and push them into the role array.
-  harvesters = _.filter(creeps, (creep) => creep.memory.role === "harvester");
+  harvesters = _.filter(creeps, c => c.memory.role === "harvester");
 
   if (Config.ENABLE_DEBUG_MODE) {
     log.info(creepCount + " creeps found in the playground.");
