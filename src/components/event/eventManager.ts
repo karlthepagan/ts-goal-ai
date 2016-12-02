@@ -1,9 +1,7 @@
 import {log} from "../support/log";
 import * as F from "../functions";
-import {SchedulableRegistry, EventRegistry} from "./index";
+import {SchedulableRegistry, EventRegistry, Registry} from "./index";
 import Named from "../named";
-
-const ON_SPAWN = "spawn";
 
 interface Tick {
   spawn: {name: string, id: string, args: any[]}[];
@@ -18,28 +16,40 @@ interface EventMemory {
   /**
    * Map of time indexes to lists of callback declarations
    */
-  timeline: { [key: string]: Tick };
+  timeline: { [key: number]: Tick };
 }
 
-class ScheduleManager implements SchedulableRegistry {
-  private _tick: Tick;
+class ScheduleManager implements ProxyHandler<Tick> {
+  public get(target: Tick, eventMethod: string, receiver: SchedulableRegistry
+          ): (instance: Named, args: any[]) => SchedulableRegistry {
 
-  constructor(tick: Tick) {
-    this._tick = tick;
+    log.debug("schedules register", eventMethod);
+    if (eventMethod === "on") {
+      return this.genericRegisterHandler(target, receiver) as any; // TODO cleanup?
+    }
+
+    return (instance, args) => {
+      const name = instance.className();
+      const id = instance.getId();
+      F.expand([eventMethod], target, true).push({name, id, args});
+      return receiver;
+    };
   }
 
-  public onSpawn<T extends Named>(instance: T, ...args: any[]) {
-    const name = instance.className();
-    const id = instance.getId();
-    F.expand([ON_SPAWN], this._tick, true).push({name, id, args});
-    return this;
+  public genericRegisterHandler(target: Tick, receiver: SchedulableRegistry
+          ): (event: string, instance: Named, args: any[]) => Registry<Named> {
+    return (instance, args) => {
+      return receiver;
+    };
   }
 }
 
 export default class EventManager implements EventRegistry {
   private _memory: EventMemory;
+  private _schedule: ScheduleManager;
 
   constructor(mem: any) {
+    this._schedule = new ScheduleManager();
     this._memory = mem = mem.events = {} as EventMemory;
     mem.timeline = {};
   }
@@ -51,7 +61,7 @@ export default class EventManager implements EventRegistry {
     let last = this._memory.lastTick;
 
     while (last < time) {
-      let events = this._memory.timeline[last + 1 + ""];
+      let events = this._memory.timeline[last + 1];
       events = events;
       // TODO callbacks
 
@@ -61,6 +71,7 @@ export default class EventManager implements EventRegistry {
 
   public schedule(relativeTime: number) {
     log.debug("scheduling for", relativeTime);
-    return new ScheduleManager(F.expand([relativeTime + ""], this._memory.timeline));
+    return new Proxy(F.expand([relativeTime], this._memory.timeline), this._schedule) as SchedulableRegistry;
+    // new ScheduleManager(F.expand([relativeTime + ""], this._memory.timeline));
   }
 }

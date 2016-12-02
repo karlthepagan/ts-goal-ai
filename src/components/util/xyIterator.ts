@@ -1,5 +1,3 @@
-import * as F from "../functions";
-
 /**
  * An endless iterator which advances in a square box beginning at the top-left.
  *
@@ -10,17 +8,27 @@ import * as F from "../functions";
  *  16 M  7  0  3  E
  *  15 L  6  5  4  F
  *  14 K  J  I  H  G
+ *
+ *  Easy starting-points are 0, 1, A, etc. Use the ring number to indicate these.
  */
-export default class XYIterator<T extends F.XY> implements Iterator<T> {
+export default class XYIterator<T extends XY> implements Iterator<T> {
   public y: number;
   public x: number;
-  public _ring = 0;
+  private _ring;
   private _dir = TOP; // dir of next step
-  private _step = 2;
+  private _step;
 
-  constructor(xy: T) { // TODO borders
+  constructor(xy: T, ring?: number) { // TODO borders
     this.x = xy.x;
-    this.y = xy.y + 1; // debit y's position accounting for first step
+    if (ring === undefined) {
+      this._ring = 0;
+      this._step = 2;
+      this.y = xy.y + 1; // debit y's position accounting for center point step
+    } else {
+      this._ring = ring - 1;
+      this._step = 1;
+      this.y = xy.y;
+    }
   }
 
   /**
@@ -31,7 +39,7 @@ export default class XYIterator<T extends F.XY> implements Iterator<T> {
   }
 
   public next(): IteratorResult<T> {
-    F.dirTransform(this, this._dir);
+    dirTransform(this, this._dir);
 
     --this._step;
 
@@ -63,4 +71,38 @@ export default class XYIterator<T extends F.XY> implements Iterator<T> {
       value: {x: this.x, y: this.y},
     } as IteratorResult<T>;
   }
+}
+
+type XY = {x: number, y: number};
+
+function dirTransform<D extends XY>(origin: D, dir: number): D {
+  switch (dir) {
+    case TOP_RIGHT:
+      origin.x++;
+    case TOP:
+      origin.y--;
+      break;
+
+    case BOTTOM_RIGHT:
+      origin.y++;
+    case RIGHT:
+      origin.x++;
+      break;
+
+    case BOTTOM_LEFT:
+      origin.x--;
+    case BOTTOM:
+      origin.y++;
+      break;
+
+    case TOP_LEFT:
+      origin.y--;
+    case LEFT:
+      origin.x--;
+      break;
+
+    default:
+  }
+
+  return origin;
 }

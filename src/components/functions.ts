@@ -177,7 +177,7 @@ export function isSource(x: any) {
   return x.ticksToRegeneration !== undefined && x.mineralType === undefined;
 }
 
-export function buildFollow(mem: any, addr: string, value: any): any {
+export function buildFollow(mem: any, addr: PropertyKey, value: any): any {
   if (mem[addr] === undefined) {
     return mem[addr] = value;
   } else {
@@ -185,7 +185,7 @@ export function buildFollow(mem: any, addr: string, value: any): any {
   }
 }
 
-export function deleteExpand(address: string[], memory: any, array?: boolean): boolean {
+export function deleteExpand(address: PropertyKey[], memory: any, array?: boolean): boolean {
   if (address.length === 0) {
     return false;
   }
@@ -198,7 +198,7 @@ export function deleteExpand(address: string[], memory: any, array?: boolean): b
 
   const key = address[last];
   if (array) {
-    const list: string[] = memory[last];
+    const list: PropertyKey[] = memory[last];
     const i = list.indexOf(key);
     if (i >= 0) {
       list.splice(i, 1);
@@ -208,7 +208,7 @@ export function deleteExpand(address: string[], memory: any, array?: boolean): b
   return delete memory[address[last]];
 }
 
-export function expand(address: string[], memory: any, array?: boolean): any {
+export function expand(address: PropertyKey[], memory: any, array?: boolean): any {
   if (address.length === 0) {
     return memory;
   }
