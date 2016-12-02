@@ -14,9 +14,9 @@
 export default class XYIterator<T extends XY> implements Iterator<T> {
   public y: number;
   public x: number;
-  private _ring;
+  private _ring: number;
   private _dir = TOP; // dir of next step
-  private _step;
+  private _step: number;
 
   constructor(xy: T, ring?: number) { // TODO borders
     this.x = xy.x;

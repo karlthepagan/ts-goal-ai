@@ -248,6 +248,28 @@ export default class CreepState extends State<Creep> {
     return Math.ceil(this.maxMovePenalty(terrain) * CARRY_RECIPROCAL) + this.minMoveFatigue(terrain);
   }
 
+  public move(direction: number): number {
+    const result = this.subject().move(direction);
+    const em = State.events;
+
+    if (typeof result === "number") {
+      em.failure(this).move(result, direction);
+    }
+
+    // TODO is this ok? dispatch an interrupt notify creeps at the location i'm moving into
+    em.dispatch(this).preMove(F.dirToPosition(this.pos())(direction));
+
+    // schedule an event to examine bumps / behaviors at the new position
+    em.schedule(1, this).onMove(this.bump);
+
+    return result;
+  }
+
+  public bump() {
+    // TODO scan for friendly structures around, send to behavior
+    log.debug("bump look");
+  }
+
   protected _accessAddress() {
     return ["creeps"];
   }

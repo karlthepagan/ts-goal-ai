@@ -3,14 +3,17 @@ import {CreepDescription} from "./botMemoryDescription";
 
 export default class ScreepsOsMemory implements BotMemoryDescription {
   public getRoomCostmatrix(roomName: string): CostMatrix|any {
+    roomName = roomName;
     return undefined;
   }
 
   public detect(): boolean {
-    return undefined; // TODO processTable, processMemory
+    const mem = Memory as any;
+    return mem.processTable && mem.processMemory;
   }
 
   public describeCreep(creep: Creep): CreepDescription {
-    return undefined;
+    creep = creep;
+    return "";
   }
 }

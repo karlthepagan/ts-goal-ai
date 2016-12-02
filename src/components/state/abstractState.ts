@@ -197,6 +197,11 @@ abstract class State<T> implements Named {
     this._memory = _access(this, botMemory(), mem);
   }
 
+  public rescan() {
+    delete this._memory.seen;
+    this.init(this._memory);
+  }
+
   protected abstract _accessAddress(): string[];
   protected abstract _indexAddress(): string[]|undefined;
 

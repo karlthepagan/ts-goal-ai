@@ -48,11 +48,22 @@ function scoreWork(state: CreepState): number {
   return WORK_WEIGHT * _.sum(creep.body, (s: BodyPartDefinition) => s.type === WORK ? 1 : 0);
 }
 
+function scoreTtl(state: CreepState): number {
+
+  const creep = state.subject();
+  if (creep === undefined) {
+    return 1;
+  }
+
+  return creep.ticksToLive;
+}
+
 const impl = {
   // CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS
   creepState: {
     move: scoreMove,
     venergy: scoreWork,
+    ttl: scoreTtl,
   } as StateScoreImpl<CreepState>,
 
   // ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY
