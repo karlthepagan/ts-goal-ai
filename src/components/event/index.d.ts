@@ -34,7 +34,8 @@ export interface SchedulableRegistry extends CallbackRegistry {
 export interface FailureEvents extends Registry {
   createCreep(failureCode: number, body: string[], name?: string, mem?: any): void;
   move(failureCode: number, direction: number): void;
-  moveTo(failureCode: number, direction: number): void; // route planning failure?
+  // TODO route planning failure?
+  moveTo(failureCode: number, target: RoomPosition | { pos: RoomPosition; }, opts?: MoveToOpts & FindPathOpts): void;
 }
 
 export interface TriggeredEvents extends Registry {

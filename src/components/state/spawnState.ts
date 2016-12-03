@@ -38,10 +38,6 @@ export default class SpawnState extends State<Spawn> {
       return result;
     }
 
-    // TODO fire behavior think?
-    // State.events.schedule(time, this).onSpawn(this.think, mem);
-
-    debugger;
     const creepName = result as string;
     // const creep = CreepState.right(Game.creeps[creepName]);
     // while we CAN get the creep before next tick... it DOESN'T have the id until next tick!
@@ -53,7 +49,6 @@ export default class SpawnState extends State<Spawn> {
   }
 
   public onSpawn(creepName: string, mem: any) {
-    debugger;
     const creep = Game.creeps[creepName];
     const time = creep.body.length * 3;
 
@@ -62,6 +57,9 @@ export default class SpawnState extends State<Spawn> {
       .onSpawn(state.setMemory, mem)
       .onSpawn(state.rescan);
     // TODO don't fear the reaper, you will die in 1499? ticks
+
+    // TODO fire behavior think?
+    // State.events.schedule(time, this).onSpawn(this.think, mem);
   }
 
   protected _accessAddress() {

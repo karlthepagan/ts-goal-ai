@@ -3,6 +3,7 @@ import {log} from "../support/log";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 import {TERRAIN_ROAD, TERRAIN_PLAIN, TERRAIN_SWAMP} from "../constants";
+import LookForIterator from "../util/lookForIterator";
 // const BiMap = require("bimap"); // TODO BiMap
 
 const MOVE_KEYS = {
@@ -128,7 +129,7 @@ export default class CreepState extends State<Creep> {
     return Math.round(sum * terrain);
   }
 
-  public static left(subject: Creep) {
+  public static left(subject: Creep) { // TODO as CreepState & Creep and use a proxy?
     return (FLYWEIGHTS ? CreepState._left : new CreepState("CS") ).wrap(subject, botMemory()) as CreepState;
   }
 
@@ -266,14 +267,43 @@ export default class CreepState extends State<Creep> {
     em.dispatch(this).preMove(F.dirToPosition(this.pos())(direction));
 
     // schedule an event to examine bumps / behaviors at the new position
-    em.schedule(1, this).onMove(this.bump);
+    em.schedule(1, this).onMove(this.touching);
 
     return result;
   }
 
-  public bump() {
-    // TODO scan for friendly structures around, send to behavior
-    log.debug("bump look");
+  public moveTo(target: RoomPosition | { pos: RoomPosition; }, opts?: MoveToOpts & FindPathOpts): number {
+    const result = this.subject().moveTo(target, opts);
+    const em = State.events;
+
+    if (typeof result === "number") {
+      em.failure(this).moveTo(result, target, opts);
+    }
+
+    // TODO look up _move and translate that to a direction
+    // em.dispatch(this).preMove(F.dirToPosition(this.pos())(direction));
+
+    // schedule an event to examine bumps / behaviors at the new position
+    em.schedule(1, this).onMove(this.touching);
+
+    return result;
+  }
+
+  public touching() {
+    // TODO reactive behaviors?
+    // energy,
+    const pos = this.pos();
+    const posToDir = F.posToDirection(pos);
+    this.memory("touch").creep = []; // reset creep touches
+    LookForIterator.search(pos, 1, this, [{
+      key: LOOK_CREEPS, value: creep => {
+        this.memory("touch.creep", true)[posToDir(creep.pos)] = creep.id;
+      }
+    }, {
+      key: LOOK_ENERGY, value: resource => {
+        log.debug("touching energy");
+      }
+    }]);
   }
 
   protected _accessAddress() {

@@ -2,7 +2,10 @@ import PositionIterable from "./positionIterable";
 
 export interface FindCallback<T> {
   key: string;
-  value?: (value: any, index: number, thisArg?: T) => boolean;
+  /**
+   * return false to invoke the chained handler
+   */
+  value?: (value: any, index: number, thisArg?: T) => boolean; // TODO thisArg or position?
   target?: string;
 }
 

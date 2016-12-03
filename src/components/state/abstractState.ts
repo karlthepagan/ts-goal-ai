@@ -12,7 +12,6 @@ type XY = {x: number, y: number};
 
 function strAsPos(room: string, serialized?: string): RoomPosition {
   if (serialized === undefined) {
-    debugger;
     return new RoomPosition(25, 25, room);
   }
 
@@ -54,7 +53,7 @@ function _access(state: any, rootMemory: any, writeValue?: any): any {
     return memory;
   }
 
-  if (writeValue !== undefined) {
+  if (writeValue !== undefined && writeValue != null) {
     return memory[state._id] = writeValue;
   }
 
@@ -156,7 +155,7 @@ abstract class State<T> implements Named {
       return this._memory;
     }
 
-    return F.expand([ key ], this._memory, array);
+    return F.expand(key.split("."), this._memory, array);
   }
 
   public isPaused(): boolean {

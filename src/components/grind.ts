@@ -78,7 +78,7 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
   //   // keep moving
   //   if (creep.memory._move !== undefined) {
   //     const dest = creep.memory._move.dest;
-  //     creep.moveTo(new RoomPosition(dest.x, dest.y, dest.name));
+  //     creep.moveTo(new RoomPosition(dest.x, dest.y, dest.name)); // TODO creep state
   //
   //     creeps[creeps.indexOf(creep)] = null;
   //   }
@@ -135,7 +135,7 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
 
         creep.build(site);
         if (!creep.pos.isNearTo(site.pos)) {
-          creep.move(creep.pos.getDirectionTo(site.pos));
+          CreepState.left(creep).move(creep.pos.getDirectionTo(site.pos));
         }
         creep.say("📐", false);
         return false;
@@ -427,7 +427,7 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
             creep.say("💩", false); // poo
           }
 
-          const moveResult = creep.moveTo(pos);
+          const moveResult = creepState.moveTo(pos);
           if (moveResult !== 0) {
             log.debug("move failed", sourceState, "moveTo=", moveResult, creepState);
           }

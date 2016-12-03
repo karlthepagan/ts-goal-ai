@@ -29,7 +29,7 @@ export default class EnemyCreepState extends CreepState {
   protected static _vright: EnemyCreepState = new EnemyCreepState("EnemyCreepStateVirtualRight");
 
   public className() {
-    return "CreepState";
+    return "EnemyCreepState";
   }
 
   protected _accessAddress() {

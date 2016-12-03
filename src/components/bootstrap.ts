@@ -12,6 +12,7 @@ import MineralState from "./state/mineralState";
 import RoomState from "./state/roomState";
 import SourceState from "./state/sourceState";
 import SpawnState from "./state/spawnState";
+import ConstructionState from "./state/constructionState";
 
 export const bootstrap: (() => void)[] = [];
 
@@ -27,6 +28,7 @@ bootstrap.push(() => {
 bootstrap.push(() => {
   registerStateScoreProvider();
   eventManager.registerNamedClass(new CreepState("proto"), CreepState.vright);
+  eventManager.registerNamedClass(new ConstructionState("proto"), ConstructionState.vright);
   eventManager.registerNamedClass(new EnemyCreepState("proto"), EnemyCreepState.vright);
   eventManager.registerNamedClass(new GlobalState("proto"), GlobalState.game);
   eventManager.registerNamedClass(new MineralState("proto"), MineralState.vright);
