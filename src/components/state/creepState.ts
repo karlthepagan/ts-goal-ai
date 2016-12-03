@@ -84,6 +84,19 @@ function changes<T>(oldList: T[], newList: T[]): {removed: T[], added: T[]} {
   return {removed, added};
 }
 
+function iterateNeighbors(neighborIds: string[],
+                          type: (i: number) => any,
+                          callbackName: string,
+                          args: (i: number) => any[]) {
+  for (let dir = neighborIds.length - 1; dir >= 0; dir--) {
+    const id = neighborIds[dir];
+    if (id === undefined || id === null || type(dir) === undefined) {
+      continue;
+    }
+    getType(type(dir)).vright(id)[callbackName](...args(dir));
+  }
+}
+
 export default class CreepState extends State<Creep> {
   public static calculateBody(body: BodyPartDefinition[], forFight: boolean, max?: boolean): string {
     // bimap: new BiMap(), // testing TODO REMOVE
@@ -321,7 +334,7 @@ export default class CreepState extends State<Creep> {
     const posToDir = F.posToDirection(selfpos);
     LookForIterator.search(selfpos, 1, this, [{
       key: LOOK_CREEPS, value: (creep: Creep, range: number) => {
-        if (range < 0) {
+        if (range < 1) {
           return true;
         }
         const dir = posToDir(creep.pos);
@@ -355,31 +368,34 @@ export default class CreepState extends State<Creep> {
     }]);
 
     // TODO transact touch directions
-    const oldCreeps = this.memory("touch").creep;
-    const oldEnergy = this.memory("touch").energy;
+    const oldCreeps = F.elvis(this.memory("touch").creep, []);
+    const oldEnergy = F.elvis(this.memory("touch").energy, []);
 
+    debugger;
     const creeps = changes(oldCreeps, newCreeps);
 
-    creeps.removed.filter(i => i !== null).map((id, dir) => CreepState.vright(id).goodbye(this, dir));
-    creeps.added.filter(i => i !== null).map((id, dir) => CreepState.vright(id).hello(this, dir));
+    iterateNeighbors(creeps.removed, () => CreepState, "onPart", (dir) => [this, dir]);
+    iterateNeighbors(creeps.added, () => CreepState, "onMeet", (dir) => [this, dir]);
 
     const structs = changes(oldEnergy, newEnergy);
 
-    structs.removed.filter(i => i).filter((_, i) => energyTypes[i] !== null)
-      .map((id, dir) => getType(energyTypes[dir]).vright(id).goodbye(this, dir));
-    structs.added.filter(i => i).filter((_, i) => energyTypes[i] !== null)
-      .map((id, dir) => getType(energyTypes[dir]).vright(id).hello(this, dir));
+    iterateNeighbors(structs.removed, dir => energyTypes[dir], "onPart", (dir) => [this, dir]);
+    iterateNeighbors(structs.added, dir => energyTypes[dir], "onMeet", (dir) => [this, dir]);
 
     this.memory("touch").creep = newCreeps;
     this.memory("touch").energy = newEnergy;
   }
 
-  public goodbye(other: CreepState, direction: number) {
-    log.debug("goodbye", other, direction);
+  public onPart(other: CreepState, direction: number) {
+    other = other;
+    direction = direction;
+    log.debug("bye");
   }
 
-  public hello(other: CreepState, direction: number) {
-    log.debug("hello", other, direction);
+  public onMeet(other: CreepState, direction: number) {
+    other = other;
+    direction = direction;
+    log.debug("hi");
   }
 
   public keepSaying(say: string, toPublic?: boolean, count?: number) {

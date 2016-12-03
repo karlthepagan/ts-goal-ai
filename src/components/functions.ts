@@ -344,6 +344,24 @@ export function str(x: any, f: (x: any) => string|number): {} {
   };
 }
 
+export function remove<T>(array: T[], item: T): boolean {
+  const i = array.indexOf(item);
+  if (i >= 0) {
+    array.splice(i, 1);
+    return true;
+  }
+  return false;
+}
+
+export function add<T>(array: T[], item: T): boolean {
+  const i = array.indexOf(item);
+  if (i < 0) {
+    array.push(item);
+    return true;
+  }
+  return false;
+}
+
 export function dummy() {
   log.debug("don't warn me about unused imports");
 }

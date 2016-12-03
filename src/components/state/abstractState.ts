@@ -4,6 +4,7 @@ import * as Config from "../../config/config";
 import Named from "../named";
 import {botMemory} from "../../config/config";
 import EventRegistry from "../event/index";
+import CreepState from "./creepState";
 
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
@@ -200,6 +201,19 @@ abstract class State<T> implements Named {
   public rescan() {
     delete this._memory.seen;
     this.init(this._memory);
+  }
+
+  public onPart(other: CreepState, direction: number) {
+    other = other;
+    this.memory("touch.creep", true)[direction] = null;
+    const dirs = this.memory("touch.dir", true) as number[];
+    F.remove(dirs, direction);
+  }
+
+  public onMeet(other: CreepState, direction: number) {
+    this.memory("touch.creep", true)[direction] = other.getId();
+    const dirs = this.memory("touch.dir", true) as number[];
+    F.add(dirs, direction);
   }
 
   protected abstract _accessAddress(): string[];
