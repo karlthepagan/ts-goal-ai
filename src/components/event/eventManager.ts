@@ -3,6 +3,7 @@ import * as F from "../functions";
 import {SchedulableRegistry, EventRegistry, FailureEvents, TriggeredEvents} from "./index";
 import Named from "../named";
 import {botMemory} from "../../config/config";
+import {getType} from "../types";
 
 type Event = {name: string, id: string, method: string, args: any[]};
 
@@ -88,15 +89,7 @@ export default class EventManager implements EventRegistry {
   private _scheduler: ScheduleManager = new ScheduleManager();
   private _dispatcher: DispatchManager = new DispatchManager();
   private _failures: FailureManager = new FailureManager();
-  private _classes: { [name: string]: (id: string) => Named } = {};
   private _dispatchTime: number|undefined;
-
-  public registerNamedClass(example: Named, constructor: (id: string) => Named) {
-    if (this._classes[example.className()] !== undefined) {
-      throw new Error("already registered " + example.className());
-    }
-    this._classes[example.className()] = constructor;
-  }
 
   public dispatchTime(): number|undefined {
     return this._dispatchTime;
@@ -115,7 +108,7 @@ export default class EventManager implements EventRegistry {
       if (tick !== undefined) {
         for (const eventName in tick) {
           for (const event of tick[eventName]) {
-            const instance = this._classes[event.name](event.id) as any;
+            const instance = getType(event.name).vright(event.id) as any;
             const f = instance[event.method] as Function;
             f.call(instance, ...event.args);
           }

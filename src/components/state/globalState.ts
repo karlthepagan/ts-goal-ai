@@ -31,6 +31,10 @@ export default class GlobalState extends State<Game> {
     return GlobalState._game;
   }
 
+  public static vright() {
+    return GlobalState.game();
+  }
+
   public static addDeleteHandler(key: string, handler: (memory: any) => void) {
     this._deleteHandler[key] = handler;
   }

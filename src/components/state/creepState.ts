@@ -5,6 +5,7 @@ import * as F from "../functions";
 import {TERRAIN_ROAD, TERRAIN_PLAIN, TERRAIN_SWAMP} from "../constants";
 import LookForIterator from "../util/lookForIterator";
 import {eventManager} from "../event/eventSingleton";
+import {getType} from "../types";
 // const BiMap = require("bimap"); // TODO BiMap
 
 const MOVE_KEYS = {
@@ -64,6 +65,23 @@ function isForWork(b: string) {
  */
 function isForFight(b: string) {
   return WORK_FIGHT[b] <= 0;
+}
+
+function sparseDifference<T>(a: T[], b: T[]) {
+  const result: T[] = [];
+  for (let i = a.length - 1; i >= 0; i--) {
+    if (b.indexOf(a[i]) < 0) {
+      result[i] = a[i];
+    }
+  }
+  return result;
+}
+
+function changes<T>(oldList: T[], newList: T[]): {removed: T[], added: T[]} {
+  const removed = sparseDifference(oldList, newList);
+  const added = sparseDifference(newList, oldList);
+
+  return {removed, added};
 }
 
 export default class CreepState extends State<Creep> {
@@ -294,30 +312,35 @@ export default class CreepState extends State<Creep> {
 
   public touching() {
     // TODO reactive behaviors?
+
+    const newCreeps: string[] = [];
+    const newEnergy: string[] = [];
+    const energyTypes: string[] = [];
     // energy,
     const selfpos = this.pos();
     const posToDir = F.posToDirection(selfpos);
-    this.memory("touch").creep = []; // reset creep touches
-    this.memory("touch").energy = [];
     LookForIterator.search(selfpos, 1, this, [{
-      key: LOOK_CREEPS, value: (creep: Creep, range: number, self: CreepState) => {
+      key: LOOK_CREEPS, value: (creep: Creep, range: number) => {
         if (range < 0) {
           return true;
         }
         const dir = posToDir(creep.pos);
-        self.memory("touch.creep", true)[dir] = creep.id;
+        newCreeps[dir] = creep.id;
         return true;
       },
     }, {
-      key: LOOK_STRUCTURES, value: (struct: OwnedStructure, range: number, self: CreepState) => {
+      key: LOOK_STRUCTURES, value: (struct: OwnedStructure, range: number) => {
         range = range;
+        const i = posToDir(struct.pos);
         switch (struct.structureType) {
+          case STRUCTURE_SPAWN:
+            energyTypes[i] = struct.structureType;
           case STRUCTURE_CONTAINER:
           case STRUCTURE_EXTENSION:
-          case STRUCTURE_SPAWN:
           case STRUCTURE_STORAGE:
           case STRUCTURE_TOWER:
-            self.memory("touch.energy", true)[posToDir(struct.pos)] = struct.id;
+            newEnergy[i] = struct.id;
+
             break;
 
           default:
@@ -330,6 +353,33 @@ export default class CreepState extends State<Creep> {
         return true;
       },
     }]);
+
+    // TODO transact touch directions
+    const oldCreeps = this.memory("touch").creep;
+    const oldEnergy = this.memory("touch").energy;
+
+    const creeps = changes(oldCreeps, newCreeps);
+
+    creeps.removed.filter(i => i !== null).map((id, dir) => CreepState.vright(id).goodbye(this, dir));
+    creeps.added.filter(i => i !== null).map((id, dir) => CreepState.vright(id).hello(this, dir));
+
+    const structs = changes(oldEnergy, newEnergy);
+
+    structs.removed.filter(i => i).filter((_, i) => energyTypes[i] !== null)
+      .map((id, dir) => getType(energyTypes[dir]).vright(id).goodbye(this, dir));
+    structs.added.filter(i => i).filter((_, i) => energyTypes[i] !== null)
+      .map((id, dir) => getType(energyTypes[dir]).vright(id).hello(this, dir));
+
+    this.memory("touch").creep = newCreeps;
+    this.memory("touch").energy = newEnergy;
+  }
+
+  public goodbye(other: CreepState, direction: number) {
+    log.debug("goodbye", other, direction);
+  }
+
+  public hello(other: CreepState, direction: number) {
+    log.debug("hello", other, direction);
   }
 
   public keepSaying(say: string, toPublic?: boolean, count?: number) {

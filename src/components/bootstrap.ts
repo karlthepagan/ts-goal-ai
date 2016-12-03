@@ -13,6 +13,7 @@ import RoomState from "./state/roomState";
 import SourceState from "./state/sourceState";
 import SpawnState from "./state/spawnState";
 import ConstructionState from "./state/constructionState";
+import {registerType} from "./types";
 
 export const bootstrap: (() => void)[] = [];
 
@@ -27,14 +28,16 @@ bootstrap.push(() => {
 
 bootstrap.push(() => {
   registerStateScoreProvider();
-  eventManager.registerNamedClass(new CreepState("proto"), CreepState.vright);
-  eventManager.registerNamedClass(new ConstructionState("proto"), ConstructionState.vright);
-  eventManager.registerNamedClass(new EnemyCreepState("proto"), EnemyCreepState.vright);
-  eventManager.registerNamedClass(new GlobalState("proto"), GlobalState.game);
-  eventManager.registerNamedClass(new MineralState("proto"), MineralState.vright);
-  eventManager.registerNamedClass(new RoomState("proto"), RoomState.vright);
-  eventManager.registerNamedClass(new SourceState("proto"), SourceState.vright);
-  eventManager.registerNamedClass(new SpawnState("proto"), SpawnState.vright);
+  registerType(new CreepState("proto").className(), CreepState);
+  registerType(new ConstructionState("proto").className(), ConstructionState);
+  registerType(new EnemyCreepState("proto").className(), EnemyCreepState);
+  registerType(new GlobalState("proto").className(), GlobalState);
+  registerType(new MineralState("proto").className(), MineralState);
+  registerType(new RoomState("proto").className(), RoomState);
+  registerType(new SourceState("proto").className(), SourceState);
+  registerType(new SpawnState("proto").className(), SpawnState);
+
+  registerType(STRUCTURE_SPAWN, SpawnState);
 });
 
 bootstrap.push(() => {
