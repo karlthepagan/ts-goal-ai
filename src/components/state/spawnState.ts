@@ -31,7 +31,6 @@ export default class SpawnState extends State<Spawn> {
   // TODO hook?
   public createCreep(body: string[], name?: string, mem?: any): number {
     const result = this.subject().createCreep(body, name);
-    const time = body.length * 3;
     const em = State.events;
 
     if (typeof result === "number") {
@@ -42,16 +41,27 @@ export default class SpawnState extends State<Spawn> {
     // TODO fire behavior think?
     // State.events.schedule(time, this).onSpawn(this.think, mem);
 
+    debugger;
     const creepName = result as string;
-    const creep = CreepState.vright(creepName); // WOW we create our memory object before spawning... ok!
-    em.schedule(time, creep)
-      .onSpawn(creep.setMemory, mem)
-      .onSpawn(creep.rescan);
+    // const creep = CreepState.right(Game.creeps[creepName]);
+    // while we CAN get the creep before next tick... it DOESN'T have the id until next tick!
 
-    // const game = GlobalState.game()
-    // State.events.schedule(time, game).onSpawn(game.) // TODO does global strategy need to know?
+    em.schedule(1, this)
+      .onSpawn(this.onSpawn, creepName, mem);
 
     return 0;
+  }
+
+  public onSpawn(creepName: string, mem: any) {
+    debugger;
+    const creep = Game.creeps[creepName];
+    const time = creep.body.length * 3;
+
+    const state = CreepState.left(creep);
+    State.events.schedule(time, state)
+      .onSpawn(state.setMemory, mem)
+      .onSpawn(state.rescan);
+    // TODO don't fear the reaper, you will die in 1499? ticks
   }
 
   protected _accessAddress() {

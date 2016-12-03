@@ -41,6 +41,7 @@ export interface TriggeredEvents extends Registry {
   preMove(pos: RoomPosition): TriggeredEvents;
   onMove(): TriggeredEvents; // dispatches
   onDone(site: ConstructionSite): TriggeredEvents; // TODO build -> done -> built
+  onDeath(pos: RoomPosition): TriggeredEvents;
 }
 
 export interface CallbackRegistry {

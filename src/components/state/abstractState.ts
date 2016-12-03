@@ -12,6 +12,7 @@ type XY = {x: number, y: number};
 
 function strAsPos(room: string, serialized?: string): RoomPosition {
   if (serialized === undefined) {
+    debugger;
     return new RoomPosition(25, 25, room);
   }
 
@@ -171,7 +172,7 @@ abstract class State<T> implements Named {
   }
 
   public pos(): RoomPosition {
-    if (this._visionSource()) {
+    if (this._visionSource() && this.resolve()) {
       return (this.subject() as any).pos;
     }
     return strAsPos(this._memory.room, this._memory.pos);

@@ -2,15 +2,16 @@ import State from "./abstractState";
 import {log} from "../support/log";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
+import {TERRAIN_ROAD, TERRAIN_PLAIN, TERRAIN_SWAMP} from "../constants";
 // const BiMap = require("bimap"); // TODO BiMap
 
 const MOVE_KEYS = {
   // yes i'm being clever here, don't change constants
-  ROAD: 1,
+  ROAD: TERRAIN_ROAD,
   ROAD_LOAD: 0,
-  PLAIN: 2,
+  PLAIN: TERRAIN_PLAIN,
   PLAIN_LOAD: 3,
-  SWAMP: 5,
+  SWAMP: TERRAIN_SWAMP,
   SWAMP_LOAD: 4,
 };
 
@@ -188,7 +189,12 @@ export default class CreepState extends State<Creep> {
   }
 
   public isCarrying(): boolean {
+    // TODO put # of carry parts in memory
     return _.chain(this.subject().carry).values().all(isZero).value();
+  }
+
+  public getWeight(): number {
+    return this.isRemote() ? 25 : this.subject().body.length;
   }
 
   public getCarrying(): number {
@@ -280,10 +286,6 @@ export default class CreepState extends State<Creep> {
 
   protected _visionSource() {
     return true;
-  }
-
-  protected _getId(subject: Creep) {
-    return subject.name;
   }
 
   protected init(rootMemory: any): boolean {

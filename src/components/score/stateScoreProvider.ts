@@ -11,6 +11,7 @@ import {log} from "../support/log";
 import * as F from "../functions";
 import {SCORE_KEY} from "./scoreManager";
 import EnemyCreepState from "../state/enemyCreepState";
+import {TERRAIN_PLAIN, TERRAIN_ROAD, TERRAIN_SWAMP} from "../constants";
 
 type StateScoreImpl<T> = { [key: string]: ScoreHandler<T, GlobalState> };
 
@@ -19,6 +20,8 @@ type StateScoreImpl<T> = { [key: string]: ScoreHandler<T, GlobalState> };
 export const DISTANCE_WEIGHT = 9;
 export const FATIGUE_WEIGHT = 4;
 export const WORK_WEIGHT = 2;
+export const ROAD_WEIGHT = 3; // cost to maintain roads
+export const SWAMP_WEIGHT = 1; // cost to route around swamps
 
 export default function registerStateScoreProvider() {
   scoreManager.addHandler(new CreepState("proto").className(), impl.creepState);
@@ -58,12 +61,40 @@ function scoreTtl(state: CreepState): number {
   return creep.ticksToLive;
 }
 
+function scoreRoad(state: CreepState): number {
+
+  const creep = state.subject();
+  if (creep === undefined) {
+    return 0;
+  }
+
+  if (state.isCarrying()) {
+    return (ROAD_WEIGHT * state.maxMovePenalty(TERRAIN_PLAIN) - state.maxMovePenalty(TERRAIN_ROAD)) / state.getWeight();
+  }
+  return (ROAD_WEIGHT * state.minMoveFatigue(TERRAIN_PLAIN) - state.minMoveFatigue(TERRAIN_ROAD)) / state.getWeight();
+}
+
+function scoreSwamp(state: CreepState): number {
+
+  const creep = state.subject();
+  if (creep === undefined) {
+    return 0;
+  }
+
+  if (state.isCarrying()) {
+    return SWAMP_WEIGHT * state.maxMovePenalty(TERRAIN_SWAMP) - state.maxMovePenalty(TERRAIN_PLAIN);
+  }
+  return SWAMP_WEIGHT * state.minMoveFatigue(TERRAIN_SWAMP) - state.minMoveFatigue(TERRAIN_PLAIN);
+}
+
 const impl = {
   // CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS
   creepState: {
     move: scoreMove,
     venergy: scoreWork,
     ttl: scoreTtl,
+    road: scoreRoad, // this goes very low if the creep gets no benefit from roads and has large part count
+    swamp: scoreSwamp, // this goes very low when the creep gains large fatigue from swamps
   } as StateScoreImpl<CreepState>,
 
   // ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY ENEMY
