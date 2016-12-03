@@ -29,7 +29,7 @@ export default class LookForIterator<T> implements Iterable<boolean>, Iterator<b
   private _minY: number;
   private _findCallbacks: FindCallback<T>[];
   private _thisArg: undefined|T;
-  private _callbackFailure?: (found: any, callback?: FindCallback<T>) => boolean;
+  private _callbackFailure?: (found: any, callback?: FindCallback<T>, thisArg?: T) => boolean;
 
   constructor(pos: RoomPosition, maxDistance: number,
               thisArg: undefined|T,
@@ -56,7 +56,7 @@ export default class LookForIterator<T> implements Iterable<boolean>, Iterator<b
       if (find.value && this._callbackFailure) {
         for (const found of res) {
           const callbackSuccess = find.value(found, dist, this._thisArg);
-          doContinue = doContinue && (callbackSuccess || this._callbackFailure(found, find));
+          doContinue = doContinue && (callbackSuccess || this._callbackFailure(found, find, this._thisArg));
         }
       } else if (find.value) {
         for (const found of res) {
@@ -64,7 +64,7 @@ export default class LookForIterator<T> implements Iterable<boolean>, Iterator<b
           doContinue = doContinue && callbackSuccess;
         }
       } else if (this._callbackFailure) {
-        doContinue = doContinue && (res.length !== 0 || this._callbackFailure(undefined));
+        doContinue = doContinue && (res.length !== 0 || this._callbackFailure(undefined, undefined, this._thisArg));
       } else {
         doContinue = doContinue && res.length !== 0;
       }

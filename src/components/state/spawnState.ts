@@ -53,13 +53,14 @@ export default class SpawnState extends State<Spawn> {
     const time = creep.body.length * 3;
 
     const state = CreepState.left(creep);
-    State.events.schedule(time, state)
+    State.events.schedule(time - 1, state)
       .onSpawn(state.setMemory, mem)
-      .onSpawn(state.rescan);
-    // TODO don't fear the reaper, you will die in 1499? ticks
+      .onSpawn(state.rescan)
+      .onMove(state.touching)
+      .on("say", state.keepSaying, "🎂", true, 3);
 
     // TODO fire behavior think?
-    // State.events.schedule(time, this).onSpawn(this.think, mem);
+    // State.events.schedule(time, GlobalState.game()).onSpawn(this.think);
   }
 
   protected _accessAddress() {

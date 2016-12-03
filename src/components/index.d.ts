@@ -18,6 +18,16 @@ interface Commands {
    * last think time
    */
   last: number;
+
+  /**
+   * procedural transfers
+   */
+  hardxfer: boolean;
+
+  /**
+   * procedural idle
+   */
+  hardidle: boolean;
 }
 
 interface Options {

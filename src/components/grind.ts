@@ -36,18 +36,26 @@ export function grind(state: GlobalState) {
     doScans(state, th.isRoomscanTime(), th.isRescoreTime(), th.isRemoteRoomScanTime());
   }
 
-  const creeps = _.values<Creep|null>(Game.creeps);
+  const creeps = _.values<Creep|null>(Game.creeps).filter(i => !(i === null || i.ticksToLive === undefined));
   // tasked is useful for double-checking my accounting
   const tasked: { [creepIdToSourceId: string]: string } = {};
 
   if (!commands.pause) {
+
+    if (creeps.length > 0) {
+      if (commands.hardxfer) {
+        debugger;
+        doTransfers(state, creeps, tasked);
+      }
+
+      doHarvest(state, creeps, tasked);
+
+      if (commands.hardidle) {
+        doIdle(state, opts, creeps, tasked);
+      }
+    }
+
     doSpawn(state, opts);
-
-    doTransfers(state, creeps, tasked);
-
-    doHarvest(state, creeps, tasked);
-
-    doIdle(state, opts, creeps, tasked);
   }
 
   commands.last = Game.time;
@@ -64,7 +72,7 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
       let result = false;
       if (action.value !== undefined) {
         const target = Game.getObjectById(action.target as string);
-        result = target === undefined ? false : action.value.bind(creep)(target);
+        result = target === undefined ? false : action.value.call(creep, target);
       }
       if (result) {
         delete cachedIdleActions[creep.id];
@@ -89,25 +97,27 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
 
     LookForIterator.search<Creep>(creep.pos, 3, creep, [{
       key: LOOK_CREEPS,
-      value: (other: Creep, range: number, caller: Creep) => {
+      value: (other: Creep, range: number, self: Creep) => {
         if (range < 0) {
           return true;
         }
+        let result = 0;
         if (CreepState.left(other).memory().working !== undefined) {
-          const result = other.transfer(caller, RESOURCE_ENERGY);
-          log.debug("transfer", result);
+          result = other.transfer(self, RESOURCE_ENERGY);
         } else if (energy(other) > 5) {
-          const result = other.transfer(caller, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
+          result = other.transfer(self, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
+        }
+        if (result !== 0) {
           log.debug("transfer", result);
         }
         return true;
       },
     }, {
       key: LOOK_ENERGY,
-      value: (resource: Resource, range: number, caller: Creep) => {
+      value: (resource: Resource, range: number, self: Creep) => {
         range = range;
-        if (caller.pickup(resource) === 0) {
-          caller.say("🔆", false);
+        if (self.pickup(resource) === 0) {
+          self.say("🔆", false);
           return false;
         }
         return true;
@@ -216,15 +226,17 @@ export function doTransfers(state: GlobalState,
       // energy hungry, feed me!
       LookForIterator.search<OwnedStructure>(spawn.pos, 3, spawn, [{
         key: LOOK_CREEPS,
-        value: (other: Creep, range: number, caller: OwnedStructure) => {
+        value: (other: Creep, range: number, self: OwnedStructure) => {
           if (range < 0) {
             return true;
           }
+          let result = 0;
           if (CreepState.left(other).memory().working !== undefined) {
-            const result = other.transfer(caller, RESOURCE_ENERGY);
-            log.debug("transfer", result);
+            result = other.transfer(self, RESOURCE_ENERGY);
           } else if (energy(other) > 5) {
-            const result = other.transfer(caller, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
+            result = other.transfer(self, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
+          }
+          if (result !== 0) {
             log.debug("transfer", result);
           }
           return true;
@@ -276,6 +288,11 @@ export function doHarvest(state: GlobalState,
       log.debug(F.str(creeps, compactSize), "left");
 
       let candidates = _.chain(creeps).compact().filter((creep: Creep) => {
+        if (creep.pos.roomName === undefined) {
+          // not yet spawned
+          debugger;
+          return false;
+        }
         const taskId = tasked[creep.id];
         if (taskId !== undefined && taskId !== source.getId()) {
           log.warning("already tasked", creep);
@@ -385,19 +402,61 @@ export function doSpawn(state: GlobalState, commands: Options) {
   commands = commands;
 
   return state.spawns().map(spawnState => {
-    const spawn = spawnState.subject();
-
-    if (spawn.room.energyAvailable >= 200) {
-      spawnCreeps(state, spawnState);
-    }
+    spawnCreeps(state, spawnState);
   }).value();
 }
 
-function spawnCreeps(state: GlobalState, spawn: SpawnState) {
+function spawnCreeps(state: GlobalState, spawnState: SpawnState) {
   state = state;
 
+  const spawn = spawnState.subject();
+
+  switch (state.creeps().value().length) {
+    case 0:
+      if (spawn.room.energyAvailable < 200) {
+        return;
+      }
+      spawnState.createCreep([CARRY, WORK, MOVE]);
+      break;
+
+    case 1:
+    case 2:
+      if (spawn.room.energyAvailable < 300) {
+        return;
+      }
+      spawnState.createCreep([CARRY, WORK, WORK, MOVE]);
+      break;
+
+    default:
+      if (spawn.room.energyAvailable < spawn.room.energyCapacityAvailable) {
+        return;
+      }
+      const majorSize = Math.floor(spawn.room.energyCapacityAvailable / 250);
+      let remaining = spawn.room.energyCapacityAvailable % 250;
+      let cost = majorSize * 250;
+      const body: string[] = [];
+      for (let i = 0; i < majorSize; i++) {
+        body.push(CARRY, WORK, MOVE, MOVE);
+      }
+      while (remaining >= 50) {
+        remaining -= 50;
+        cost += 50;
+        body.push(CARRY);
+        if (remaining >= 50) {
+          remaining -= 50;
+          cost += 50;
+          body.push(CARRY);
+        }
+        if (remaining >= 50) {
+          remaining -= 50;
+          cost += 50;
+          body.push(MOVE);
+        }
+      }
+
+      spawnState.createCreep(body);
+  }
   // log.info("I want to spawn creeps!", spawn);
-  spawn.createCreep([WORK, CARRY, MOVE]);
 }
 
 function tryHarvest(creepState: CreepState, sourceState: SourceState,

@@ -84,5 +84,7 @@ export function loop() {
     }
   }
 
-  log.info(Game.cpu.getUsed(), "+", Game.cpu.bucket);
+  if (Game.cpu.bucket !== undefined) {
+    log.info(Game.cpu.getUsed(), "+", Game.cpu.bucket);
+  }
 }

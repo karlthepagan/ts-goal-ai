@@ -4,6 +4,7 @@ import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 import {TERRAIN_ROAD, TERRAIN_PLAIN, TERRAIN_SWAMP} from "../constants";
 import LookForIterator from "../util/lookForIterator";
+import {eventManager} from "../event/eventSingleton";
 // const BiMap = require("bimap"); // TODO BiMap
 
 const MOVE_KEYS = {
@@ -261,6 +262,7 @@ export default class CreepState extends State<Creep> {
 
     if (typeof result === "number") {
       em.failure(this).move(result, direction);
+      return result;
     }
 
     // TODO is this ok? dispatch an interrupt notify creeps at the location i'm moving into
@@ -276,8 +278,9 @@ export default class CreepState extends State<Creep> {
     const result = this.subject().moveTo(target, opts);
     const em = State.events;
 
-    if (typeof result === "number") {
+    if (result !== 0) {
       em.failure(this).moveTo(result, target, opts);
+      return result;
     }
 
     // TODO look up _move and translate that to a direction
@@ -292,18 +295,72 @@ export default class CreepState extends State<Creep> {
   public touching() {
     // TODO reactive behaviors?
     // energy,
-    const pos = this.pos();
-    const posToDir = F.posToDirection(pos);
+    const selfpos = this.pos();
+    const posToDir = F.posToDirection(selfpos);
     this.memory("touch").creep = []; // reset creep touches
-    LookForIterator.search(pos, 1, this, [{
-      key: LOOK_CREEPS, value: creep => {
-        this.memory("touch.creep", true)[posToDir(creep.pos)] = creep.id;
-      }
+    this.memory("touch").energy = [];
+    LookForIterator.search(selfpos, 1, this, [{
+      key: LOOK_CREEPS, value: (creep: Creep, range: number, self: CreepState) => {
+        if (range < 0) {
+          return true;
+        }
+        const dir = posToDir(creep.pos);
+        self.memory("touch.creep", true)[dir] = creep.id;
+        return true;
+      },
+    }, {
+      key: LOOK_STRUCTURES, value: (struct: OwnedStructure, range: number, self: CreepState) => {
+        range = range;
+        switch (struct.structureType) {
+          case STRUCTURE_CONTAINER:
+          case STRUCTURE_EXTENSION:
+          case STRUCTURE_SPAWN:
+          case STRUCTURE_STORAGE:
+          case STRUCTURE_TOWER:
+            self.memory("touch.energy", true)[posToDir(struct.pos)] = struct.id;
+            break;
+
+          default:
+        }
+        return true;
+      },
     }, {
       key: LOOK_ENERGY, value: resource => {
-        log.debug("touching energy");
-      }
+        log.debug("touching energy: ", resource);
+        return true;
+      },
     }]);
+  }
+
+  public keepSaying(say: string, toPublic?: boolean, count?: number) {
+    if (count !== undefined && --count <= 0) {
+      return;
+    }
+
+    eventManager.schedule(1, this)
+      .on("say", this.keepSaying, say, toPublic, count);
+    if (this.resolve()) {
+      this.subject().say(say, toPublic);
+    }
+  }
+
+  public beforeDeath() {
+    if (this.resolve()) {
+      const s = this.subject();
+      if (s.carry.energy) {
+        s.drop(RESOURCE_ENERGY);
+      }
+      if (s.carry.power) {
+        s.drop(RESOURCE_POWER);
+      }
+      for (const t in s.carry) {
+        s.drop(t);
+      }
+    }
+  }
+
+  public isReady() {
+    return this.resolve() && this.subject().ticksToLive !== undefined;
   }
 
   protected _accessAddress() {
@@ -342,6 +399,14 @@ export default class CreepState extends State<Creep> {
         const {armor, hull} = CreepState.calculateArmorAndHull(creep.body);
         this.memory().armor = armor;
         this.memory().hull = hull;
+
+        if (creep.ticksToLive !== undefined) {
+          // on re-init these will be duplicated
+          eventManager.schedule(creep.ticksToLive - 10, this)
+            .on("say", this.keepSaying, "💀", true, 10);
+          eventManager.schedule(creep.ticksToLive - 1, this)
+            .onDeath(this.beforeDeath);
+        }
       }
 
       return true;

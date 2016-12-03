@@ -19,7 +19,7 @@ interface EventMemory {
   /**
    * Map of time indexes to lists of callback declarations
    */
-  timeline: { [key: number]: Tick };
+  timeline: { [key: string]: Tick };
 }
 
 type InstanceTick = {instance: Named, tick: Tick};
@@ -79,9 +79,8 @@ class DispatchManager extends EventProxy<Named, TriggeredEvents> {
 class FailureManager extends EventProxy<Named, FailureEvents> {
   protected handleEvent(target: Named, eventName: string, ...args: any[]): void {
     target = target;
+    eventName = eventName;
     args = args;
-    debugger; // register failure
-    log.debug("failure: ", eventName);
   }
 }
 
@@ -90,6 +89,7 @@ export default class EventManager implements EventRegistry {
   private _dispatcher: DispatchManager = new DispatchManager();
   private _failures: FailureManager = new FailureManager();
   private _classes: { [name: string]: (id: string) => Named } = {};
+  private _dispatchTime: number|undefined;
 
   public registerNamedClass(example: Named, constructor: (id: string) => Named) {
     if (this._classes[example.className()] !== undefined) {
@@ -98,14 +98,20 @@ export default class EventManager implements EventRegistry {
     this._classes[example.className()] = constructor;
   }
 
+  public dispatchTime(): number|undefined {
+    return this._dispatchTime;
+  }
+
   /**
    * ticks may be delayed to allow for CPU conservation
    */
   public dispatchTick(time: number) {
+    this._dispatchTime = time;
     let last = F.elvis(this.memory().lastTick, time - 1);
+    const timeline = F.expand([ "timeline" ], this.memory());
 
-    while (last < time) {
-      let tick = this.memory().timeline[last + 1];
+    while (last++ < time) {
+      let tick = timeline["" + last];
       if (tick !== undefined) {
         for (const eventName in tick) {
           for (const event of tick[eventName]) {
@@ -116,28 +122,34 @@ export default class EventManager implements EventRegistry {
         }
       }
 
-      this.memory().lastTick = ++last;
+      this.memory().lastTick = last;
+      delete timeline["" + last];
     }
+    this._dispatchTime = undefined;
   }
 
   // TODO method to look for the ticks remaining to and subject of a pending event
 
-  public schedule(relativeTime: number, instance: Named) {
-    const tick = F.expand([relativeTime], this.memory().timeline) as Tick;
+  public schedule(relativeTime: number, instance: Named): SchedulableRegistry {
+    if (isNaN(relativeTime)) {
+      debugger;
+      throw new Error("illegal relativeTime");
+    }
+    relativeTime += F.elvis(this.dispatchTime(), Game.time); // TODO should we fastforward ever?
+    const tick = F.expand([ "timeline", "" + relativeTime ], this.memory()) as Tick;
     return new Proxy({instance, tick}, this._scheduler) as any;
   }
 
-  public failure(instance: Named) {
+  public failure(instance: Named): FailureEvents {
     return new Proxy(instance, this._failures) as any;
   }
 
-  public dispatch(instance: Named) {
+  public dispatch(instance: Named): TriggeredEvents {
     return new Proxy(instance, this._dispatcher) as any;
   }
 
   protected memory(): EventMemory {
     const mem = F.expand(["events"], botMemory()) as EventMemory;
-    F.expand(["timeline"], mem);
     return mem;
   }
 }
