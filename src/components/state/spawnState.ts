@@ -25,7 +25,7 @@ export default class SpawnState extends State<Spawn> {
   private static _vright: SpawnState = new SpawnState("SpawnStateVirtualRight");
 
   public className() {
-    return "SpawnState";
+    return STRUCTURE_SPAWN;
   }
 
   // TODO hook?
@@ -52,15 +52,14 @@ export default class SpawnState extends State<Spawn> {
     const creep = Game.creeps[creepName];
     const time = creep.body.length * 3;
 
+    // TODO reconcile with CreepState behavior seed
+    // TODO fire behavior think?
     const state = CreepState.left(creep);
     State.events.schedule(time - 1, state)
       .onSpawn(state.setMemory, mem)
       .onSpawn(state.rescan)
-      .onMove(state.touching)
-      .on("say", state.keepSaying, "🎂", true, 3);
+      .onMove(state.touching);
 
-    // TODO fire behavior think?
-    // State.events.schedule(time, GlobalState.game()).onSpawn(this.think);
   }
 
   protected _accessAddress() {

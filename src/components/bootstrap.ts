@@ -35,7 +35,6 @@ bootstrap.push(() => {
   registerType(new MineralState("proto").className(), MineralState);
   registerType(new RoomState("proto").className(), RoomState);
   registerType(new SourceState("proto").className(), SourceState);
-  registerType(new SpawnState("proto").className(), SpawnState);
 
   registerType(STRUCTURE_SPAWN, SpawnState);
 });

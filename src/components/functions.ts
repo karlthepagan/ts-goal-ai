@@ -208,6 +208,7 @@ export function deleteExpand(address: PropertyKey[], memory: any, array?: boolea
   return delete memory[address[last]];
 }
 
+// TODO consider replacing with _.defaultsDeep
 export function expand(address: PropertyKey[], memory: any, array?: boolean): any {
   if (address.length === 0) {
     return memory;

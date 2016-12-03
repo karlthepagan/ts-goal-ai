@@ -4,7 +4,7 @@ import {botMemory, FLYWEIGHTS} from "../../config/config";
 import SourceState from "./sourceState";
 import MineralState from "./mineralState";
 import SpawnState from "./spawnState";
-import RoomIterable from "../util/roomIterable";
+import RoomIterator from "../util/roomIterator";
 import * as F from "../functions";
 
 /**
@@ -43,7 +43,7 @@ export default class RoomState extends State<Room> {
   }
 
   public grid(): Iterable<RoomState> {
-    return new RoomIterable(this.pos());
+    return new RoomIterator(this.pos());
   }
 
   public eachSource<T>(f: (room: SourceState) => T): T[] {

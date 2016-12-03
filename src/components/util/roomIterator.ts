@@ -2,11 +2,18 @@ import * as F from "../functions";
 import RoomState from "../state/roomState";
 import XYIterator from "./xyIterator";
 
-export default class RoomIterator implements Iterator<RoomState> {
+export default class RoomIterator implements Iterator<RoomState>, Iterable<RoomState> {
+  private _start: RoomPosition;
   private _xyIter: XYIterator<F.XY>;
 
-  constructor(roomName: string) { // TODO borders
-    this._xyIter = new XYIterator<F.XY>(F.parseRoomName(roomName));
+  constructor(start: RoomPosition) {
+    this._start = start;
+    this._xyIter = new XYIterator<F.XY>(F.parseRoomName(start.roomName));
+  }
+
+  public [Symbol.iterator](): Iterator<RoomState> {
+    // TODO iterable iterator clones?
+    return new RoomIterator(this._start);
   }
 
   public depth(): number {

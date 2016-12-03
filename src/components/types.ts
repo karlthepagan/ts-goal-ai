@@ -7,7 +7,7 @@ export function registerType(typeName: string, type: any) {
   types[typeName] = type;
 }
 
-export function getType(name: string) {
+export default function getType(name: string) {
   return types[name];
 }
 

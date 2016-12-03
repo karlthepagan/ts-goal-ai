@@ -3,7 +3,7 @@ import * as F from "../functions";
 import {SchedulableRegistry, EventRegistry, FailureEvents, TriggeredEvents} from "./index";
 import Named from "../named";
 import {botMemory} from "../../config/config";
-import {getType} from "../types";
+import getType from "../types";
 
 type Event = {name: string, id: string, method: string, args: any[]};
 
@@ -128,8 +128,14 @@ export default class EventManager implements EventRegistry {
       debugger;
       throw new Error("illegal relativeTime");
     }
-    relativeTime += F.elvis(this.dispatchTime(), Game.time); // TODO should we fastforward ever?
-    const tick = F.expand([ "timeline", "" + relativeTime ], this.memory()) as Tick;
+    let tick: Tick;
+    if (relativeTime < 1) {
+      // TODO assertions?
+      tick = { toString: () => "NO TICK" } as Tick;
+    } else {
+      relativeTime += F.elvis(this.dispatchTime(), Game.time); // TODO should we fastforward ever?
+      tick = F.expand([ "timeline", "" + relativeTime ], this.memory()) as Tick;
+    }
     return new Proxy({instance, tick}, this._scheduler) as any;
   }
 

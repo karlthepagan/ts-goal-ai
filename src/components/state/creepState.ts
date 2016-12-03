@@ -5,7 +5,7 @@ import * as F from "../functions";
 import {TERRAIN_ROAD, TERRAIN_PLAIN, TERRAIN_SWAMP} from "../constants";
 import LookForIterator from "../util/lookForIterator";
 import {eventManager} from "../event/eventSingleton";
-import {getType} from "../types";
+import getType from "../types";
 // const BiMap = require("bimap"); // TODO BiMap
 
 const MOVE_KEYS = {
@@ -48,10 +48,6 @@ const WORK_FIGHT: { [key: string]: number } = {
 };
 
 const CARRY_RECIPROCAL = 1 / 50;
-
-function isZero(n: number) {
-  return n === 0;
-}
 
 /**
  * parts for working, excludes move, includes work
@@ -223,7 +219,7 @@ export default class CreepState extends State<Creep> {
 
   public isCarrying(): boolean {
     // TODO put # of carry parts in memory
-    return _.chain(this.subject().carry).values().all(isZero).value();
+    return _.chain(this.subject().carry).values().all(i => i === 0).value();
   }
 
   public getWeight(): number {
@@ -441,6 +437,8 @@ export default class CreepState extends State<Creep> {
     return true;
   }
 
+  // TODO extend _resolve and required timeToLive !== undefined?
+
   protected init(rootMemory: any): boolean {
     if (super.init(rootMemory)) {
       if (this.resolve()) {
@@ -466,12 +464,16 @@ export default class CreepState extends State<Creep> {
         this.memory().armor = armor;
         this.memory().hull = hull;
 
+        // TODO creepstate behavior seed
+
         if (creep.ticksToLive !== undefined) {
           // on re-init these will be duplicated
           eventManager.schedule(creep.ticksToLive - 10, this)
-            .on("say", this.keepSaying, "💀", true, 10);
+            .on("say", this.keepSaying, "💀", true, 10); // dying
           eventManager.schedule(creep.ticksToLive - 1, this)
             .onDeath(this.beforeDeath);
+          eventManager.schedule(creep.ticksToLive - 1499, this)
+            .on("say", this.keepSaying, "🎂", true, 3); // birthday
         }
       }
 
