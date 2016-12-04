@@ -442,38 +442,38 @@ export default class CreepState extends State<Creep> {
   }
 
   protected init(rootMemory: any): boolean {
+    if (this._visionSource() && (!this.resolve() || this.subject().spawning)) {
+      return false;
+    }
+
     if (super.init(rootMemory)) {
-      if (this.resolve()) {
-        const creep = this.subject();
+      const creep = this.subject();
 
-        const move = this.memory("move", true);
-        const okRoad = move[MOVE_KEYS.ROAD] = CreepState.calculateFatigue(creep.body, 1, 0);
-        const roadLoad = move[MOVE_KEYS.ROAD_LOAD]
-          = CreepState.calculateFatigue(creep.body, 1, this.subject().carryCapacity) - okRoad;
-        const okMove = move[MOVE_KEYS.PLAIN] = CreepState.calculateFatigue(creep.body, 2, 0);
-        move[MOVE_KEYS.PLAIN_LOAD] = CreepState.calculateFatigue(creep.body, 2, this.subject().carryCapacity) - okMove;
-        const okSwamp = move[MOVE_KEYS.SWAMP] = CreepState.calculateFatigue(creep.body, 5, 0);
-        move[MOVE_KEYS.SWAMP_LOAD] = CreepState.calculateFatigue(creep.body, 5, this.subject().carryCapacity) - okSwamp;
+      const move = this.memory("move", true);
+      const okRoad = move[MOVE_KEYS.ROAD] = CreepState.calculateFatigue(creep.body, 1, 0);
+      const roadLoad = move[MOVE_KEYS.ROAD_LOAD]
+        = CreepState.calculateFatigue(creep.body, 1, this.subject().carryCapacity) - okRoad;
+      const okMove = move[MOVE_KEYS.PLAIN] = CreepState.calculateFatigue(creep.body, 2, 0);
+      move[MOVE_KEYS.PLAIN_LOAD] = CreepState.calculateFatigue(creep.body, 2, this.subject().carryCapacity) - okMove;
+      const okSwamp = move[MOVE_KEYS.SWAMP] = CreepState.calculateFatigue(creep.body, 5, 0);
+      move[MOVE_KEYS.SWAMP_LOAD] = CreepState.calculateFatigue(creep.body, 5, this.subject().carryCapacity) - okSwamp;
 
-        this.memory().worker = CreepState.calculateBody(creep.body, false) + roadLoad;
-        if (okSwamp < 3) {
-          this.memory().seal = CreepState.calculateBody(creep.body, true) + okSwamp + "*";
-        } else {
-          this.memory().fighter = CreepState.calculateBody(creep.body, true) + okMove;
-        }
-
-        const {armor, hull} = CreepState.calculateArmorAndHull(creep.body);
-        this.memory().armor = armor;
-        this.memory().hull = hull;
-
-        if (creep.ticksToLive !== undefined) {
-          // on re-init these will be duplicated
-          eventManager.schedule(creep.ticksToLive - 10, this)
-            .on("say", this.keepSaying, "💀", true, 10);
-          eventManager.schedule(creep.ticksToLive - 1, this)
-            .onDeath(this.beforeDeath);
-        }
+      this.memory().worker = CreepState.calculateBody(creep.body, false) + roadLoad;
+      if (okSwamp < 3) {
+        this.memory().seal = CreepState.calculateBody(creep.body, true) + okSwamp + "*";
+      } else {
+        this.memory().fighter = CreepState.calculateBody(creep.body, true) + okMove;
       }
+
+      const {armor, hull} = CreepState.calculateArmorAndHull(creep.body);
+      this.memory().armor = armor;
+      this.memory().hull = hull;
+
+      // lifecycle, TODO move to behavior
+      eventManager.schedule(creep.ticksToLive - 10, this)
+        .on("say", this.keepSaying, "💀", true, 10);
+      eventManager.schedule(creep.ticksToLive - 1, this)
+        .onDeath(this.beforeDeath);
 
       return true;
     }
