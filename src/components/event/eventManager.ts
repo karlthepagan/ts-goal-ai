@@ -3,7 +3,7 @@ import * as F from "../functions";
 import Named from "../named";
 import {botMemory} from "../../config/config";
 import getType from "../types";
-import {EventRegistry, When, ApiCalls, Action, Schedule} from "./index";
+import {EventRegistry, When, ApiCalls, Action} from "./index";
 import State from "../state/abstractState";
 
 type Event = {name: string, id: string, method: string, args: any[]};
@@ -87,6 +87,7 @@ class FailureManager extends EventProxy<Named, any> { // TODO new proxy interfac
 }
 
 export default class EventManager implements EventRegistry {
+  private _events: ScheduleManager = new ScheduleManager(); // TODO new impl
   private _scheduler: ScheduleManager = new ScheduleManager(); // TODO new impl
   private _dispatchTime: number|undefined;
 
@@ -117,21 +118,25 @@ export default class EventManager implements EventRegistry {
     this._dispatchTime = undefined;
   }
 
-  public when(): Schedule {
-    // if (isNaN(relativeTime)) {
-    //   debugger; // illegal relativeTime
-    //   throw new Error("illegal relativeTime");
-    // }
-    // let tick: Tick;
-    // if (relativeTime < 1) {
-    //   // TODO assertions?
-    //   tick = { toString: () => "NO TICK" } as Tick;
-    // } else {
-    //   relativeTime += F.elvis(this.dispatchTime(), Game.time); // TODO should we fastforward ever?
-    //   tick = F.expand([ "timeline", "" + relativeTime ], this.memory()) as Tick;
-    // }
+  public when() { // : EventSelector {
     const tick = {};
-    return new Proxy(tick, this._scheduler) as any; // TODO fix the impl
+    return new Proxy(tick, this._events) as any; // TODO fix the impl
+  }
+
+  public schedule<T extends Named>(relativeTime: number, instance: T) { // : Action<OnScheduled, INST, void> {
+    if (isNaN(relativeTime)) {
+      debugger; // illegal relativeTime
+      throw new Error("illegal relativeTime");
+    }
+    let tick: Tick;
+    if (relativeTime < 1) {
+      // TODO assertions?
+      tick = { toString: () => "NO TICK" } as Tick;
+    } else {
+      relativeTime += F.elvis(this.dispatchTime(), Game.time); // TODO should we fastforward ever?
+      tick = F.expand([ "timeline", "" + relativeTime ], this.memory()) as Tick;
+    }
+    return new Proxy({instance, tick}, this._scheduler) as any; // TODO fix the impl
   }
 
   protected memory(): EventMemory {

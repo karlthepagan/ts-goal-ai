@@ -5,6 +5,7 @@ import * as F from "../functions";
 import {TERRAIN_ROAD, TERRAIN_PLAIN, TERRAIN_SWAMP} from "../constants";
 import LookForIterator from "../util/lookForIterator";
 import getType from "../types";
+import Joinpoint from "../event/joinpoint";
 // const BiMap = require("bimap"); // TODO BiMap
 
 const MOVE_KEYS = {
@@ -64,13 +65,9 @@ function isForFight(b: string) {
 
 function sparseDifference<T>(a: T[], b: T[]) {
   const result: T[] = [];
-  nextA:
   for (let i = a.length - 1; i >= 0; i--) {
-    for (let j = b.length - 1; j >= 0; j--) {
-      if (b[j] === a[i]) {
-        result[i] = a[i];
-        continue nextA;
-      }
+    if (b.indexOf(a[i]) < 0) { // indexOf is strict ===
+      result[i] = a[i];
     }
   }
   return result;
@@ -323,7 +320,7 @@ export default class CreepState extends State<Creep> {
     return result;
   }
 
-  public touching(jp: Joinpoint<void>, fromPos: RoomPosition, forwardDir: number) {
+  public touching(jp: Joinpoint<CreepState, void>, fromPos: RoomPosition, forwardDir: number) {
     jp = jp;
     fromPos = fromPos;
     forwardDir = forwardDir;

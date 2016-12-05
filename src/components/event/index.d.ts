@@ -1,45 +1,52 @@
 import Named from "../named";
 import CreepState from "../state/creepState";
+import Joinpoint from "./joinpoint";
 
-type ScheduledFunction = (args: any[]) => void;
+type OnMove<R> = (jp: Joinpoint<CreepState, void>, fromPos: RoomPosition, forwardDir: number, ...args: any[]) => R;
 
-type OnMove<R> = (jp: Joinpoint<void>, fromPos: RoomPosition, forwardDir: number, ...args: any[]) => R;
-type OnLifecycle<R> = (jp: Joinpoint<string>, ...args: any[]) => R; // spawn, death, decay, rested
-type OnEnergy<R> = (jp: Joinpoint<string>, ...args: any[]) => R;
+/**
+ * spawn, death, decay, rested
+ * TODO lifecycle is a good example of difference between call and apply. Maybe apply needs an extra argument which
+ * describes the subject of the event? Maybe call can go to any object not just the subject of the event?
+ */
+type OnLifecycle<I extends CreepState|OwnedStructure, R> = (jp: Joinpoint<I, string>, ...args: any[]) => R;
+type OnEnergy<I extends CreepState|OwnedStructure, R> = (jp: Joinpoint<I, string>, ...args: any[]) => R;
+type OnScheduled = (jp: Joinpoint<any, void>, ...args: any[]) => void;
 
 export interface WhenEvent<INST, CALLBACK> {
-  of<T extends INST>(instance: T): Action<CALLBACK, T, Schedule>;
-  ofAny<T extends INST>(type: () => T): Action<CALLBACK, T, Schedule>;
-  ofAll(): Action<CALLBACK, INST, Schedule>;
-  occursAt(relativeTime: number, instance: INST): Action<CALLBACK, INST, Schedule>;
+  of<T extends INST>(instance: T): Action<CALLBACK, T, EventSelector>;
+  ofAny<T extends INST>(type: () => T): Action<CALLBACK, T, EventSelector>;
+  ofAll(): Action<CALLBACK, INST, EventSelector>;
+  occursAt(relativeTime: number, instance: INST): Action<CALLBACK, INST, EventSelector>;
 }
 
-// schedule for a
-export interface Schedule {
+// watch for an event, then respond
+export interface EventSelector {
+  // TODO instances bound by selectors are for the destination, instances bound elsewhere are ???
   /**
    * creep to be spawned
    */
-  spawn(): WhenEvent<Creep, OnLifecycle<void>>;
+  spawn(): WhenEvent<CreepState, OnLifecycle<CreepState, void>>;
   /**
    * creep will die
    */
-  death(): WhenEvent<Creep, OnLifecycle<void>>;
+  death(): WhenEvent<CreepState, OnLifecycle<CreepState, void>>;
   /**
    * fatigue was high but is now zero
    */
-  rested(): WhenEvent<CreepState, OnLifecycle<void>>;
+  rested(): WhenEvent<CreepState, OnLifecycle<CreepState, void>>;
   /**
    * structure will decay one step
    */
-  decay<T extends OwnedStructure>(): WhenEvent<T, OnLifecycle<void>>;
+  decay<T extends OwnedStructure>(): WhenEvent<T, OnLifecycle<T, void>>;
   /**
    * energy will be full
    */
-  full<T extends CreepState|OwnedStructure>(): WhenEvent<T, OnEnergy<void>>; // TODO structure state
+  full<T extends CreepState|OwnedStructure>(): WhenEvent<T, OnEnergy<T, void>>; // TODO structure state
   /**
    * energy will be empty
    */
-  empty<T extends CreepState|OwnedStructure>(): WhenEvent<T, OnEnergy<void>>;
+  empty<T extends CreepState|OwnedStructure>(): WhenEvent<T, OnEnergy<T, void>>;
   /**
    * creep moved in last tick
    * TODO ambiguous with the command? before -> after
@@ -87,17 +94,18 @@ export interface ApiCalls<INST> {
  * @param TYPE? - target for watch, schedule or intercept or triggers
  * @param SELECT - required filters, start of the chain
  */
-export interface Action<CALLBACK, TYPE, SELECT> {
+export interface Action<CALLBACK, TYPE, SELECT> { // TODO TYPE for origin of the event? (that's in the EventRegistry)
   callAnd       (instance: TYPE, callback: CALLBACK, ...args: any[]): Action<CALLBACK, TYPE, SELECT>;
   call          (): TYPE; // direct call, captured by proxy
   apply         (func: Function): void; // direct function invoke
   wait          (relativeTime: number): Action<CALLBACK, TYPE, SELECT>;
-  filterOn      (thisArg: Named, callback: CALLBACK, ...args: any[]): SELECT; // illegal for When.after or Schedule
+  // TODO filter on source or destination
+  filterOn      (thisArg: Named, callback: CALLBACK, ...args: any[]): SELECT; // illegal for When.after or EventSelector
   or            (): SELECT;
   andThen       (): SELECT; // illegal for When.before
   // TODO tap
   // andIntercept  <INST extends State<any>>(instance: State<any>): When<ApiCalls<INST>>; // NEW SUBJECT, JOIN
-  andSchedule   (): Schedule;
+  andWhen       (): EventSelector;
   D             (): SELECT; // close paren
 }
 
@@ -130,8 +138,13 @@ export interface Registry {
   on(event: string, ...args: any[]): Registry;
 }
 
-export interface EventRegistry {
-  when(): Schedule;
+export interface Schedule {
+
+}
+
+export interface EventRegistry { // TODO instances declared in this context are the source of event bindings
+  when(): EventSelector;
+  schedule<INST extends Named>(relativeTime: number, instance: INST): Action<OnScheduled, INST, void>;
   // schedule      <INST extends Named>(relativeTime: number, instance: INST): Schedule<INST>;
   // interceptOne  <INST extends State<any>>(instance: INST): When<ApiCalls<INST>>;
   // intercept     <INST extends State<any>>(instance: () => INST): When<ApiCalls<INST>>;

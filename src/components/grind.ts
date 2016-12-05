@@ -471,7 +471,7 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
           log.error("failed to resolve", sourceState);
           return false;
         }
-        const mineResult = api(creepState).harvest(sourceState.subject()); // TODO arg: api(sourceState));
+        const mineResult = api(creepState).harvest(sourceState.subject());
         if (mineResult !== 0) {
           log.debug("harvest failed", sourceState, "moveTo=", mineResult, creepState);
         }

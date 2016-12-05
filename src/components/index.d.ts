@@ -76,4 +76,9 @@ interface Options {
    * number of incomplete (bot) think ticks before we need to shuffle
    */
   failedTicksToShuffle: number;
+
+  /**
+   * turn off Proxy interception of api calls which route thru api(State<any>)
+   */
+  disableBehaviors: boolean;
 }

@@ -13,7 +13,7 @@ export function registerTypeAs(type: Function, alias: string) {
   if (types[typeName] === undefined) {
     throw new Error("not registered " + typeName + ", cannot alias");
   }
-  if (types[alias] === undefined) {
+  if (types[alias] !== undefined) {
     throw new Error("already registered " + alias + ", cannot reassign");
   }
   types[alias] = type;

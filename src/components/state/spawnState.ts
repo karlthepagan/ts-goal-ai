@@ -47,22 +47,6 @@ export default class SpawnState extends State<Spawn> {
   //   return 0;
   // }
 
-  // public onSpawn(jp: Joinpoint<string>) {
-  //   jp = jp;
-  //   const creepName = jp.returnValue as string;
-  //   // const mem = jp.args[2];
-  //   const creep = Game.creeps[creepName];
-  //   const time = creep.body.length * 3;
-  //
-  //   // TODO reconcile with CreepState behavior seed
-  //   // TODO fire behavior think?
-  //   // const state = CreepState.left(creep);
-  //   // State.events.schedule(time - 1, state) // TODO restore
-  //   //   .onSpawn().thenCall(state.setMemory, mem).thenCall(state.rescan)
-  //   //   .andThen().onMove().thenCall(state.touching);
-  //
-  // }
-
   protected _accessAddress() {
     return ["spawns"];
   }
@@ -75,9 +59,10 @@ export default class SpawnState extends State<Spawn> {
     return true;
   }
 
-  protected _getId(subject: Spawn) {
-    return subject.name;
-  }
+  // TODO getId?
+  // protected _getId(subject: Spawn) {
+  //   return subject.id;
+  // }
 
   protected init(rootMemory: any): boolean {
     if (super.init(rootMemory)) {

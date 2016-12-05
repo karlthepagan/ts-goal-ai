@@ -1,14 +1,15 @@
 import {log} from "../support/log";
 import State from "../state/abstractState";
 import getType from "../types";
+import Joinpoint from "../event/joinpoint";
 
 class Interceptor {
-  public test(jp: Joinpoint<any>): boolean {
+  public test(jp: Joinpoint<any, any>): boolean {
     jp = jp;
     return false;
   }
 
-  public invoke(jp: Joinpoint<any>): boolean {
+  public invoke(jp: Joinpoint<any, any>): boolean {
     jp = jp;
     return false;
   }
@@ -36,13 +37,14 @@ export default class BehaviorInterceptor implements ProxyHandler<State<any>> {
       const value = subject[p];
 
       if (typeof value === "function") {
-        const jp = new Joinpoint(className, objectId, method);
+        const jp = new Joinpoint<any, any>(className, method, objectId);
         jp.target = subject;
 
         // function proxy intercept the call
         return new Proxy(value, {
           apply: (callTarget: Function, thisArg: any, argArray: any[]): any => {
             thisArg = thisArg;
+            debugger;
             jp.args = argArray;
             jp.proceedApply = callTarget;
             try {
@@ -65,7 +67,7 @@ export default class BehaviorInterceptor implements ProxyHandler<State<any>> {
   }
 
   // TODO mutate or simply return?
-  protected beforeCall(jp: Joinpoint<any>): Function {
+  protected beforeCall(jp: Joinpoint<any, any>): Function {
     // : BeforeCallback<any> = (className, objectId, func, result, args) => {
     const interceptors = this.getInterceptors(jp, BEFORE_CALL);
     if (interceptors.length === 0) {
@@ -82,7 +84,7 @@ export default class BehaviorInterceptor implements ProxyHandler<State<any>> {
     return jp.proceed(); // TODO apply within?
   }
 
-  protected onCall(jp: Joinpoint<any>): any {
+  protected onCall(jp: Joinpoint<any, any>): any {
     const interceptors = this.getInterceptors(jp, AFTER_CALL);
     if (interceptors.length === 0) {
       return jp.proceed; // TODO apply within?
@@ -98,7 +100,7 @@ export default class BehaviorInterceptor implements ProxyHandler<State<any>> {
     return jp.returnValue; // TODO apply within?
   }
 
-  protected afterFail(jp: Joinpoint<any>): any {
+  protected afterFail(jp: Joinpoint<any, any>): any {
     const interceptors = this.getInterceptors(jp, AFTER_FAIL);
     if (interceptors.length === 0) {
       throw jp.thrownException;
@@ -114,7 +116,7 @@ export default class BehaviorInterceptor implements ProxyHandler<State<any>> {
     throw jp.thrownException;
   }
 
-  protected getInterceptors(jp: Joinpoint<any>, callState: number): Interceptor[] {
+  protected getInterceptors(jp: Joinpoint<any, any>, callState: number): Interceptor[] {
     jp = jp;
     callState = callState;
     // TODO look up interceptors

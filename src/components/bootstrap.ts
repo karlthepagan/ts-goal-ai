@@ -14,16 +14,12 @@ import SourceState from "./state/sourceState";
 import SpawnState from "./state/spawnState";
 import ConstructionState from "./state/constructionState";
 import {registerType, registerTypeAs} from "./types";
+import registerBehaviorProvider from "./impl/behaviorProvider";
 
 export const bootstrap: (() => void)[] = [];
 
 bootstrap.push(() => {
   log.info("bootstrap starting");
-});
-
-bootstrap.push(() => {
-  GlobalState.protectMemory("config");
-  State.setEventRegistry(eventManager);
 });
 
 bootstrap.push(() => {
@@ -38,6 +34,13 @@ bootstrap.push(() => {
   registerType(SpawnState);
 
   registerTypeAs(SpawnState, STRUCTURE_SPAWN);
+});
+
+bootstrap.push(() => {
+  GlobalState.protectMemory("config");
+  State.setEventRegistry(eventManager);
+
+  registerBehaviorProvider(eventManager);
 });
 
 bootstrap.push(() => {

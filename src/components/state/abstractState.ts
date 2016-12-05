@@ -79,7 +79,6 @@ function _access(state: any, rootMemory: any, writeValue?: any): any {
 abstract class State<T> implements Named {
   public static setEventRegistry(events: EventRegistry) {
     State.events = events;
-    log.debug("TODO replace event manager");
   }
 
   protected static events: EventRegistry;
