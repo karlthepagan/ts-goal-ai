@@ -13,7 +13,7 @@ import RoomState from "./state/roomState";
 import SourceState from "./state/sourceState";
 import SpawnState from "./state/spawnState";
 import ConstructionState from "./state/constructionState";
-import {registerType} from "./types";
+import {registerType, registerTypeAs} from "./types";
 
 export const bootstrap: (() => void)[] = [];
 
@@ -28,15 +28,16 @@ bootstrap.push(() => {
 
 bootstrap.push(() => {
   registerStateScoreProvider();
-  registerType(new CreepState("proto").className(), CreepState);
-  registerType(new ConstructionState("proto").className(), ConstructionState);
-  registerType(new EnemyCreepState("proto").className(), EnemyCreepState);
-  registerType(new GlobalState("proto").className(), GlobalState);
-  registerType(new MineralState("proto").className(), MineralState);
-  registerType(new RoomState("proto").className(), RoomState);
-  registerType(new SourceState("proto").className(), SourceState);
+  registerType(CreepState);
+  registerType(ConstructionState);
+  registerType(EnemyCreepState);
+  registerType(GlobalState);
+  registerType(MineralState);
+  registerType(RoomState);
+  registerType(SourceState);
+  registerType(SpawnState);
 
-  registerType(STRUCTURE_SPAWN, SpawnState);
+  registerTypeAs(SpawnState, STRUCTURE_SPAWN);
 });
 
 bootstrap.push(() => {

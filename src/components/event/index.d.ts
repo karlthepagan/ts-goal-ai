@@ -1,48 +1,41 @@
 import Named from "../named";
-import State from "../state/abstractState";
+import CreepState from "../state/creepState";
 
 type ScheduledFunction = (args: any[]) => void;
 
 type OnMove<R> = (jp: Joinpoint<void>, fromPos: RoomPosition, forwardDir: number, ...args: any[]) => R;
 type OnSpawn<R> = (jp: Joinpoint<string>, ...args: any[]) => R;
 
-export interface Schedule<INST> extends CallbackRegistry {
+export interface Schedule extends CallbackRegistry {
   /**
    * creep to be spawned
    */
-  onSpawn(): ActionChain<OnSpawn<void>, Schedule<INST>>;
+  onSpawn(): Action<OnSpawn<void>, CreepState, Schedule>;
   /**
    * creep will die
    */
-  onDeath(): ActionChain<OnMove<void>, Schedule<INST>>;
+  onDeath(): Action<OnMove<void>, CreepState, Schedule>;
   /**
    * energy will be full
    */
-  onFull(): ActionChain<OnMove<void>, Schedule<INST>>;
+  onFull<T extends CreepState|OwnedStructure>(): Action<OnMove<void>, T, Schedule>; // TODO structure state
   /**
    * energy will be empty
    */
-  onEmpty(): ActionChain<OnMove<void>, Schedule<INST>>;
+  onEmpty<T extends CreepState|OwnedStructure>(): Action<OnMove<void>, T, Schedule>;
   /**
    * creep moved in last tick
    * TODO ambiguous with the command? before -> after
    */
-  onMove(): ActionChain<OnMove<void>, Schedule<INST>>;
+  onMove(): Action<OnMove<void>, CreepState, Schedule>;
   /**
    * fatigue was high but is now zero
    */
-  onRested(): ActionChain<OnMove<void>, Schedule<INST>>;
+  onRested(): Action<OnMove<void>, CreepState, Schedule>;
   /**
-   * structure will decay
+   * structure will decay one step
    */
-  onDecay(): ActionChain<OnMove<void>, Schedule<INST>>;
-}
-
-export interface FailureEvents extends Registry {
-  createCreep(failureCode: number, body: string[], name?: string, mem?: any): void;
-  move(failureCode: number, direction: number): void;
-  // TODO route planning failure?
-  moveTo(failureCode: number, target: RoomPosition | { pos: RoomPosition; }, opts?: MoveToOpts & FindPathOpts): void;
+  onDecay<T extends OwnedStructure>(): Action<OnMove<void>, T, Schedule>;
 }
 
 interface ProgressInfo {
@@ -86,15 +79,16 @@ export interface ApiCalls<INST> {
  * @param SELECT - required filters, start of the chain
  */
 export interface Action<CALLBACK, TYPE, SELECT> {
-  thenCall      (callback: CALLBACK, ...args: any[]): Action<CALLBACK, TYPE, SELECT>;
-  // thenCall      (thisArg: Named, callback: CALLBACK, ...args: any[]): SELECT;
-  thenWait      (relativeTime: number): Action<CALLBACK, TYPE, SELECT>;
-  filterOn      (thisARg: Named, callback: CALLBACK, ...args: any[]): SELECT; // illegal for When.after or Schedule
+  callAnd       (instance: TYPE, callback: CALLBACK, ...args: any[]): Action<CALLBACK, TYPE, SELECT>;
+  call          (): TYPE; // direct call, captured by proxy
+  apply         (func: Function): void; // direct function invoke
+  wait          (relativeTime: number): Action<CALLBACK, TYPE, SELECT>;
+  filterOn      (thisArg: Named, callback: CALLBACK, ...args: any[]): SELECT; // illegal for When.after or Schedule
   or            (): SELECT;
   andThen       (): SELECT; // illegal for When.before
   // TODO tap
-  andIntercept  <INST extends State<any>>(instance: State<any>): When<ApiCalls<INST>>; // NEW SUBJECT, JOIN
-  andSchedule   <INST extends Named>(relativeTime: number, instance: INST): Schedule<INST>;
+  // andIntercept  <INST extends State<any>>(instance: State<any>): When<ApiCalls<INST>>; // NEW SUBJECT, JOIN
+  andSchedule   (relativeTime: number): Schedule;
   D             (): SELECT; // close paren
 }
 
@@ -128,14 +122,22 @@ export interface Registry {
 }
 
 export interface EventRegistry {
-  schedule  <INST extends Named>(relativeTime: number, instance: INST): Schedule<INST>;
-  intercept <INST extends State<any>>(instance: INST): When<ApiCalls<INST>>;
-  next      <INST extends State<any>>(instance: INST): When<ApiCalls<INST>>;
-  run       <INST extends Named>(instance: INST): Action<Function, void, void>;
-  dispatch  (instance: Named): TriggeredEvents;
+  schedule(relativeTime: number): Schedule;
+  // schedule      <INST extends Named>(relativeTime: number, instance: INST): Schedule<INST>;
+  // interceptOne  <INST extends State<any>>(instance: INST): When<ApiCalls<INST>>;
+  // intercept     <INST extends State<any>>(instance: () => INST): When<ApiCalls<INST>>;
+  // next          <INST extends State<any>>(instance: INST): When<ApiCalls<INST>>;
+  // run           <INST extends Named>(instance: INST): Action<Function, void, void>;
+  // dispatch      (instance: Named): TriggeredEvents;
 }
 export default EventRegistry;
 
+// export function f(em: EventRegistry) {
+//   em.schedule(1).onSpawn().then().
+//   const creep = CreepState.vright("");
+//   em.intercept(CreepState).before.attack().then
+// }
+//
 /*
  * chaining api options
  * - different actors

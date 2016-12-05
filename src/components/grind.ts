@@ -45,7 +45,7 @@ export function grind(state: GlobalState) {
 
     if (creeps.length > 0) {
       if (commands.hardxfer) {
-        debugger;
+        debugger; // hardxfer
         doTransfers(state, creeps, tasked);
       }
 
@@ -291,11 +291,6 @@ export function doHarvest(state: GlobalState,
       log.debug(F.str(creeps, compactSize), "left");
 
       let candidates = _.chain(creeps).compact().filter((creep: Creep) => {
-        if (creep.pos.roomName === undefined) {
-          // not yet spawned
-          debugger;
-          return false;
-        }
         const taskId = tasked[creep.id];
         if (taskId !== undefined && taskId !== source.getId()) {
           log.warning("already tasked", creep);

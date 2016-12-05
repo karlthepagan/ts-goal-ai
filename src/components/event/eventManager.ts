@@ -3,7 +3,7 @@ import * as F from "../functions";
 import Named from "../named";
 import {botMemory} from "../../config/config";
 import getType from "../types";
-import {EventRegistry, When, ApiCalls, Action} from "./index";
+import {EventRegistry, When, ApiCalls, Action, Schedule} from "./index";
 import State from "../state/abstractState";
 
 type Event = {name: string, id: string, method: string, args: any[]};
@@ -87,6 +87,59 @@ class FailureManager extends EventProxy<Named, any> { // TODO new proxy interfac
 }
 
 export default class EventManager implements EventRegistry {
+  private _scheduler: ScheduleManager = new ScheduleManager(); // TODO new impl
+  private _dispatchTime: number|undefined;
+
+  public dispatchTime(): number|undefined {
+    return this._dispatchTime;
+  }
+
+  public dispatchTick(time: number) {
+    this._dispatchTime = time;
+    let last = F.elvis(this.memory().lastTick, time - 1);
+    const timeline = F.expand([ "timeline" ], this.memory());
+
+    while (last++ < time) {
+      let tick = timeline["" + last];
+      if (tick !== undefined) {
+        for (const eventName in tick) {
+          for (const event of tick[eventName]) {
+            const instance = getType(event.name).vright(event.id) as any;
+            const f = instance[event.method] as Function;
+            f.call(instance, ...event.args);
+          }
+        }
+      }
+
+      this.memory().lastTick = last;
+      delete timeline["" + last];
+    }
+    this._dispatchTime = undefined;
+  }
+
+  public schedule(relativeTime: number): Schedule {
+    if (isNaN(relativeTime)) {
+      debugger; // illegal relativeTime
+      throw new Error("illegal relativeTime");
+    }
+    let tick: Tick;
+    if (relativeTime < 1) {
+      // TODO assertions?
+      tick = { toString: () => "NO TICK" } as Tick;
+    } else {
+      relativeTime += F.elvis(this.dispatchTime(), Game.time); // TODO should we fastforward ever?
+      tick = F.expand([ "timeline", "" + relativeTime ], this.memory()) as Tick;
+    }
+    return new Proxy(tick, this._scheduler) as any;
+  }
+
+  protected memory(): EventMemory {
+    const mem = F.expand(["events"], botMemory()) as EventMemory;
+    return mem;
+  }
+}
+
+export class EventManager2 { // implements EventRegistry {
   private _scheduler: ScheduleManager = new ScheduleManager();
   private _dispatcher: DispatchManager = new DispatchManager();
   private _failures: FailureManager = new FailureManager();
@@ -126,7 +179,7 @@ export default class EventManager implements EventRegistry {
 
   public schedule(relativeTime: number, instance: Named) { // TODO new handler
     if (isNaN(relativeTime)) {
-      debugger;
+      debugger; // illegal relativeTime
       throw new Error("illegal relativeTime");
     }
     let tick: Tick;

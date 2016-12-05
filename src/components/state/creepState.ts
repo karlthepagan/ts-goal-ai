@@ -64,9 +64,13 @@ function isForFight(b: string) {
 
 function sparseDifference<T>(a: T[], b: T[]) {
   const result: T[] = [];
+  nextA:
   for (let i = a.length - 1; i >= 0; i--) {
-    if (b.indexOf(a[i]) < 0) {
-      result[i] = a[i];
+    for (let j = b.length - 1; j >= 0; j--) {
+      if (b[j] === a[i]) {
+        result[i] = a[i];
+        continue nextA;
+      }
     }
   }
   return result;
@@ -370,7 +374,7 @@ export default class CreepState extends State<Creep> {
     const oldCreeps = F.elvis(this.memory("touch").creep, []);
     const oldEnergy = F.elvis(this.memory("touch").energy, []);
 
-    debugger;
+    debugger; // touching
     const creeps = changes(oldCreeps, newCreeps);
 
     iterateNeighbors(creeps.removed, () => CreepState, "onPart", (dir) => [this, dir]);
