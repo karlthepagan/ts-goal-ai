@@ -4,7 +4,6 @@ import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 import {TERRAIN_ROAD, TERRAIN_PLAIN, TERRAIN_SWAMP} from "../constants";
 import LookForIterator from "../util/lookForIterator";
-import {eventManager} from "../event/eventSingleton";
 import getType from "../types";
 // const BiMap = require("bimap"); // TODO BiMap
 
@@ -157,19 +156,19 @@ export default class CreepState extends State<Creep> {
     return Math.round(sum * terrain);
   }
 
-  public static left(subject: Creep) { // TODO as CreepState & Creep and use a proxy?
+  public static left(subject: Creep): CreepState { // TODO as CreepState & Creep and use a proxy?
     return (FLYWEIGHTS ? CreepState._left : new CreepState("CS") ).wrap(subject, botMemory()) as CreepState;
   }
 
-  public static right(subject: Creep) {
+  public static right(subject: Creep): CreepState {
     return (FLYWEIGHTS ? CreepState._right : new CreepState("CS") ).wrap(subject, botMemory()) as CreepState;
   }
 
-  public static vleft(id: string) {
+  public static vleft(id: string): CreepState {
     return (FLYWEIGHTS ? CreepState._vleft : new CreepState("CS") ).wrapRemote(id, botMemory()) as CreepState;
   }
 
-  public static vright(id: string) {
+  public static vright(id: string): CreepState {
     return (FLYWEIGHTS ? CreepState._vright : new CreepState("CS") ).wrapRemote(id, botMemory()) as CreepState;
   }
 
@@ -285,28 +284,28 @@ export default class CreepState extends State<Creep> {
 
   public move(direction: number): number {
     const result = this.subject().move(direction);
-    const em = State.events;
+    // const em = State.events;
 
     if (typeof result === "number") {
-      em.failure(this).move(result, direction);
+      // em.failure(this).move(result, direction);
       return result;
     }
 
     // TODO is this ok? dispatch an interrupt notify creeps at the location i'm moving into
-    em.dispatch(this).preMove(F.dirToPosition(this.pos())(direction));
+    // em.dispatch(this).preMove(F.dirToPosition(this.pos())(direction));
 
     // schedule an event to examine bumps / behaviors at the new position
-    em.schedule(1, this).onMove(this.touching);
+    // em.schedule(1, this).onMove().thenCall(this.touching);
 
     return result;
   }
 
   public moveTo(target: RoomPosition | { pos: RoomPosition; }, opts?: MoveToOpts & FindPathOpts): number {
     const result = this.subject().moveTo(target, opts);
-    const em = State.events;
+    // const em = State.events;
 
     if (result !== 0) {
-      em.failure(this).moveTo(result, target, opts);
+      // em.failure(this).moveTo(result, target, opts);
       return result;
     }
 
@@ -314,12 +313,16 @@ export default class CreepState extends State<Creep> {
     // em.dispatch(this).preMove(F.dirToPosition(this.pos())(direction));
 
     // schedule an event to examine bumps / behaviors at the new position
-    em.schedule(1, this).onMove(this.touching);
+    // em.intercept(this).afterMove(i => em.schedule()
+    // em.schedule(1, this).onMove().thenCall(this.touching);
 
     return result;
   }
 
-  public touching() {
+  public touching(jp: Joinpoint<void>, fromPos: RoomPosition, forwardDir: number) {
+    jp = jp;
+    fromPos = fromPos;
+    forwardDir = forwardDir;
     // TODO reactive behaviors?
 
     const newCreeps: string[] = [];
@@ -399,8 +402,9 @@ export default class CreepState extends State<Creep> {
       return;
     }
 
-    eventManager.schedule(1, this)
-      .on("say", this.keepSaying, say, toPublic, count);
+    // TODO restore
+    // eventManager.schedule(1, this)
+    //   .on("say", this.keepSaying, say, toPublic, count);
     if (this.resolve()) {
       this.subject().say(say, toPublic);
     }
@@ -468,12 +472,13 @@ export default class CreepState extends State<Creep> {
 
         if (creep.ticksToLive !== undefined) {
           // on re-init these will be duplicated
-          eventManager.schedule(creep.ticksToLive - 10, this)
-            .on("say", this.keepSaying, "💀", true, 10); // dying
-          eventManager.schedule(creep.ticksToLive - 1, this)
-            .onDeath(this.beforeDeath);
-          eventManager.schedule(creep.ticksToLive - 1499, this)
-            .on("say", this.keepSaying, "🎂", true, 3); // birthday
+          // TODO restore (and merge)
+          // eventManager.schedule(creep.ticksToLive - 10, this)
+          //   .on("say", this.keepSaying, "💀", true, 10); // dying
+          // eventManager.schedule(creep.ticksToLive - 1, this)
+          //   .onDeath(this.beforeDeath);
+          // eventManager.schedule(creep.ticksToLive - 1499, this)
+          //   .on("say", this.keepSaying, "🎂", true, 3); // birthday
         }
       }
 

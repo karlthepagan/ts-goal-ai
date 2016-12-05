@@ -8,6 +8,7 @@ export function registerType(typeName: string, type: any) {
 }
 
 export default function getType(name: string) {
+  debugger;
   return types[name];
 }
 

@@ -1,6 +1,5 @@
 import State from "./abstractState";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
-import CreepState from "./creepState";
 
 export default class SpawnState extends State<Spawn> {
   public static left(subject: Spawn) {
@@ -29,38 +28,40 @@ export default class SpawnState extends State<Spawn> {
   }
 
   // TODO hook?
-  public createCreep(body: string[], name?: string, mem?: any): number {
-    const result = this.subject().createCreep(body, name);
-    const em = State.events;
+  // public createCreep(body: string[], name?: string, mem?: any): number {
+  //   const result = this.subject().createCreep(body, name);
+  //   // const em = State.events;
+  //
+  //   if (typeof result === "number") {
+  //     // em.failure(this).createCreep(result, body, name, mem);
+  //     return result;
+  //   }
+  //
+  //   // const creepName = result as string;
+  //   // const creep = CreepState.right(Game.creeps[creepName]);
+  //   // while we CAN get the creep before next tick... it DOESN'T have the id until next tick!
+  //
+  //   // em.schedule(1, this)
+  //   //   .onSpawn().thenCall(this.onSpawn, creepName, mem);
+  //
+  //   return 0;
+  // }
 
-    if (typeof result === "number") {
-      em.failure(this).createCreep(result, body, name, mem);
-      return result;
-    }
-
-    const creepName = result as string;
-    // const creep = CreepState.right(Game.creeps[creepName]);
-    // while we CAN get the creep before next tick... it DOESN'T have the id until next tick!
-
-    em.schedule(1, this)
-      .onSpawn(this.onSpawn, creepName, mem);
-
-    return 0;
-  }
-
-  public onSpawn(creepName: string, mem: any) {
-    const creep = Game.creeps[creepName];
-    const time = creep.body.length * 3;
-
-    // TODO reconcile with CreepState behavior seed
-    // TODO fire behavior think?
-    const state = CreepState.left(creep);
-    State.events.schedule(time - 1, state)
-      .onSpawn(state.setMemory, mem)
-      .onSpawn(state.rescan)
-      .onMove(state.touching);
-
-  }
+  // public onSpawn(jp: Joinpoint<string>) {
+  //   jp = jp;
+  //   const creepName = jp.returnValue as string;
+  //   // const mem = jp.args[2];
+  //   const creep = Game.creeps[creepName];
+  //   const time = creep.body.length * 3;
+  //
+  //   // TODO reconcile with CreepState behavior seed
+  //   // TODO fire behavior think?
+  //   // const state = CreepState.left(creep);
+  //   // State.events.schedule(time - 1, state) // TODO restore
+  //   //   .onSpawn().thenCall(state.setMemory, mem).thenCall(state.rescan)
+  //   //   .andThen().onMove().thenCall(state.touching);
+  //
+  // }
 
   protected _accessAddress() {
     return ["spawns"];

@@ -1,9 +1,10 @@
 import {log} from "../support/log";
 import * as F from "../functions";
-import {SchedulableRegistry, EventRegistry, FailureEvents, TriggeredEvents} from "./index";
 import Named from "../named";
 import {botMemory} from "../../config/config";
 import getType from "../types";
+import {EventRegistry, When, ApiCalls, Action} from "./index";
+import State from "../state/abstractState";
 
 type Event = {name: string, id: string, method: string, args: any[]};
 
@@ -54,7 +55,7 @@ abstract class EventProxy<T, V> implements ProxyHandler<T> { // as V (extends Re
   }
 }
 
-class ScheduleManager extends EventProxy<InstanceTick, SchedulableRegistry> {
+class ScheduleManager { // TODO new handler replacing extends EventProxy<InstanceTick, SchedulableRegistry> {
   protected handleEvent(target: InstanceTick, eventName: string, ...args: any[]): void {
     const name = target.instance.className();
     const id = target.instance.getId();
@@ -68,7 +69,7 @@ class ScheduleManager extends EventProxy<InstanceTick, SchedulableRegistry> {
   }
 }
 
-class DispatchManager extends EventProxy<Named, TriggeredEvents> {
+class DispatchManager extends EventProxy<Named, any> { // TODO new proxy interface for dispatch
   protected handleEvent(target: Named, eventName: string, ...args: any[]): void {
     target = target;
     args = args;
@@ -77,7 +78,7 @@ class DispatchManager extends EventProxy<Named, TriggeredEvents> {
   }
 }
 
-class FailureManager extends EventProxy<Named, FailureEvents> {
+class FailureManager extends EventProxy<Named, any> { // TODO new proxy interface for failure (probably just intercepts)
   protected handleEvent(target: Named, eventName: string, ...args: any[]): void {
     target = target;
     eventName = eventName;
@@ -123,7 +124,7 @@ export default class EventManager implements EventRegistry {
 
   // TODO method to look for the ticks remaining to and subject of a pending event
 
-  public schedule(relativeTime: number, instance: Named): SchedulableRegistry {
+  public schedule(relativeTime: number, instance: Named) { // TODO new handler
     if (isNaN(relativeTime)) {
       debugger;
       throw new Error("illegal relativeTime");
@@ -139,12 +140,24 @@ export default class EventManager implements EventRegistry {
     return new Proxy({instance, tick}, this._scheduler) as any;
   }
 
-  public failure(instance: Named): FailureEvents {
+  public failure(instance: Named) { // TODO handler
     return new Proxy(instance, this._failures) as any;
   }
 
-  public dispatch(instance: Named): TriggeredEvents {
+  public dispatch(instance: Named) { // TODO handler
     return new Proxy(instance, this._dispatcher) as any;
+  }
+
+  public intercept<INST extends State<any>>(instance: INST): When<ApiCalls<INST>> {
+    return new Proxy(instance, this._dispatcher) as any; // TODO implement
+  }
+
+  public next<INST extends State<any>>(instance: INST): When<ApiCalls<INST>> {
+    return new Proxy(instance, this._dispatcher) as any; // TODO implement
+  }
+
+  public run<INST extends Named>(instance: INST): Action<Function, void, void> {
+    return new Proxy(instance, this._dispatcher) as any; // TODO implement
   }
 
   protected memory(): EventMemory {

@@ -12,6 +12,7 @@ import MemoIterator = _.MemoIterator;
 import LookForIterator from "./util/lookForIterator";
 import {FindCallback} from "./util/lookForIterator";
 import SpawnState from "./state/spawnState";
+import api from "./behavior/behaviorContext";
 
 const cachedIdleActions: { [id: string]: FindCallback<any> } = {};
 
@@ -86,7 +87,7 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
   //   // keep moving
   //   if (creep.memory._move !== undefined) {
   //     const dest = creep.memory._move.dest;
-  //     creep.moveTo(new RoomPosition(dest.x, dest.y, dest.name)); // TODO creep state
+  //     creep.moveTo(new RoomPosition(dest.x, dest.y, dest.name)); // TODO creep state, wrap with api(state).moveTo
   //
   //     creeps[creeps.indexOf(creep)] = null;
   //   }
@@ -102,10 +103,11 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
           return true;
         }
         let result = 0;
-        if (CreepState.left(other).memory().working !== undefined) {
-          result = other.transfer(self, RESOURCE_ENERGY);
+        const otherState = CreepState.left(other);
+        if (otherState.memory().working !== undefined) {
+          result = api(otherState).transfer(self, RESOURCE_ENERGY);
         } else if (energy(other) > 5) {
-          result = other.transfer(self, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
+          result = api(otherState).transfer(self, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
         }
         if (result !== 0) {
           log.debug("transfer", result);
@@ -145,7 +147,7 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
 
         creep.build(site);
         if (!creep.pos.isNearTo(site.pos)) {
-          CreepState.left(creep).move(creep.pos.getDirectionTo(site.pos));
+          api(CreepState.left(creep)).move(creep.pos.getDirectionTo(site.pos));
         }
         creep.say("📐", false);
         return false;
@@ -231,10 +233,11 @@ export function doTransfers(state: GlobalState,
             return true;
           }
           let result = 0;
-          if (CreepState.left(other).memory().working !== undefined) {
-            result = other.transfer(self, RESOURCE_ENERGY);
+          const otherState = CreepState.left(other);
+          if (otherState.memory().working !== undefined) {
+            result = api(otherState).transfer(self, RESOURCE_ENERGY);
           } else if (energy(other) > 5) {
-            result = other.transfer(self, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
+            result = api(otherState).transfer(self, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
           }
           if (result !== 0) {
             log.debug("transfer", result);
@@ -416,7 +419,7 @@ function spawnCreeps(state: GlobalState, spawnState: SpawnState) {
       if (spawn.room.energyAvailable < 200) {
         return;
       }
-      spawnState.createCreep([CARRY, WORK, MOVE]);
+      api(spawnState).createCreep([CARRY, WORK, MOVE]);
       break;
 
     case 1:
@@ -424,7 +427,7 @@ function spawnCreeps(state: GlobalState, spawnState: SpawnState) {
       if (spawn.room.energyAvailable < 300) {
         return;
       }
-      spawnState.createCreep([CARRY, WORK, WORK, MOVE]);
+      api(spawnState).createCreep([CARRY, WORK, WORK, MOVE]);
       break;
 
     default:
@@ -454,7 +457,7 @@ function spawnCreeps(state: GlobalState, spawnState: SpawnState) {
         }
       }
 
-      spawnState.createCreep(body);
+      api(spawnState).createCreep(body);
   }
   // log.info("I want to spawn creeps!", spawn);
 }
@@ -473,7 +476,7 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
           log.error("failed to resolve", sourceState);
           return false;
         }
-        const mineResult = creep.harvest(sourceState.subject());
+        const mineResult = api(creepState).harvest(sourceState.subject()); // TODO arg: api(sourceState));
         if (mineResult !== 0) {
           log.debug("harvest failed", sourceState, "moveTo=", mineResult, creepState);
         }
@@ -486,7 +489,7 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
             creep.say("💩", false); // poo
           }
 
-          const moveResult = creepState.moveTo(pos);
+          const moveResult = api(creepState).moveTo(pos);
           if (moveResult !== 0) {
             log.debug("move failed", sourceState, "moveTo=", moveResult, creepState);
           }

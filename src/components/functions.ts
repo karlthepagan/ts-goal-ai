@@ -116,6 +116,14 @@ const posToDirMap: number[][] = [
   [ BOTTOM_LEFT,  BOTTOM, BOTTOM_RIGHT],
 ];
 
+export function reverse(direction: number) {
+  if (direction === 0) {
+    return 0;
+  }
+
+  return (direction + 3) % 8 + 1;
+}
+
 export function posToDirection(origin: XY): (dst: XY) => number {
   return dst => {
     const dirRow = elvis(posToDirMap[1 + dst.y - origin.y], [] as number[]);
