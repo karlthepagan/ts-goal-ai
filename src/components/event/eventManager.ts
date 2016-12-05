@@ -117,20 +117,21 @@ export default class EventManager implements EventRegistry {
     this._dispatchTime = undefined;
   }
 
-  public schedule(relativeTime: number): Schedule {
-    if (isNaN(relativeTime)) {
-      debugger; // illegal relativeTime
-      throw new Error("illegal relativeTime");
-    }
-    let tick: Tick;
-    if (relativeTime < 1) {
-      // TODO assertions?
-      tick = { toString: () => "NO TICK" } as Tick;
-    } else {
-      relativeTime += F.elvis(this.dispatchTime(), Game.time); // TODO should we fastforward ever?
-      tick = F.expand([ "timeline", "" + relativeTime ], this.memory()) as Tick;
-    }
-    return new Proxy(tick, this._scheduler) as any;
+  public when(): Schedule {
+    // if (isNaN(relativeTime)) {
+    //   debugger; // illegal relativeTime
+    //   throw new Error("illegal relativeTime");
+    // }
+    // let tick: Tick;
+    // if (relativeTime < 1) {
+    //   // TODO assertions?
+    //   tick = { toString: () => "NO TICK" } as Tick;
+    // } else {
+    //   relativeTime += F.elvis(this.dispatchTime(), Game.time); // TODO should we fastforward ever?
+    //   tick = F.expand([ "timeline", "" + relativeTime ], this.memory()) as Tick;
+    // }
+    const tick = {};
+    return new Proxy(tick, this._scheduler) as any; // TODO fix the impl
   }
 
   protected memory(): EventMemory {

@@ -4,38 +4,47 @@ import CreepState from "../state/creepState";
 type ScheduledFunction = (args: any[]) => void;
 
 type OnMove<R> = (jp: Joinpoint<void>, fromPos: RoomPosition, forwardDir: number, ...args: any[]) => R;
-type OnSpawn<R> = (jp: Joinpoint<string>, ...args: any[]) => R;
+type OnLifecycle<R> = (jp: Joinpoint<string>, ...args: any[]) => R; // spawn, death, decay, rested
+type OnEnergy<R> = (jp: Joinpoint<string>, ...args: any[]) => R;
 
-export interface Schedule extends CallbackRegistry {
+export interface WhenEvent<INST, CALLBACK> {
+  of<T extends INST>(instance: T): Action<CALLBACK, T, Schedule>;
+  ofAny<T extends INST>(type: () => T): Action<CALLBACK, T, Schedule>;
+  ofAll(): Action<CALLBACK, INST, Schedule>;
+  occursAt(relativeTime: number, instance: INST): Action<CALLBACK, INST, Schedule>;
+}
+
+// schedule for a
+export interface Schedule {
   /**
    * creep to be spawned
    */
-  onSpawn(): Action<OnSpawn<void>, CreepState, Schedule>;
+  spawn(): WhenEvent<Creep, OnLifecycle<void>>;
   /**
    * creep will die
    */
-  onDeath(): Action<OnMove<void>, CreepState, Schedule>;
+  death(): WhenEvent<Creep, OnLifecycle<void>>;
+  /**
+   * fatigue was high but is now zero
+   */
+  rested(): WhenEvent<CreepState, OnLifecycle<void>>;
+  /**
+   * structure will decay one step
+   */
+  decay<T extends OwnedStructure>(): WhenEvent<T, OnLifecycle<void>>;
   /**
    * energy will be full
    */
-  onFull<T extends CreepState|OwnedStructure>(): Action<OnMove<void>, T, Schedule>; // TODO structure state
+  full<T extends CreepState|OwnedStructure>(): WhenEvent<T, OnEnergy<void>>; // TODO structure state
   /**
    * energy will be empty
    */
-  onEmpty<T extends CreepState|OwnedStructure>(): Action<OnMove<void>, T, Schedule>;
+  empty<T extends CreepState|OwnedStructure>(): WhenEvent<T, OnEnergy<void>>;
   /**
    * creep moved in last tick
    * TODO ambiguous with the command? before -> after
    */
-  onMove(): Action<OnMove<void>, CreepState, Schedule>;
-  /**
-   * fatigue was high but is now zero
-   */
-  onRested(): Action<OnMove<void>, CreepState, Schedule>;
-  /**
-   * structure will decay one step
-   */
-  onDecay<T extends OwnedStructure>(): Action<OnMove<void>, T, Schedule>;
+  move(): WhenEvent<CreepState, OnMove<void>>;
 }
 
 interface ProgressInfo {
@@ -88,7 +97,7 @@ export interface Action<CALLBACK, TYPE, SELECT> {
   andThen       (): SELECT; // illegal for When.before
   // TODO tap
   // andIntercept  <INST extends State<any>>(instance: State<any>): When<ApiCalls<INST>>; // NEW SUBJECT, JOIN
-  andSchedule   (relativeTime: number): Schedule;
+  andSchedule   (): Schedule;
   D             (): SELECT; // close paren
 }
 
@@ -122,7 +131,7 @@ export interface Registry {
 }
 
 export interface EventRegistry {
-  schedule(relativeTime: number): Schedule;
+  when(): Schedule;
   // schedule      <INST extends Named>(relativeTime: number, instance: INST): Schedule<INST>;
   // interceptOne  <INST extends State<any>>(instance: INST): When<ApiCalls<INST>>;
   // intercept     <INST extends State<any>>(instance: () => INST): When<ApiCalls<INST>>;
@@ -133,9 +142,11 @@ export interface EventRegistry {
 export default EventRegistry;
 
 // export function f(em: EventRegistry) {
-//   em.schedule(1).onSpawn().then().
+//   // em.schedule(1).onSpawn().then().
 //   const creep = CreepState.vright("");
-//   em.intercept(CreepState).before.attack().then
+//   // em.intercept(CreepState).before.attack().then
+//   em.when().death().occursAt(1499, creep);
+//   em.when().death().of(creep).call();
 // }
 //
 /*
