@@ -1,4 +1,4 @@
-import {log} from "./support/log";
+import {log} from "../support/log";
 
 const _terminal: any = {
   callAnd: true,

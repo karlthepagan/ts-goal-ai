@@ -5,7 +5,7 @@ import {botMemory} from "../../config/config";
 import getType from "../types";
 import {EventRegistry, When, ApiCalls, Action} from "./index";
 import State from "../state/abstractState";
-import BuilderProxyHandler from "../builderProxyHandler";
+import BuilderProxyHandler from "../behavior/builderProxyHandler";
 
 type Event = {name: string, id: string, method: string, args: any[]};
 
