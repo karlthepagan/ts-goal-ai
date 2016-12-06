@@ -120,8 +120,8 @@ export default class EventManager implements EventRegistry {
   }
 
   public when() { // : EventSelector {
-    const tick = {}; // TODO replacement for tick which emits configuration
-    return new Proxy(tick, this._events) as any; // TODO fix the impl
+    // TODO replacement for tick which emits configuration
+    return new Proxy<any>(BuilderProxyHandler.newTarget(), this._events) as any; // TODO fix the impl
   }
 
   public schedule<T extends Named>(relativeTime: number, instance: T) { // : Action<OnScheduled, INST, void> {

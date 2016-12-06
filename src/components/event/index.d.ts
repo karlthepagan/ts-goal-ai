@@ -97,13 +97,13 @@ export interface ApiCalls<INST> {
 export interface Action<CALLBACK, TYPE, SELECT> { // TODO TYPE for origin of the event? (that's in the EventRegistry)
   callAnd       (instance: TYPE, callback: CALLBACK, ...args: any[]): Action<CALLBACK, TYPE, SELECT>;
   call          (): TYPE; // direct call, captured by proxy
-  apply         (func: Function): void; // direct function invoke
+  apply         (func: Function): void; // direct function invoke, TODO index of anonymous functions?
   wait          (relativeTime: number): Action<CALLBACK, TYPE, SELECT>;
   // TODO filter on source or destination
   filterOn      (thisArg: Named, callback: CALLBACK, ...args: any[]): SELECT; // illegal for When.after or EventSelector
   or            (): SELECT;
   andThen       (): SELECT; // illegal for When.before
-  // TODO tap
+  // TODO tap?
   // andIntercept  <INST extends State<any>>(instance: State<any>): When<ApiCalls<INST>>; // NEW SUBJECT, JOIN
   andWhen       (): EventSelector;
   D             (): SELECT; // close paren
