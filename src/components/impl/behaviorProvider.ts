@@ -13,6 +13,7 @@ export default function registerBehaviorProvider(em: EventRegistry) {
 
     // TODO construct virtual move event TOP is WAG (usually the case)
     whenBorn.call().touching(jp.asVoid(), creep.pos(), TOP);
+
     // const creepName = jp.returnValue as string;
     // const creep = Game.creeps[creepName];
     // const state = CreepState.left(creep);

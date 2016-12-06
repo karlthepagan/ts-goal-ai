@@ -5,6 +5,7 @@ import {botMemory} from "../../config/config";
 import getType from "../types";
 import {EventRegistry, When, ApiCalls, Action} from "./index";
 import State from "../state/abstractState";
+import BuilderProxyHandler from "../builderProxyHandler";
 
 type Event = {name: string, id: string, method: string, args: any[]};
 
@@ -87,7 +88,7 @@ class FailureManager extends EventProxy<Named, any> { // TODO new proxy interfac
 }
 
 export default class EventManager implements EventRegistry {
-  private _events: ScheduleManager = new ScheduleManager(); // TODO new impl
+  private _events: BuilderProxyHandler = new BuilderProxyHandler(); // TODO new impl
   private _scheduler: ScheduleManager = new ScheduleManager(); // TODO new impl
   private _dispatchTime: number|undefined;
 
@@ -119,7 +120,7 @@ export default class EventManager implements EventRegistry {
   }
 
   public when() { // : EventSelector {
-    const tick = {};
+    const tick = {}; // TODO replacement for tick which emits configuration
     return new Proxy(tick, this._events) as any; // TODO fix the impl
   }
 

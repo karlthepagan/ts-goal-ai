@@ -1,36 +1,26 @@
-export abstract class StepHandler<V> {
-  /*
-   "Schedule" = ["WhenEvent"];
-   "WhenEvent" = ["ActionSchedule"];
-   "ActionSchedule" = ["ActionSchedule", "Schedule"]
-   */
-  // constructor(tree: any) {
-  //
-  // }
+import {log} from "./support/log";
 
-  public step(receiver: V, target: any, eventMethod: string, builders: any): V {
-    target = target;
-    receiver = receiver; // TODO should be pushing the state changes into target
-    return builders[eventMethod] as any;
-  }
-}
+const terminal: any = {
+  callAnd: true,
+  call: true,
+  apply: true,
+};
 
-/**
- * TODO - "T" is the factory impl
- */
-export default class BuilderProxyHandler<T, V> implements ProxyHandler<T> {
-  private _name: String;
-  private _stepHandler: any;
-  private _next: { [key: string]: BuilderProxyHandler<T, any> };
-
-  constructor(name: string, stepHandler: any, next: BuilderProxyHandler<T, any>[], loop?: boolean) {
-    this._name = name;
-    this._stepHandler = stepHandler;
-    next = loop ? next.concat(this) : next;
-    this._next = _.chain(next).indexBy(i => i._name).value();
+export default class BuilderProxyHandler implements ProxyHandler<any> {
+  public get(target: any[], eventMethod: string, receiver: any): any {
+    debugger;
+    target.push([eventMethod]);
+    if (terminal[eventMethod] === true) {
+      // TODO emit event from chain
+      log.debug("next function call is the end!");
+    }
+    return receiver; // TODO tree structure to support multiple call chains
+    // consider incrementing on each call so that target is forked per call
   }
 
-  public get(target: T, eventMethod: string, receiver: V): BuilderProxyHandler<T, any> {
-    return this._stepHandler.step(receiver, target, eventMethod, this._next);
+  public apply(target: any[], thisArg: any, argArray?: any): any {
+    debugger;
+    target.push(argArray);
+    return thisArg; // TODO is this same as receiver?
   }
 }
