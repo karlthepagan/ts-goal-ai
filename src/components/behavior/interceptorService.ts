@@ -4,10 +4,7 @@ import Joinpoint from "../event/joinpoint";
 import InterceptorSpec from "../event/interceptorSpec";
 import {AnyIS} from "../event/interceptorSpec";
 import * as F from "../functions";
-
-export const BEFORE_CALL = 0;
-export const AFTER_CALL = 1;
-export const AFTER_FAIL = 2;
+import {AFTER_CALL, AFTER_FAIL, BEFORE_CALL} from "../event/interceptorSpec";
 
 type ClassSpecs = { [methodName: string]: AnyIS[] };
 export type SpecMap = { [className: string]: ClassSpecs };

@@ -4,9 +4,6 @@ import * as Builders from "./builders";
 
 const matchMethodName = /\.([^\(\s]+)/;
 
-// const BEFORE_CALL = 0;
-// const AFTER_CALL = 1;
-// const AFTER_FAIL = 2;
 const callStateList = ["before", "after", "failure"];
 
 function whenClosureGet(is: AnyIS, callState: string) {

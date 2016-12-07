@@ -1,6 +1,9 @@
 import Joinpoint from "./joinpoint";
-import {BEFORE_CALL, AFTER_CALL, AFTER_FAIL} from "../behavior/interceptorService";
 import {OnIntercept} from "./index";
+
+export const BEFORE_CALL = 0;
+export const AFTER_CALL = 1;
+export const AFTER_FAIL = 2;
 
 export type AnyIS = InterceptorSpec<any, any>;
 export function newIS(is?: AnyIS): AnyIS {
