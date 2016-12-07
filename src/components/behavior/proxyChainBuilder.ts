@@ -37,7 +37,7 @@ function newTarget(last?: Accumulator, push?: any[], terminal?: number): Accumul
   return accumulator;
 }
 
-export default class BuilderProxyHandler implements ProxyHandler<Accumulator> {
+export default class ProxyChainBuilder implements ProxyHandler<Accumulator> {
   private _callback: TerminalCallback;
   private _stackHandler: StackHandler;
 

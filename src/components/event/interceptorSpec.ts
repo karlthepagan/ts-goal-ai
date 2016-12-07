@@ -1,5 +1,5 @@
 import Joinpoint from "./joinpoint";
-import {BEFORE_CALL, AFTER_CALL, AFTER_FAIL} from "../behavior/behaviorInterceptor";
+import {BEFORE_CALL, AFTER_CALL, AFTER_FAIL} from "../behavior/interceptorService";
 import {OnIntercept} from "./index";
 
 export type AnyIS = InterceptorSpec<any, any>;

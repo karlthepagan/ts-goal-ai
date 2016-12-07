@@ -12,7 +12,7 @@ export const AFTER_FAIL = 2;
 type ClassSpecs = { [methodName: string]: AnyIS[] };
 export type SpecMap = { [className: string]: ClassSpecs };
 
-export default class BehaviorInterceptor implements ProxyHandler<State<any>> {
+export default class InterceptorService implements ProxyHandler<State<any>> {
   private _interceptors: SpecMap[] = [{}, {}, {}];
 
   /**

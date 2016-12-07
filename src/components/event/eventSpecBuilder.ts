@@ -1,7 +1,7 @@
 import {newJP} from "./joinpoint";
 import * as Builders from "./builders";
 import {AnyIS, newIS} from "./interceptorSpec";
-import {AFTER_CALL} from "../behavior/behaviorInterceptor";
+import {AFTER_CALL} from "../behavior/interceptorService";
 
 /**
  * @see "./index.d.ts":EventSelector

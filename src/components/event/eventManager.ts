@@ -4,7 +4,7 @@ import Named from "../named";
 import {botMemory} from "../../config/config";
 import {EventRegistry, When, ApiCalls, Action} from "./index";
 import State from "../state/abstractState";
-import BuilderProxyHandler from "../behavior/builderProxyHandler";
+import ProxyChainBuilder from "../behavior/proxyChainBuilder";
 import {registerBehavior} from "../behavior/behaviorContext";
 import EventSpecBuilders from "./eventSpecBuilder";
 import InterceptorSpecBuilders from "./interceptorSpecBuilders";
@@ -92,7 +92,7 @@ class FailureManager extends EventProxy<Named, any> { // TODO new proxy interfac
 }
 
 export default class EventManager implements EventRegistry {
-  private _events: BuilderProxyHandler = new BuilderProxyHandler(
+  private _events: ProxyChainBuilder = new ProxyChainBuilder(
     EventSpecBuilders.handler,
     (spec) => {
       // cleanup, erase constructor info
@@ -102,7 +102,7 @@ export default class EventManager implements EventRegistry {
     }
   );
 
-  private _intercepts: BuilderProxyHandler = new BuilderProxyHandler(
+  private _intercepts: ProxyChainBuilder = new ProxyChainBuilder(
     InterceptorSpecBuilders.handler,
     (spec) => {
       // cleanup, erase constructor info
@@ -112,7 +112,7 @@ export default class EventManager implements EventRegistry {
     }
   );
 
-  private _scheduler: BuilderProxyHandler = new BuilderProxyHandler(
+  private _scheduler: ProxyChainBuilder = new ProxyChainBuilder(
     Builders.scheduleHandler,
     (spec) => {
       const is = newIS(spec);

@@ -1,4 +1,4 @@
-import BehaviorInterceptor from "./behaviorInterceptor";
+import InterceptorService from "./interceptorService";
 import State from "../state/abstractState";
 import * as F from "../functions";
 import {botMemory} from "../../config/config";
@@ -6,7 +6,7 @@ import {AnyIS} from "../event/interceptorSpec";
 import {log} from "../support/log";
 import {AnyJP, newJP} from "../event/joinpoint";
 
-const _behaviors = new BehaviorInterceptor();
+const _interceptors = new InterceptorService();
 
 export function triggerBehaviors(jp: AnyJP, eventName: string) { // TODO should InterspectorSpec pollute this API?
   debugger; // triggerBehaviors
@@ -19,11 +19,11 @@ export function triggerBehaviors(jp: AnyJP, eventName: string) { // TODO should 
   event.returnValue = jp.returnValue;
   event.args = jp.args;
 
-  _behaviors.dispatch(event);
+  _interceptors.dispatch(event);
 }
 
 export function registerBehavior(name: string, spec: AnyIS) {
-  _behaviors.register(name, spec);
+  _interceptors.register(name, spec);
 }
 
 export default function api<T>(subject: State<T>): T {
@@ -32,7 +32,7 @@ export default function api<T>(subject: State<T>): T {
   if (opts.disableBehaviors) {
     return subject.subject();
   } else {
-    return new Proxy(subject, _behaviors) as any;
+    return new Proxy(subject, _interceptors) as any;
   }
 }
 
