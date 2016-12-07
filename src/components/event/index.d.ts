@@ -164,26 +164,7 @@ export interface WhenClosure<INST, API> {
   C(): WhenClosure<INST, API>; // open paren
 }
 
-/**
- *
- */
-export interface TriggeredEvents extends Registry {
-  onCompleted(site: ConstructionSite): TriggeredEvents; // TODO build -> done -> built?
-  onDeath(pos: RoomPosition): TriggeredEvents;
-}
-
-export interface CallbackRegistry {
-  on(event: string, callback: Function, ...args: any[]): CallbackRegistry;
-}
-
-export interface Registry {
-  on(event: string, ...args: any[]): Registry;
-}
-
 // https://github.com/Microsoft/TypeScript/issues/4890#issuecomment-141879451
-// interface Base {
-// }
-//
 
 export interface EventRegistry { // TODO instances declared in this context are the source of event bindings
   when            (): EventSelector;
