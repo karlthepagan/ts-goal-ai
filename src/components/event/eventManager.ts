@@ -2,10 +2,14 @@ import {log} from "../support/log";
 import * as F from "../functions";
 import Named from "../named";
 import {botMemory} from "../../config/config";
-import getType from "../types";
 import {EventRegistry, When, ApiCalls, Action} from "./index";
 import State from "../state/abstractState";
 import BuilderProxyHandler from "../behavior/builderProxyHandler";
+import {registerBehavior} from "../behavior/behaviorContext";
+import EventSpecBuilders from "./eventSpecBuilder";
+import InterceptorSpecBuilders from "./interceptorSpecBuilders";
+import {newIS} from "./interceptorSpec";
+import * as Builders from "./builders";
 
 type Event = {name: string, id: string, method: string, args: any[]};
 
@@ -88,8 +92,38 @@ class FailureManager extends EventProxy<Named, any> { // TODO new proxy interfac
 }
 
 export default class EventManager implements EventRegistry {
-  private _events: BuilderProxyHandler = new BuilderProxyHandler(); // TODO new impl
-  private _scheduler: ScheduleManager = new ScheduleManager(); // TODO new impl
+  private _events: BuilderProxyHandler = new BuilderProxyHandler(
+    EventSpecBuilders.handler,
+    (spec) => {
+      // cleanup, erase constructor info
+      const is = newIS(spec);
+      delete is.targetConstructor;
+      registerBehavior("event", is);
+    }
+  );
+
+  private _intercepts: BuilderProxyHandler = new BuilderProxyHandler(
+    InterceptorSpecBuilders.handler,
+    (spec) => {
+      // cleanup, erase constructor info
+      const is = newIS(spec);
+      delete is.targetConstructor;
+      registerBehavior("intercept", is);
+    }
+  );
+
+  private _scheduler: BuilderProxyHandler = new BuilderProxyHandler(
+    Builders.scheduleHandler,
+    (spec) => {
+      const is = newIS(spec);
+      delete is.targetConstructor;
+      const relativeTime = is.parameter;
+
+      log.debug("TODO schedule event for ", relativeTime);
+      // const tick = F.expand([ "timeline", "" + relativeTime ], this.memory()) as SpecMap;
+    }
+  );
+
   private _dispatchTime: number|undefined;
 
   public dispatchTime(): number|undefined {
@@ -106,7 +140,7 @@ export default class EventManager implements EventRegistry {
       if (tick !== undefined) {
         for (const eventName in tick) {
           for (const event of tick[eventName]) {
-            const instance = getType(event.name).vright(event.id) as any;
+            const instance = State.vright(event.name, event.id) as any;
             const f = instance[event.method] as Function;
             f.call(instance, ...event.args);
           }
@@ -119,9 +153,14 @@ export default class EventManager implements EventRegistry {
     this._dispatchTime = undefined;
   }
 
-  public when() { // : EventSelector {
-    // TODO replacement for tick which emits configuration
-    return new Proxy<any>(BuilderProxyHandler.newTarget(), this._events) as any; // TODO fix the impl
+  public when() {
+    return this._events.newProxyChain() as any;
+  }
+
+  // intercept       <API, INST extends State<API>>(implType: (...args: any[]) => State<API>): WhenClosure<INST, API>;
+  // intercept       <API>(implType: Constructor<State<API>>): WhenClosure<State<API>, API>;
+  public intercept(implType: any) {
+    return this._intercepts.newProxyChain(implType) as any;
   }
 
   public schedule<T extends Named>(relativeTime: number, instance: T) { // : Action<OnScheduled, INST, void> {
@@ -129,15 +168,17 @@ export default class EventManager implements EventRegistry {
       debugger; // illegal relativeTime
       throw new Error("illegal relativeTime");
     }
-    let tick: Tick;
     if (relativeTime < 1) {
       // TODO assertions?
-      tick = { toString: () => "NO TICK" } as Tick;
+      // tick = { toString: () => "NO TICK" } as Tick;
+      // TODO NOOP proxy
+      throw new Error("illegal relativeTime=" + relativeTime);
     } else {
       relativeTime += F.elvis(this.dispatchTime(), Game.time); // TODO should we fastforward ever?
-      tick = F.expand([ "timeline", "" + relativeTime ], this.memory()) as Tick;
+      // tick = F.expand([ "timeline", "" + relativeTime ], this.memory()) as Tick;
     }
-    return new Proxy({instance, tick}, this._scheduler) as any; // TODO fix the impl
+    return this._scheduler.newProxyChain(relativeTime, instance) as any;
+    // old -- new Proxy({instance, tick}, this._scheduler)
   }
 
   protected memory(): EventMemory {
@@ -169,7 +210,7 @@ export class EventManager2 { // implements EventRegistry {
       if (tick !== undefined) {
         for (const eventName in tick) {
           for (const event of tick[eventName]) {
-            const instance = getType(event.name).vright(event.id) as any;
+            const instance = State.vright(event.name, event.id) as any;
             const f = instance[event.method] as Function;
             f.call(instance, ...event.args);
           }

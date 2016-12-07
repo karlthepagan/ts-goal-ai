@@ -1,59 +1,77 @@
-import {log} from "../support/log";
+import * as F from "../functions";
+import {AnyIS} from "../event/interceptorSpec";
 
 const _terminal: any = {
-  callAnd: true,
-  call: true,
-  apply: true,
+  callAnd: 1,
+  call: 3,
+  apply: 1,
+  fireEvent: 1,
 };
 
-class AccumulatorStack {
-  private _value: string[][] = [];
-  public push(...items: string[][]): number {
-    return this._value.push(...items);
-  }
-}
+type StackHandler = (value: any, ...push: any[]) => any;
+type TerminalCallback = (spec: AnyIS) => void;
 
 interface Accumulator {
-  stack: AccumulatorStack;
+  stack: any;
+  step: Function;
   position: number;
-  terminal: boolean;
+  terminal: number|undefined;
+}
+
+function newTarget(last?: Accumulator, push?: any[], terminal?: number): Accumulator {
+  const accumulator: Accumulator = (() => undefined) as any;
+  if (last === undefined) {
+    accumulator.position = 0;
+    accumulator.terminal = terminal;
+  } else {
+    if (push === undefined) {
+      push = [];
+    }
+    terminal = F.elvis(last.terminal, terminal);
+    accumulator.position = last.position + 1; // TODO call stack concat names for debugger?
+    let [stack, step] = last.step(last.stack, ...push);
+    accumulator.stack = stack;
+    accumulator.step = step;
+    accumulator.terminal = terminal === undefined ? undefined : (terminal - 1);
+  }
+  return accumulator;
 }
 
 export default class BuilderProxyHandler implements ProxyHandler<Accumulator> {
-  public static newTarget(last?: Accumulator, terminal?: boolean): Accumulator {
-    const accumulator: Accumulator = (() => undefined) as any;
-    if (last === undefined) {
-      accumulator.position = 0;
-      accumulator.stack = new AccumulatorStack();
-      accumulator.terminal = terminal === true;
+  private _callback: TerminalCallback;
+  private _stackHandler: StackHandler;
+
+  constructor(stackHandler: StackHandler, callback: TerminalCallback) {
+    this._stackHandler = stackHandler;
+    this._callback = callback;
+  }
+
+  public target(): Accumulator {
+    const acc = newTarget();
+    acc.step = this._stackHandler;
+    return acc;
+  }
+
+  public newProxyChain(...args: any[]) {
+    const target = this.target();
+    if (args === undefined || args.length === 0) {
+      return new Proxy(target, this);
     } else {
-      accumulator.position = last.position + 1;
-      accumulator.stack = last.stack;
-      accumulator.terminal = terminal === true;
+      return new Proxy(newTarget(target, args), this);
     }
-    return accumulator;
   }
 
   public get(target: Accumulator, eventMethod: string, receiver: any): any {
     receiver = receiver;
-    debugger;
-    target.stack.push([eventMethod]);
-    if (_terminal[eventMethod] === true) {
-      // next function call is the end!
-      return new Proxy(BuilderProxyHandler.newTarget(target, true), this);
-    }
-
-    // TODO tree structure to support multiple call chains
-    return new Proxy(BuilderProxyHandler.newTarget(target), this);
-    // consider incrementing on each call so that target is forked per call
+    return new Proxy(newTarget(target, [eventMethod], _terminal[eventMethod]), this);
   }
 
   public apply(target: Accumulator, thisArg: any, argArray?: any): any {
-    debugger;
-    target.stack.push(argArray);
-    if (target.terminal) {
-      log.debug("TODO emit binding registration!"); // TODO THIS NEXT
+    thisArg = thisArg;
+    const next = newTarget(target, argArray);
+    if (target.terminal === 0) {
+      this._callback(target.stack); // target.step(target.stack, ...argArray)[0]); // unwrap
     }
-    return thisArg;
+    return next.step === undefined ? undefined : new Proxy(next, this);
   }
 }

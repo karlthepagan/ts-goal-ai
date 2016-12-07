@@ -1,6 +1,4 @@
 import * as Config from "./config/config";
-// import * as F from "./components/functions";
-
 import { log } from "./components/support/log";
 import GlobalState from "./components/state/globalState";
 import {bootstrap} from "./components/bootstrap";
@@ -8,11 +6,14 @@ import {grind} from "./components/grind";
 import {importManager} from "./components/import/importSingleton";
 import {throttle} from "./components/util/throttle";
 import {eventManager} from "./components/event/eventSingleton";
+import monkeypatch from "./monkeypatch";
 
 // Any code written outside the `loop()` method is executed only when the
 // Screeps system reloads your script.
 // Use this bootstrap wisely. You can cache some of your stuff to save CPU.
 // You should extend prototypes before the game loop executes here.
+
+monkeypatch();
 
 // This is an example for using a config variable from `config.ts`.
 if (Config.USE_PATHFINDER) {

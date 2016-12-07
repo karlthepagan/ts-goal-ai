@@ -1,12 +1,18 @@
+export type AnyJP = Joinpoint<any, any>;
+export function newJP(className: string, method: string, objectId?: string) {
+  return new Joinpoint<any, any>(className, method, objectId);
+}
+
 export default class Joinpoint<I, T> {
   public className: string;
   public objectId?: string;
-  public target?: I;
+  public target: I;
   public method: string;
-  public args: any[] = [];
+  public args: any[];
+  public proceedApply: Function;
   public returnValue?: T;
   public thrownException?: string|Error;
-  public proceedApply?: Function;
+  public source?: any;
 
   constructor(className: string, method: string, objectId?: string) {
     this.className = className;
@@ -14,15 +20,12 @@ export default class Joinpoint<I, T> {
     this.objectId = objectId;
   }
 
+  public isValid(): boolean {
+    return !(this.className === undefined || this.objectId === undefined || this.target === undefined
+      || this.method === undefined || this.args === undefined || this.proceedApply === undefined);
+  }
+
   public proceed(): T {
-    if (this.proceedApply === undefined) {
-      throw new Error("method not resolved");
-    }
-
-    if (this.target === undefined) {
-      throw new Error("target not resolved");
-    }
-
     try {
       return this.returnValue = this.proceedApply.apply(this.target, this.args);
     } catch (err) {

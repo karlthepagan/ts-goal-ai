@@ -2,6 +2,10 @@ import State from "./abstractState";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 
 export default class SpawnState extends State<Spawn> {
+  public static apiType() {
+    return Spawn;
+  }
+
   public static left(subject: Spawn) {
     return (FLYWEIGHTS ? SpawnState._left : new SpawnState("SS") ).wrap(subject, botMemory()) as SpawnState;
   }

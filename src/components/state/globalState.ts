@@ -10,14 +10,18 @@ import * as F from "../functions";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 
 export default class GlobalState extends State<Game> {
-    /* TODO game score is sum of
-     - add sum of all RCL * RCL weight
-     - add sum of each room's energy velocity * venergy weight
-     - add sum of all scored minerals * each minieral type weight
-     - add sum of each secured mineral * each mineral type access weight (secured: military minimum score)
-     - add sum of each room's military score minus sum of neighbor military score * military weight
-     -- military score influenced by player military weight
-     */
+  public static apiType() {
+    return undefined;
+  }
+
+  /* TODO game score is sum of
+   - add sum of all RCL * RCL weight
+   - add sum of each room's energy velocity * venergy weight
+   - add sum of all scored minerals * each minieral type weight
+   - add sum of each secured mineral * each mineral type access weight (secured: military minimum score)
+   - add sum of each room's military score minus sum of neighbor military score * military weight
+   -- military score influenced by player military weight
+   */
     // score all sources
     // score all minerals
     // score all creeps

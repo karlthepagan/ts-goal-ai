@@ -4,6 +4,10 @@ import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 
 export default class MineralState extends State<Mineral> {
+  public static apiType() {
+    return undefined; // TODO Mineral; not a constructor
+  }
+
   public static left(subject: Mineral) {
     return (FLYWEIGHTS ? MineralState._left : new MineralState("MS") ).wrap(subject, botMemory()) as MineralState;
   }

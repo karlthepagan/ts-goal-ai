@@ -4,6 +4,10 @@ import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 
 export default class SourceState extends State<Source> {
+  public static apiType() {
+    return Source;
+  }
+
   public static left(subject: Source) {
     return (FLYWEIGHTS ? SourceState._left : new SourceState("SS") ).wrap(subject, botMemory()) as SourceState;
   }

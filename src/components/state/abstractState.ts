@@ -5,6 +5,7 @@ import Named from "../named";
 import {botMemory} from "../../config/config";
 import EventRegistry from "../event/index";
 import CreepState from "./creepState";
+import getType from "../types";
 
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
@@ -79,6 +80,10 @@ function _access(state: any, rootMemory: any, writeValue?: any): any {
 abstract class State<T> implements Named {
   public static setEventRegistry(events: EventRegistry) {
     State.events = events;
+  }
+
+  public static vright<I>(className: string, id: string): State<I> {
+    return (getType(className) as any).vright(id); // TODO startPool and transaction?
   }
 
   protected static events: EventRegistry;

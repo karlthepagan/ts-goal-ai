@@ -7,7 +7,7 @@ import {throttle} from "./util/throttle";
 import {scoreManager} from "./score/scoreSingleton";
 import {SCORE_KEY} from "./score/scoreManager";
 import State from "./state/abstractState";
-import {DISTANCE_WEIGHT} from "./score/stateScoreProvider";
+import {DISTANCE_WEIGHT} from "./impl/stateScoreProvider";
 import MemoIterator = _.MemoIterator;
 import LookForIterator from "./util/lookForIterator";
 import {FindCallback} from "./util/lookForIterator";

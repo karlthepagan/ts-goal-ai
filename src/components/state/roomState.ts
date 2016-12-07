@@ -11,6 +11,10 @@ import * as F from "../functions";
  * TODO BSP this mofo? https://www.npmjs.com/package/bsp-tree
  */
 export default class RoomState extends State<Room> {
+  public static apiType() {
+    return Room;
+  }
+
   public static left(subject: Room) {
     return (FLYWEIGHTS ? RoomState._left : new RoomState("RS") ).wrap(subject, botMemory()) as RoomState;
   }

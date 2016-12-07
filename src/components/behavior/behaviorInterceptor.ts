@@ -1,34 +1,39 @@
 import {log} from "../support/log";
 import State from "../state/abstractState";
-import getType from "../types";
 import Joinpoint from "../event/joinpoint";
+import InterceptorSpec from "../event/interceptorSpec";
+import {AnyIS} from "../event/interceptorSpec";
+import * as F from "../functions";
 
-class Interceptor {
-  public test(jp: Joinpoint<any, any>): boolean {
-    jp = jp;
-    return false;
-  }
+export const BEFORE_CALL = 0;
+export const AFTER_CALL = 1;
+export const AFTER_FAIL = 2;
 
-  public invoke(jp: Joinpoint<any, any>): boolean {
-    jp = jp;
-    return false;
-  }
-}
-
-const BEFORE_CALL = 0;
-const AFTER_CALL = 1;
-const AFTER_FAIL = 2;
+type ClassSpecs = { [methodName: string]: AnyIS[] };
+export type SpecMap = { [className: string]: ClassSpecs };
 
 export default class BehaviorInterceptor implements ProxyHandler<State<any>> {
-  public register(className: string, ) {
-    className = className;
-    log.debug("TODO behavior register"); // TODO register behavior
+  private _interceptors: SpecMap[] = [{}, {}, {}];
+
+  /**
+   * @param name - descirbes the builder
+   * @param spec - test input was like [[createCreep],[],[ofAll],[],[apply],[function]]
+   */
+  public register(name: string, spec: AnyIS) {
+    if (!spec.isValid()) {
+      throw new Error("invalid spec=" + JSON.stringify(spec));
+    }
+    log.debug("register", name, spec.callState, spec.definition.className, spec.definition.method);
+    const specs = F.expand(
+      [ spec.callState, spec.definition.className, spec.definition.method ],
+      this._interceptors, true) as AnyIS[];
+    specs.push(spec);
   }
 
   public get(target: State<any>, p: PropertyKey, receiver: any): any {
     receiver = receiver;
 
-    const className = target.className();
+    const className = target.constructor.name;
     const objectId = target.getId();
     const method = p as string; // TODO really?
 
@@ -44,13 +49,13 @@ export default class BehaviorInterceptor implements ProxyHandler<State<any>> {
         return new Proxy(value, {
           apply: (callTarget: Function, thisArg: any, argArray: any[]): any => {
             thisArg = thisArg;
-            debugger;
             jp.args = argArray;
             jp.proceedApply = callTarget;
             try {
               jp.returnValue = this.beforeCall(jp);
-              return this.onCall(jp);
+              return this.dispatch(jp);
             } catch (err) {
+              log.trace(err); // TODO remove trace
               jp.thrownException = err;
               return this.afterFail(jp);
             }
@@ -66,11 +71,27 @@ export default class BehaviorInterceptor implements ProxyHandler<State<any>> {
     }
   }
 
+  public dispatch(jp: Joinpoint<any, any>): any {
+    const interceptors = this.getInterceptors(jp, AFTER_CALL);
+    if (interceptors === undefined || interceptors.length === 0) {
+      return jp.returnValue; // TODO apply within?
+    }
+
+    for (const interceptor of interceptors) {
+      // TODO how to handle interceptor invoke decisions
+      if (interceptor.test(jp) && interceptor.invoke(jp)) {
+        return jp.returnValue;
+      }
+    }
+
+    return jp.returnValue; // TODO apply within?
+  }
+
   // TODO mutate or simply return?
   protected beforeCall(jp: Joinpoint<any, any>): Function {
     // : BeforeCallback<any> = (className, objectId, func, result, args) => {
     const interceptors = this.getInterceptors(jp, BEFORE_CALL);
-    if (interceptors.length === 0) {
+    if (interceptors === undefined || interceptors.length === 0) {
       return jp.proceed(); // TODO apply within?
     }
 
@@ -84,25 +105,9 @@ export default class BehaviorInterceptor implements ProxyHandler<State<any>> {
     return jp.proceed(); // TODO apply within?
   }
 
-  protected onCall(jp: Joinpoint<any, any>): any {
-    const interceptors = this.getInterceptors(jp, AFTER_CALL);
-    if (interceptors.length === 0) {
-      return jp.proceed; // TODO apply within?
-    }
-
-    for (const interceptor of interceptors) {
-      // TODO how to handle interceptor invoke decisions
-      if (interceptor.test(jp) && interceptor.invoke(jp)) {
-        return jp.returnValue;
-      }
-    }
-
-    return jp.returnValue; // TODO apply within?
-  }
-
   protected afterFail(jp: Joinpoint<any, any>): any {
     const interceptors = this.getInterceptors(jp, AFTER_FAIL);
-    if (interceptors.length === 0) {
+    if (interceptors === undefined || interceptors.length === 0) {
       throw jp.thrownException;
     }
 
@@ -116,14 +121,7 @@ export default class BehaviorInterceptor implements ProxyHandler<State<any>> {
     throw jp.thrownException;
   }
 
-  protected getInterceptors(jp: Joinpoint<any, any>, callState: number): Interceptor[] {
-    jp = jp;
-    callState = callState;
-    // TODO look up interceptors
-    return [];
-  }
-
-  protected resolve(className: string, objectId: string): State<any> {
-    return getType(className).vright(objectId) as State<any>; // TODO startPool on transaction
+  protected getInterceptors(jp: Joinpoint<any, any>, callState: number): InterceptorSpec<any, any>[] {
+    return F.expand([ callState, jp.className, jp.method ], this._interceptors, true) as AnyIS[];
   }
 }

@@ -4,7 +4,6 @@ import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 import {TERRAIN_ROAD, TERRAIN_PLAIN, TERRAIN_SWAMP} from "../constants";
 import LookForIterator from "../util/lookForIterator";
-import getType from "../types";
 import Joinpoint from "../event/joinpoint";
 // const BiMap = require("bimap"); // TODO BiMap
 
@@ -89,11 +88,16 @@ function iterateNeighbors(neighborIds: string[],
     if (id === undefined || id === null || type(dir) === undefined) {
       continue;
     }
-    getType(type(dir)).vright(id)[callbackName](...args(dir));
+    const instance = State.vright(type(dir), id) as any;
+    instance[callbackName](...args(dir));
   }
 }
 
 export default class CreepState extends State<Creep> {
+  public static apiType() {
+    return Creep;
+  }
+
   public static calculateBody(body: BodyPartDefinition[], forFight: boolean, max?: boolean): string {
     // bimap: new BiMap(), // testing TODO REMOVE
     // sort and extract current effectiveness

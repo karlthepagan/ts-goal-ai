@@ -2,6 +2,9 @@ import CreepState from "./creepState";
 import {FLYWEIGHTS, botMemory} from "../../config/config";
 
 export default class EnemyCreepState extends CreepState {
+  public static apiType() {
+    return Creep;
+  }
 
   public static left(subject: Creep) {
     return (FLYWEIGHTS ? EnemyCreepState._left : new EnemyCreepState("EC") )

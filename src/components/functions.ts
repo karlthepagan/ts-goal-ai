@@ -193,7 +193,7 @@ export function buildFollow(mem: any, addr: PropertyKey, value: any): any {
   }
 }
 
-export function deleteExpand(address: PropertyKey[], memory: any, array?: boolean): boolean {
+export function deleteExpand(address: (PropertyKey|undefined)[], memory: any, array?: boolean): boolean {
   if (address.length === 0) {
     return false;
   }
@@ -201,10 +201,17 @@ export function deleteExpand(address: PropertyKey[], memory: any, array?: boolea
   let last = address.length - 1;
 
   for (let i = 0; i < last; i++) {
-    memory = buildFollow(memory, address[i], {});
+    const node = address[i];
+    if (node === undefined) {
+      throw new Error("bad address: " + JSON.stringify(address));
+    }
+    memory = buildFollow(memory, node, {});
   }
 
   const key = address[last];
+  if (key === undefined) {
+    throw new Error("bad address: " + JSON.stringify(address));
+  }
   if (array) {
     const list: PropertyKey[] = memory[last];
     const i = list.indexOf(key);
@@ -213,11 +220,11 @@ export function deleteExpand(address: PropertyKey[], memory: any, array?: boolea
     }
     return true;
   }
-  return delete memory[address[last]];
+  return delete memory[key];
 }
 
 // TODO consider replacing with _.defaultsDeep
-export function expand(address: PropertyKey[], memory: any, array?: boolean): any {
+export function expand(address: (PropertyKey|undefined)[], memory: any, array?: boolean): any {
   if (address.length === 0) {
     return memory;
   }
@@ -225,10 +232,18 @@ export function expand(address: PropertyKey[], memory: any, array?: boolean): an
   let last = address.length - 1;
 
   for (let i = 0; i < last; i++) {
-    memory = buildFollow(memory, address[i], {});
+    const node = address[i];
+    if (node === undefined) {
+      throw new Error("bad address: " + JSON.stringify(address));
+    }
+    memory = buildFollow(memory, node, {});
   }
 
-  return buildFollow(memory, address[last], array ? [] : {});
+  const node = address[last];
+  if (node === undefined) {
+    throw new Error("bad address: " + JSON.stringify(address));
+  }
+  return buildFollow(memory, node, array ? [] : {});
 }
 
 export function parseRoomName(roomName: string): XY {

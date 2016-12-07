@@ -1,15 +1,15 @@
-import {scoreManager} from "./scoreSingleton";
+import {scoreManager} from "../score/scoreSingleton";
 import CreepState from "../state/creepState";
 import GlobalState from "../state/globalState";
 import MineralState from "../state/mineralState";
 import RoomState from "../state/roomState";
 import SourceState from "../state/sourceState";
 import SpawnState from "../state/spawnState";
-import ScoreManager from "./scoreManager";
-import ScoreHandler from "./scoreHandler";
+import ScoreManager from "../score/scoreManager";
+import ScoreHandler from "../score/scoreHandler";
 import {log} from "../support/log";
 import * as F from "../functions";
-import {SCORE_KEY} from "./scoreManager";
+import {SCORE_KEY} from "../score/scoreManager";
 import EnemyCreepState from "../state/enemyCreepState";
 import {TERRAIN_PLAIN, TERRAIN_ROAD, TERRAIN_SWAMP} from "../constants";
 
@@ -22,6 +22,7 @@ export const FATIGUE_WEIGHT = 4;
 export const WORK_WEIGHT = 2;
 export const ROAD_WEIGHT = 3; // cost to maintain roads
 export const SWAMP_WEIGHT = 1; // cost to route around swamps
+export const COMBAT_DANGER = 10; // TODO implement risk
 
 export default function registerStateScoreProvider() {
   scoreManager.addHandler(new CreepState("proto").className(), impl.creepState);
@@ -68,6 +69,7 @@ function scoreRoad(state: CreepState): number {
     return 0;
   }
 
+  // TODO score
   if (state.isCarrying()) {
     return (ROAD_WEIGHT * state.maxMovePenalty(TERRAIN_PLAIN) - state.maxMovePenalty(TERRAIN_ROAD)) / state.getWeight();
   }

@@ -1,13 +1,17 @@
 import State from "./abstractState";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 
-export default class ConstructionState extends State<Mineral> {
-  public static left(subject: Mineral) {
+export default class ConstructionState extends State<ConstructionSite> {
+  public static apiType() {
+    return ConstructionSite;
+  }
+
+  public static left(subject: ConstructionSite) {
     return (FLYWEIGHTS ? ConstructionState._left : new ConstructionState("TS") )
       .wrap(subject, botMemory()) as ConstructionState;
   }
 
-  public static right(subject: Mineral) {
+  public static right(subject: ConstructionSite) {
     return (FLYWEIGHTS ? ConstructionState._right : new ConstructionState("TS") )
       .wrap(subject, botMemory()) as ConstructionState;
   }

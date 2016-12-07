@@ -1,6 +1,6 @@
 import {log} from "./support/log";
 import {importManager} from "./import/importSingleton";
-import registerStateScoreProvider from "./score/stateScoreProvider";
+import registerStateScoreProvider from "./impl/stateScoreProvider";
 import GlobalState from "./state/globalState";
 import TooAngelMemory from "./import/tooAngelMemory";
 import State from "./state/abstractState";
@@ -20,10 +20,11 @@ export const bootstrap: (() => void)[] = [];
 
 bootstrap.push(() => {
   log.info("bootstrap starting");
+  GlobalState.protectMemory("config");
 });
 
 bootstrap.push(() => {
-  registerStateScoreProvider();
+  log.debug("registering state types");
   registerType(CreepState);
   registerType(ConstructionState);
   registerType(EnemyCreepState);
@@ -37,7 +38,13 @@ bootstrap.push(() => {
 });
 
 bootstrap.push(() => {
-  GlobalState.protectMemory("config");
+  log.debug("registering score functions");
+  registerStateScoreProvider();
+});
+
+bootstrap.push(() => {
+  log.debug("registering event builders");
+
   State.setEventRegistry(eventManager);
 
   registerBehaviorProvider(eventManager);
