@@ -1,4 +1,4 @@
-import * as Builders from "../../event/builders";
+import * as Builders from "./builders";
 import {AnyIS, default as InterceptorSpec} from "../interceptorSpec";
 import Joinpoint from "../joinpoint";
 

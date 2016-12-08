@@ -7,7 +7,7 @@ import {AnyIS, default as InterceptorSpec} from "../behavior/interceptorSpec";
 import Joinpoint from "../behavior/joinpoint";
 import {eventSelectorGet} from "../behavior/impl/eventSpecBuilder";
 import {whenClosureGet} from "../behavior/impl/interceptorSpecBuilders";
-import {actionGet} from "./builders";
+import {actionGet} from "../behavior/impl/builders";
 import ScheduleSpec from "../behavior/scheduledSpec";
 
 export default class EventManager implements EventRegistry {
