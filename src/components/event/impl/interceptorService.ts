@@ -1,8 +1,8 @@
 import {log} from "../../support/log";
 import State from "../../state/abstractState";
 import Joinpoint from "../joinpoint";
-import InterceptorSpec from "../../behavior/interceptorSpec";
-import {AnyIS} from "../../behavior/interceptorSpec";
+import InterceptorSpec from "./interceptorSpec";
+import {AnyIS} from "./interceptorSpec";
 import * as F from "../../functions";
 import {botMemory} from "../../../config/config";
 import ScheduleSpec from "../../behavior/scheduledSpec";

@@ -1,6 +1,6 @@
-import Joinpoint from "../event/joinpoint";
-import {OnIntercept} from "../event/api/index";
-import InterceptorService from "../event/impl/interceptorService";
+import Joinpoint from "../joinpoint";
+import {OnIntercept} from "../api/index";
+import InterceptorService from "./interceptorService";
 
 export type AnyIS = InterceptorSpec<any, any>;
 

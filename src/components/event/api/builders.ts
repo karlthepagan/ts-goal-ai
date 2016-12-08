@@ -1,4 +1,4 @@
-import {AnyIS} from "../../behavior/interceptorSpec";
+import {AnyIS} from "../impl/interceptorSpec";
 import {triggerBehaviors} from "../behaviorContext";
 import {OnIntercept} from "./index";
 import ScheduleSpec from "../../behavior/scheduledSpec";

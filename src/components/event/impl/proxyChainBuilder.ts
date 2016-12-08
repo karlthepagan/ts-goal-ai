@@ -1,5 +1,5 @@
 import * as F from "../../functions";
-import {AnyIS} from "../../behavior/interceptorSpec";
+import {AnyIS} from "./interceptorSpec";
 
 const _terminal: any = {
   callAnd: 1,

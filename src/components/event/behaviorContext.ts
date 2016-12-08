@@ -2,7 +2,7 @@ import InterceptorService from "./impl/interceptorService";
 import State from "../state/abstractState";
 import * as F from "../functions";
 import {botMemory} from "../../config/config";
-import {AnyIS} from "../behavior/interceptorSpec";
+import {AnyIS} from "./impl/interceptorSpec";
 import {log} from "../support/log";
 import {AnyJP, default as Joinpoint} from "./joinpoint";
 

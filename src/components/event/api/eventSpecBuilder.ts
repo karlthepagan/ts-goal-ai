@@ -1,5 +1,5 @@
 import * as Builders from "./builders";
-import {AnyIS, default as InterceptorSpec} from "../../behavior/interceptorSpec";
+import {AnyIS, default as InterceptorSpec} from "../impl/interceptorSpec";
 import Joinpoint from "../joinpoint";
 
 /**

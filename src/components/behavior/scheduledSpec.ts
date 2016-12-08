@@ -1,4 +1,4 @@
-import InterceptorSpec from "./interceptorSpec";
+import InterceptorSpec from "../event/impl/interceptorSpec";
 import InterceptorService from "../event/impl/interceptorService";
 import Joinpoint from "../event/joinpoint";
 
