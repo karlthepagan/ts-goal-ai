@@ -1,6 +1,6 @@
-import {newJP} from "./joinpoint";
 import * as Builders from "./builders";
-import {AnyIS, newIS, AFTER_CALL} from "./interceptorSpec";
+import {AnyIS, AFTER_CALL, default as InterceptorSpec} from "./interceptorSpec";
+import Joinpoint from "./joinpoint";
 
 /**
  * @see "./index.d.ts":EventSelector
@@ -16,9 +16,9 @@ empty<T extends CreepState|OwnedStructure>(): WhenEvent<T, OnEnergy<T, void>>;
 move(): WhenEvent<CreepState, OnMove<void>>;
 };
 */
-function eventSelectorGet(name: string) {
-  const is = newIS();
-  is.definition = newJP("__events__", name);
+export function eventSelectorGet(name: string): [AnyIS, Function] {
+  const is = new InterceptorSpec<any, any>();
+  is.definition = new Joinpoint<any, any>("__events__", name);
   is.callState = AFTER_CALL;
   // is.targetConstructor = constructor; // TODO event typing
   return [is, eventSelectorApply];
@@ -58,23 +58,13 @@ function whenApply(is: AnyIS, args: any[]) {
   return [is, Builders.actionGet(eventSelectorGet)];
 }
 
-export default class EventSpecBuilders {
-  public static testHandler(value: any, ... append: any[]) {
-    // if (!Array.isArray(append)) {
-    //   append = [append];
-    // }
-    if (value === undefined) {
-      return [[append], EventSpecBuilders.testHandler];
-    } else {
-      return [value.concat([append]), EventSpecBuilders.testHandler];
-    }
-  }
-
-  public static handler(value: any, methodName: string) {
-    if (value === undefined) {
-      return eventSelectorGet(methodName);
-    } else {
-      throw new Error("unexpected state. value=" + value);
-    }
+export function testHandler(value: any, ... append: any[]) {
+  // if (!Array.isArray(append)) {
+  //   append = [append];
+  // }
+  if (value === undefined) {
+    return [[append], testHandler];
+  } else {
+    return [value.concat([append]), testHandler];
   }
 }

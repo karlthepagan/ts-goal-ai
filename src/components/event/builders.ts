@@ -1,22 +1,24 @@
-import {AnyIS, newIS} from "./interceptorSpec";
+import {AnyIS, ScheduleSpec} from "./interceptorSpec";
 import {triggerBehaviors} from "../behavior/behaviorContext";
 import {OnIntercept} from "./index";
-import Named from "../named";
-import {newJP} from "./joinpoint";
 
 export function actionGet(select?: Function) {
   return (is: AnyIS, actionName: string) => {
     switch (actionName) {
       case "fireEvent":
-        is.action = triggerBehaviors;
-        return [is, assignArgsThen(actionGet(select))]; // TODO skip is a bit of a hack but easy
+        is.action = triggerBehaviors; // TODO never concrete, always named
+        // TODO set instance as the named global interceptorService
+        return [is, assignArgsThen(actionGet(select))];
 
       case "andThen":
         // TODO implement and
         return [is, select];
 
       case "apply":
-        return [is, actionApplyApply]; // TODO apply returns void (should return promise)
+        return [is, actionApplyApply]; // apply returns void (TODO should return promise?)
+
+      case "wait":
+        return [is, waitApply(actionGet(select))];
 
       default:
         throw new Error("undefined action=" + actionName);
@@ -25,14 +27,35 @@ export function actionGet(select?: Function) {
   };
 }
 
+/**
+ * wait implementation changes the behavior of action from immediately firing/doing the action into
+ * scheduling that to occur later
+ */
+export function waitApply(next: Function) {
+  return (is: AnyIS, relativeTime: number) => {
+    // TODO compose two joinpoints together??? - one to be applied immediately, and one to be executed after a delay
+    const ss = is.clone(new ScheduleSpec<any, any>());
+    if (isNaN(relativeTime)) {
+      debugger; // illegal relativeTime
+      throw new Error("illegal relativeTime=NaN");
+    }
+    if (relativeTime < 1) {
+      throw new Error("illegal relativeTime=" + relativeTime);
+    }
+
+    ss.relativeTime = relativeTime;
+
+    return [ss, next]; // ss needs to get send to the schedule handler
+  };
+}
+
 export function actionApplyApply(is: AnyIS, action: OnIntercept<any, any>) {
   is.action = action;
-  return [is, undefined]; // TODO Action.apply(f) returns void
+  return [is, undefined];
 }
 
 export function assignArgsThen(next?: Function) {
   return (is: AnyIS, ...args: any[]) => {
-    debugger;
     is.actionArgs = args;
     return [is, next];
   };
@@ -40,13 +63,4 @@ export function assignArgsThen(next?: Function) {
 
 export function skip(next: Function) { // TODO unexport
   return (is: AnyIS) => [is, next];
-}
-
-export function scheduleHandler(initial: undefined, relativeTime: number, instance: Named) {
-  initial = initial;
-  const is = newIS();
-  is.parameter = relativeTime;
-  is.definition = newJP(instance.constructor.name, "?");
-  is.definition.target = instance;
-  return [is, actionGet(undefined)];
 }

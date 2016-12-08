@@ -4,9 +4,13 @@ import * as F from "../functions";
 import {botMemory} from "../../config/config";
 import {AnyIS} from "../event/interceptorSpec";
 import {log} from "../support/log";
-import {AnyJP, newJP} from "../event/joinpoint";
+import {AnyJP, default as Joinpoint} from "../event/joinpoint";
 
 const _interceptors = new InterceptorService();
+
+export function dispatchTick(time: number) {
+  _interceptors.dispatchTick(time);
+}
 
 export function triggerBehaviors(jp: AnyJP, eventName: string) { // TODO should InterspectorSpec pollute this API?
   debugger; // triggerBehaviors
@@ -14,7 +18,7 @@ export function triggerBehaviors(jp: AnyJP, eventName: string) { // TODO should 
   log.debug("trigger behaviors event=", eventName);
   // construct event
   // TODO map
-  const event = newJP("__events__", eventName);
+  const event = new Joinpoint<any, any>("__events__", eventName);
   // jp.target; // TODO this is the event source
   event.returnValue = jp.returnValue;
   event.args = jp.args;

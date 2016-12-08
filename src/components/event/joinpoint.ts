@@ -1,7 +1,4 @@
 export type AnyJP = Joinpoint<any, any>;
-export function newJP(className: string, method: string, objectId?: string) {
-  return new Joinpoint<any, any>(className, method, objectId);
-}
 
 export default class Joinpoint<I, T> {
   public className: string;

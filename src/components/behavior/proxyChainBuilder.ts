@@ -8,8 +8,8 @@ const _terminal: any = {
   fireEvent: 1,
 };
 
-type StackHandler = (value: any, ...push: any[]) => any;
-type TerminalCallback = (spec: AnyIS) => void;
+type StackHandler<O extends AnyIS> = (value: O, ...push: any[]) => [O, Function];
+type TerminalCallback<O extends AnyIS> = (spec: O) => void;
 
 interface Accumulator {
   stack: any;
@@ -37,11 +37,11 @@ function newTarget(last?: Accumulator, push?: any[], terminal?: number): Accumul
   return accumulator;
 }
 
-export default class ProxyChainBuilder implements ProxyHandler<Accumulator> {
-  private _callback: TerminalCallback;
-  private _stackHandler: StackHandler;
+export default class ProxyChainBuilder<O extends AnyIS> implements ProxyHandler<Accumulator> {
+  private _stackHandler: StackHandler<O>;
+  private _callback: TerminalCallback<O>;
 
-  constructor(stackHandler: StackHandler, callback: TerminalCallback) {
+  constructor(stackHandler: StackHandler<O>, callback: TerminalCallback<O>) {
     this._stackHandler = stackHandler;
     this._callback = callback;
   }

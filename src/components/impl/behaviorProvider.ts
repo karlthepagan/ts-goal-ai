@@ -7,12 +7,13 @@ import {log} from "../support/log";
 
 export default function registerBehaviorProvider(em: EventRegistry) {
   debugger;
-  em.intercept(SpawnState).after(i => i.createCreep).fireEvent("spawn");
-  // TODO delay! .wait(1).fireEvent("spawn");
+  em.intercept(SpawnState).after(i => i.createCreep).wait(1).fireEvent("spawn");
+
   em.when().aggro().ofAll().apply((jp: Joinpoint<RoomState, void>) => {
     jp = jp;
     log.debug("AGGRO! TODO find turrets and FIRE! later do enemy priority scoring & elections");
   });
+
   em.when().spawn().ofAll().apply((jp: Joinpoint<any, string>) => {
     // const creep = jp.target as CreepState; // TODO implement event domain target resolution
     const time = jp.args[0].length * 3; // TODO get event source? Spawn.spawning.remainingTime?

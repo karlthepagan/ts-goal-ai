@@ -5,8 +5,8 @@ import {bootstrap} from "./components/bootstrap";
 import {grind} from "./components/grind";
 import {importManager} from "./components/import/importSingleton";
 import {throttle} from "./components/util/throttle";
-import {eventManager} from "./components/event/eventSingleton";
 import monkeypatch from "./monkeypatch";
+import {dispatchTick} from "./components/behavior/behaviorContext";
 
 // Any code written outside the `loop()` method is executed only when the
 // Screeps system reloads your script.
@@ -61,7 +61,7 @@ export function loop() {
       imported = true;
     }
 
-    eventManager.dispatchTick(Game.time);
+    dispatchTick(Game.time);
 
     grind(state);
   } catch (err) {

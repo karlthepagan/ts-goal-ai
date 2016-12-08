@@ -5,12 +5,34 @@ import InterceptorSpec from "../event/interceptorSpec";
 import {AnyIS} from "../event/interceptorSpec";
 import * as F from "../functions";
 import {AFTER_CALL, AFTER_FAIL, BEFORE_CALL} from "../event/interceptorSpec";
+import {ScheduleSpec} from "../event/interceptorSpec";
+import {botMemory} from "../../config/config";
 
-type ClassSpecs = { [methodName: string]: AnyIS[] };
-export type SpecMap = { [className: string]: ClassSpecs };
+type ClassSpec = { [methodName: string]: AnyIS[] };
+export type SpecMap = { [className: string]: ClassSpec };
+
+interface EventMemory {
+  /**
+   * last dispatched event tick
+   */
+  lastTick: number;
+
+  /**
+   * Map of tick numbers to lists of InterceptorSpecs
+   */
+  timeline: { [key: string]: SpecMap };
+}
 
 export default class InterceptorService implements ProxyHandler<State<any>> {
   private _interceptors: SpecMap[] = [{}, {}, {}];
+  private _dispatchTime: number|undefined;
+
+  /**
+   * the current time if called from inside the execution context
+   */
+  public dispatchTime(): number|undefined {
+    return this._dispatchTime;
+  }
 
   /**
    * @param name - descirbes the builder
@@ -76,12 +98,61 @@ export default class InterceptorService implements ProxyHandler<State<any>> {
 
     for (const interceptor of interceptors) {
       // TODO how to handle interceptor invoke decisions
-      if (interceptor.test(jp) && interceptor.invoke(jp)) {
+      if (interceptor.test(jp) && interceptor.invoke(jp, this)) { // TODO circular reference?
         return jp.returnValue;
       }
     }
 
     return jp.returnValue; // TODO apply within?
+  }
+
+  public scheduleExec<A, B>(spec: ScheduleSpec<A, B>, jp: Joinpoint<A, B>) {
+    debugger;
+    jp = jp; // TODO need to put jp into spec?
+    // jp is the context of the call which triggered us
+
+    const scheduledTick = spec.relativeTime + F.elvis(this.dispatchTime(), Game.time);
+
+    const taskList = F.expand(
+      [ "timeline", scheduledTick, spec.definition.className, spec.definition.method],
+      this.eventMemory(), true) as AnyIS[];
+
+    const event = spec.clone();
+    event.definition.objectId = jp.objectId;
+    // TODO action must be resolved to a Named instance
+    taskList.push(event);
+  }
+
+  /**
+   * ticks may be delayed to allow for CPU conservation
+   */
+  public dispatchTick(time: number) {
+    this._dispatchTime = time;
+    let last = F.elvis(this.eventMemory().lastTick, time - 1);
+    const timeline = F.expand([ "timeline" ], this.eventMemory());
+
+    while (last++ < time) {
+      let tick = timeline["" + last] as SpecMap;
+      if (tick !== undefined) {
+        for (const className in tick) {
+          const classSpec: ClassSpec = tick[className];
+          for (const methodName in classSpec) {
+            const tasks: AnyIS[] = classSpec[methodName];
+            for (const task of tasks) { // TODO kill this line?
+              debugger;
+              // TODO replace State with generic named object registry to do callbacks that survive sharding
+              const jp = task.definition;
+              jp.target = State.vright(jp.className, jp.objectId as string); // TODO cache target?
+              task.invoke(jp, this);
+            }
+          }
+        }
+      }
+
+      this.eventMemory().lastTick = last;
+      delete timeline["" + last];
+    }
+    this._dispatchTime = undefined;
   }
 
   // TODO mutate or simply return?
@@ -94,7 +165,7 @@ export default class InterceptorService implements ProxyHandler<State<any>> {
 
     for (const interceptor of interceptors) {
       // TODO how to handle interceptor invoke decisions
-      if (interceptor.test(jp) && interceptor.invoke(jp)) {
+      if (interceptor.test(jp) && interceptor.invoke(jp, this)) {
         return jp.returnValue;
       }
     }
@@ -110,7 +181,7 @@ export default class InterceptorService implements ProxyHandler<State<any>> {
 
     for (const interceptor of interceptors) {
       // TODO how to handle interceptor invoke decisions
-      if (interceptor.test(jp) && interceptor.invoke(jp)) {
+      if (interceptor.test(jp) && interceptor.invoke(jp, this)) {
         return jp.returnValue;
       }
     }
@@ -120,5 +191,12 @@ export default class InterceptorService implements ProxyHandler<State<any>> {
 
   protected getInterceptors(jp: Joinpoint<any, any>, callState: number): InterceptorSpec<any, any>[] {
     return F.expand([ callState, jp.className, jp.method ], this._interceptors, true) as AnyIS[];
+  }
+
+  // TODO method to look for the ticks remaining to and subject of a pending event
+
+  protected eventMemory(): EventMemory {
+    const mem = F.expand(["events"], botMemory()) as EventMemory;
+    return mem;
   }
 }

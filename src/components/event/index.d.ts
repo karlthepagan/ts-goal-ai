@@ -128,6 +128,8 @@ export interface ApiCalls<INST> {
  * @param SELECT - required filters, start of the chain
  */
 export interface Action<CALLBACK, TYPE, SELECT> { // TODO TYPE for origin of the event? (that's in the EventRegistry)
+  // TODO void if no "and impl"
+  // TODO callback will be method reference like intercept(Class).after(c=>c.methodName)
   callAnd       (instance: TYPE, callback: CALLBACK, ...args: any[]): Action<CALLBACK, TYPE, SELECT>;
   call          (): TYPE; // direct call, captured by proxy
   apply         (func: Function): void; // direct function invoke, TODO index of anonymous functions?
@@ -135,12 +137,13 @@ export interface Action<CALLBACK, TYPE, SELECT> { // TODO TYPE for origin of the
   wait          (relativeTime: number): Action<CALLBACK, TYPE, SELECT>;
   // TODO filter on source or destination
   filterOn      (thisArg: Named, callback: CALLBACK, ...args: any[]): SELECT; // illegal for When.after or EventSelector
-  or            (): SELECT;
-  andThen       (): SELECT; // illegal for When.before
+  or            (): SELECT; // TODO difficult
+  // TODO don't implement and, just save the builder object and invoke multiple times?
+  // andThen       (): SELECT; // illegal for When.before
   // TODO tap?
   // andIntercept  <INST extends State<any>>(instance: State<any>): When<ApiCalls<INST>>; // NEW SUBJECT, JOIN
   andWhen       (): EventSelector;
-  D             (): SELECT; // close paren
+  D             (): SELECT; // close paren TODO difficult
 }
 
 /**
@@ -153,7 +156,7 @@ export interface When<TYPE> {
   before: TYPE;
   after: TYPE;
   failure: TYPE;
-  C(): When<TYPE>; // open paren
+  C(): When<TYPE>; // open paren TODO difficult
 }
 
 export interface WhenClosure<INST, API> {
@@ -161,7 +164,7 @@ export interface WhenClosure<INST, API> {
   before(method: (i: API) => Function): Action<OnIntercept<API, void>, INST, WhenClosure<INST, API>>;
   after(method: (i: API) => Function): Action<OnIntercept<API, any>, INST, WhenClosure<INST, API>>;
   failure(method: (i: API) => Function): Action<OnIntercept<API, void>, INST, WhenClosure<INST, API>>;
-  C(): WhenClosure<INST, API>; // open paren
+  C(): WhenClosure<INST, API>; // open paren TODO difficult
 }
 
 // https://github.com/Microsoft/TypeScript/issues/4890#issuecomment-141879451
