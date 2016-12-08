@@ -72,7 +72,6 @@ export default class EventManager implements EventRegistry {
       const relativeTime = spec.relativeTime;
 
       log.debug("TODO schedule event for ", relativeTime);
-      // const tick = F.expand([ "timeline", "" + relativeTime ], this.memory()) as SpecMap;
     }
   );
 

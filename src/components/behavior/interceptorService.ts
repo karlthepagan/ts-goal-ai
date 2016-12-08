@@ -7,8 +7,8 @@ import * as F from "../functions";
 import {botMemory} from "../../config/config";
 import ScheduleSpec from "../event/scheduledSpec";
 
-type ClassSpec = { [methodName: string]: AnyIS[] };
-export type SpecMap = { [className: string]: ClassSpec };
+type ClassSpec<T extends InterceptorSpec<any, any>> = { [methodName: string]: T[] };
+export type SpecMap<T extends InterceptorSpec<any, any>> = { [className: string]: ClassSpec<T> };
 
 interface EventMemory {
   /**
@@ -19,11 +19,11 @@ interface EventMemory {
   /**
    * Map of tick numbers to lists of InterceptorSpecs
    */
-  timeline: { [key: string]: SpecMap };
+  timeline: { [key: string]: SpecMap<ScheduleSpec<any, any>> };
 }
 
 export default class InterceptorService implements ProxyHandler<State<any>> {
-  private _interceptors: SpecMap[] = [{}, {}, {}];
+  private _interceptors: SpecMap<AnyIS>[] = [{}, {}, {}];
   private _dispatchTime: number|undefined;
 
   /**
@@ -131,18 +131,19 @@ export default class InterceptorService implements ProxyHandler<State<any>> {
     const timeline = F.expand([ "timeline" ], this.eventMemory());
 
     while (last++ < time) {
-      let tick = timeline["" + last] as SpecMap;
+      let tick = timeline["" + last] as SpecMap<ScheduleSpec<any, any>>;
       if (tick !== undefined) {
         for (const className in tick) {
-          const classSpec: ClassSpec = tick[className];
+          const classSpec: ClassSpec<ScheduleSpec<any, any>> = tick[className];
           for (const methodName in classSpec) {
-            const tasks: AnyIS[] = classSpec[methodName];
-            for (const task of tasks) { // TODO kill this line?
+            const tasks: ScheduleSpec<any, any>[] = classSpec[methodName];
+            for (const task of tasks) {
               debugger;
+              // TODO attach ScheduledSpec.prototype into task
               // TODO replace State with generic named object registry to do callbacks that survive sharding
               const jp = task.definition;
               jp.target = State.vright(jp.className, jp.objectId as string); // TODO cache target?
-              task.invoke(jp, this);
+              task.invoke(jp, this); // TODO NPE, really... prototype!
             }
           }
         }
