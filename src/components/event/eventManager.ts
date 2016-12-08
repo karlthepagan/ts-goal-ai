@@ -1,12 +1,12 @@
 import * as F from "../functions";
 import Named from "../named";
-import {EventRegistry} from "../behavior/impl/index";
-import ProxyChainBuilder from "../behavior/proxyChainBuilder";
+import {EventRegistry} from "./api/index";
+import ProxyChainBuilder from "./impl/proxyChainBuilder";
 import {registerBehavior} from "../behavior/behaviorContext";
 import {AnyIS, default as InterceptorSpec} from "../behavior/interceptorSpec";
-import Joinpoint from "../behavior/joinpoint";
-import {eventSelectorGet} from "../behavior/impl/eventSpecBuilder";
-import {whenClosureGet} from "../behavior/impl/interceptorSpecBuilders";
+import Joinpoint from "./joinpoint";
+import {eventSelectorGet} from "./api/eventSpecBuilder";
+import {whenClosureGet} from "./api/interceptorSpecBuilders";
 import {actionGet} from "../behavior/impl/builders";
 import ScheduleSpec from "../behavior/scheduledSpec";
 
