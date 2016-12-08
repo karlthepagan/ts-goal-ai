@@ -1,6 +1,6 @@
 import Named from "../../named";
 import CreepState from "../../state/creepState";
-import Joinpoint from "../joinpoint";
+import Joinpoint from "./joinpoint";
 import State from "../../state/abstractState";
 import EnemyCreepState from "../../state/enemyCreepState";
 import RoomState from "../../state/roomState";

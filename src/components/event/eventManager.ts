@@ -4,7 +4,7 @@ import {EventRegistry} from "./api/index";
 import ProxyChainBuilder from "./impl/proxyChainBuilder";
 import {registerBehavior} from "./behaviorContext";
 import {AnyIS, default as InterceptorSpec} from "./impl/interceptorSpec";
-import Joinpoint from "./joinpoint";
+import Joinpoint from "./api/joinpoint";
 import {eventSelectorGet} from "./api/eventSpecBuilder";
 import {whenClosureGet} from "./api/interceptorSpecBuilders";
 import {actionGet} from "./api/builders";

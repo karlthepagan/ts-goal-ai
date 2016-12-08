@@ -1,4 +1,4 @@
-import Joinpoint from "../joinpoint";
+import Joinpoint from "../api/joinpoint";
 import {OnIntercept} from "../api/index";
 import InterceptorService from "./interceptorService";
 

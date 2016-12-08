@@ -1,6 +1,6 @@
 import {EventRegistry} from "../event/api/index";
 import SpawnState from "../state/spawnState";
-import Joinpoint from "../event/joinpoint";
+import Joinpoint from "../event/api/joinpoint";
 import CreepState from "../state/creepState";
 import RoomState from "../state/roomState";
 import {log} from "../support/log";
