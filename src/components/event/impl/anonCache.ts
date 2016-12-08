@@ -1,8 +1,12 @@
 import Named from "../../named";
 
-const anonCache = new AnonCache();
+export default class AnonCache extends Array implements Named {
+  public static instance = new AnonCache();
+  public static vright(id: string) {
+    id = id;
+    return AnonCache.instance; // TODO pass back cache?
+  }
 
-export class AnonCache implements Named {
   public className(): string {
     return "AnonCache";
   }
@@ -10,6 +14,9 @@ export class AnonCache implements Named {
   public getId(): string {
     return "global";
   }
-}
 
-export default anonCache;
+  public wrap<T extends Function>(func: T): (i: any) => T {
+    const n = this.push(func) - 1;
+    return ((i: any) => i[n]) as any; // telling the nameCapture proxy what our index is
+  }
+}

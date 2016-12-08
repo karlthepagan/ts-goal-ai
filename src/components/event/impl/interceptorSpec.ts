@@ -2,31 +2,56 @@ import Joinpoint from "../api/joinpoint";
 import {OnIntercept} from "../api/index";
 import InterceptorService from "./interceptorService";
 import Named from "../../named";
-import {log} from "../../support/log";
 import {getType} from "../../functions";
-import NameCapture from "./nameCapture";
 import getConstructor from "../../types";
+import NAME_CAPTURE from "./nameCapture";
 
 export type AnyIS = InterceptorSpec<any, any>;
-
-const NAME_CAPTURE = new NameCapture();
 
 class InterceptorSpec<I, T> {
   public static BEFORE_CALL = 0; // TODO enum?
   public static AFTER_CALL = 1;
   public static AFTER_FAIL = 2;
 
-  public definition: Joinpoint<I, T>;
+  public definition: Joinpoint<I, T>; // TODO this is basically the "source" of the event/call/intercept
   public targetConstructor?: Constructor<I>;
   public callState: number;
   public actionArgs: any[] = [];
-  private action?: OnIntercept<I, T>; // only valid for immediate execution, doesn't survive sharding
-  private instanceType: string;
-  private instanceId: string;
-  private  actionMethod: string;
+  // TODO these be private? see eventManager.ts:_scheduler first arg (instanceType = instance.className())
+  public instanceType: string; // TODO this is basically the "destination" of the event/call/intercept
+  public instanceId: string;
+  public actionMethod: string;
 
-  public isValid(): boolean {
-    return !(this.definition === undefined || this.callState === undefined || this.action === undefined);
+  public clone<R extends InterceptorSpec<I, T>>(into?: R): R {
+    // TODO THIS IS SO COOL, instead of literal clone, just use a prototype!!!!
+    if (into === undefined) {
+      into = new InterceptorSpec<I, T>() as R;
+    }
+    if (this.definition === undefined) {
+      debugger; // spec definition is undef
+    }
+    into.definition = this.definition.clone(); // TODO deep prototype
+    into.targetConstructor = this.targetConstructor;
+    into.callState = this.callState;
+    into.actionArgs = this.actionArgs;
+    into.instanceType = this.instanceType;
+    into.instanceId = this.instanceId;
+    into.actionMethod = this.actionMethod;
+    return into;
+  }
+
+  public isRegisterable(): boolean {
+    return !(this.definition === undefined
+      || !this.definition.isRegisterable()
+      || this.callState === undefined
+    );
+  }
+
+  public isInvokable(): boolean {
+    return !(this.instanceType === undefined
+      || this.instanceId === undefined
+      || this.actionMethod === undefined
+    );
   }
 
   public test(jp: Joinpoint<any, any>): boolean {
@@ -38,8 +63,9 @@ class InterceptorSpec<I, T> {
     jp = jp; // jp is the actual call invocation
     context = context; // context used to schedule dependent actions
     const inst = this.resolve() as any;
-    this.action = inst[this.actionMethod] as OnIntercept<I, T>; // this should be bound
-    this.action(jp, ...this.actionArgs); // TODO break this out and call in switch?
+
+    // TODO break this out and call in switch (for beforecall handling)
+    inst[this.actionMethod](jp, ...this.actionArgs);
 
     switch (this.callState) { // TODO abstraction
       case InterceptorSpec.BEFORE_CALL:
@@ -59,31 +85,10 @@ class InterceptorSpec<I, T> {
     return false; // TODO return true indicates filtering, stop all JP processing
   }
 
-  public clone<R extends InterceptorSpec<I, T>>(into?: R): R {
-    if (into === undefined) {
-      into = new InterceptorSpec<I, T>() as R;
-    }
-    into.action = this.action;
-    into.actionArgs = this.actionArgs;
-    into.callState = this.callState;
-    into.definition = this.definition;
-    into.targetConstructor = this.targetConstructor;
-    return into;
-  }
-
-  public doAction<T extends Named>(instance: T): T {
-    // TODO name capture with countdown
-    log.debug("TODO name capture");
-    return instance;
-  }
-
   public setAction<T extends Named>(instance: T, method: (i: T) => OnIntercept<I, T> ): void {
-    debugger;
     this.instanceType = getType(instance);
     this.instanceId = instance.getId();
-    const capture = new Proxy({}, NAME_CAPTURE) as any;
-    method.call(capture);
-    this.actionMethod = capture.captured[0];
+    this.actionMethod = NAME_CAPTURE.capture(method);
   }
 
   protected resolve(): I {

@@ -3,6 +3,7 @@ import State from "../state/abstractState";
 import * as F from "../functions";
 import {botMemory} from "../../config/config";
 import {AnyIS} from "./impl/interceptorSpec";
+import ScheduleSpec from "./impl/scheduledSpec";
 
 export const interceptorService = new InterceptorService();
 
@@ -12,6 +13,11 @@ export function dispatchTick(time: number) {
 
 export function registerBehavior(name: string, spec: AnyIS) {
   interceptorService.register(name, spec);
+}
+
+export function scheduleExec(name: string, spec: ScheduleSpec<any, any>) {
+  name = name; // TODO log or pass thru?
+  interceptorService.scheduleExec(spec);
 }
 
 export default function api<T>(subject: State<T>): T {

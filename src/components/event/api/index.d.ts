@@ -132,7 +132,7 @@ export interface Action<CALLBACK, TYPE, SELECT> { // TODO TYPE for origin of the
   // TODO callback will be method reference like intercept(Class).after(c=>c.methodName)
   callAnd       (instance: TYPE, callback: CALLBACK, ...args: any[]): Action<CALLBACK, TYPE, SELECT>;
   call          (): TYPE; // direct call, captured by proxy
-  // apply         (func: Function): void; // direct function invoke, TODO index of anonymous functions!!!
+  apply         (func: Function): void; // direct function invoke, TODO index of anonymous functions!!!
   fireEvent     (eventName: string): Action<CALLBACK, TYPE, SELECT>; // TODO is this voodoomagic?
   wait          (relativeTime: number): Action<CALLBACK, TYPE, SELECT>;
   // TODO filter on source or destination
@@ -171,10 +171,11 @@ export interface WhenClosure<INST, API> {
 
 export interface EventRegistry { // TODO instances declared in this context are the source of event bindings
   when            (): EventSelector;
+  // TODO schedule target jp? pass thru what caused the thing
   schedule        <INST extends Named>(relativeTime: number, instance: INST): Action<OnScheduled, INST, void>;
   // schedule      <INST extends Named>(relativeTime: number, instance: INST): Schedule<INST>;
   // interceptOne  <INST extends State<any>>(instance: INST): When<ApiCalls<INST>>;
-  intercept       <API>(implType: Constructor<State<API>>): WhenClosure<State<API>, API>;
+  intercept       <API>(implType: Constructor<State<API>>): WhenClosure<State<API>, API>; // TODO INST type
   // next          <INST extends State<any>>(instance: INST): When<ApiCalls<INST>>;
   // run           <INST extends Named>(instance: INST): Action<Function, void, void>;
   // dispatch        (instance: Named): TriggeredEvents;

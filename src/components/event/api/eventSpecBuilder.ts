@@ -16,9 +16,9 @@ empty<T extends CreepState|OwnedStructure>(): WhenEvent<T, OnEnergy<T, void>>;
 move(): WhenEvent<CreepState, OnMove<void>>;
 };
 */
-export function eventSelectorGet(name: string): [AnyIS, Function] {
+export function eventSelectorGet(name: string): [AnyIS, Function] { // TODO where called from?
   const is = new InterceptorSpec<any, any>();
-  is.definition = new Joinpoint<any, any>("__events__", name);
+  is.definition = new Joinpoint<any, any>("__events__", name, "?");
   is.callState = InterceptorSpec.AFTER_CALL;
   // is.targetConstructor = constructor; // TODO event typing
   return [is, eventSelectorApply];

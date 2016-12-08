@@ -19,7 +19,9 @@ interface EventMemory {
   lastTick: number;
 
   /**
-   * Map of tick numbers to lists of InterceptorSpecs
+   * Map of tick numbers to lists of ScheduleSpecs
+   *
+   * TODO discard scheduledTick info and make this an InterceptorSpec?
    */
   timeline: { [key: string]: SpecMap<ScheduleSpec<any, any>> };
 }
@@ -52,7 +54,8 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
    * @param spec - test input was like [[createCreep],[],[ofAll],[],[apply],[function]]
    */
   public register(name: string, spec: AnyIS) {
-    if (!spec.isValid()) {
+    if (!spec.isRegisterable()) {
+      debugger; // invalid spec
       throw new Error("invalid spec=" + JSON.stringify(spec));
     }
     log.debug("register", name, spec.callState, spec.definition.className, spec.definition.method);
@@ -105,13 +108,11 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
   // TODO should InterspectorSpec pollute this API?
   public triggerBehaviors(jp: Joinpoint<any, any>, eventName: string) {
-    debugger; // triggerBehaviors
     jp = jp;
     log.debug("trigger behaviors event=", eventName);
     // construct event
-    // TODO map
-    const event = new Joinpoint<any, any>("__events__", eventName);
-    // jp.target; // TODO this is the event source
+    const event = new Joinpoint<any, any>("__events__", eventName, "?"); // TODO objectId for definition?
+    // jp.target; // TODO this is the event source, inject it into event?
     event.returnValue = jp.returnValue;
     event.args = jp.args;
 
@@ -119,6 +120,9 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
   }
 
   public dispatch(jp: Joinpoint<any, any>): any {
+    if (!jp.isReturned()) {
+      debugger; // jp not captured before call
+    }
     const interceptors = this.getInterceptors(jp, InterceptorSpec.AFTER_CALL);
     if (interceptors === undefined || interceptors.length === 0) {
       return jp.returnValue; // TODO apply within?
@@ -134,11 +138,11 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     return jp.returnValue; // TODO apply within?
   }
 
-  public scheduleExec<A, B>(spec: ScheduleSpec<A, B>, jp: Joinpoint<A, B>) {
-    debugger;
-    jp = jp; // TODO need to put jp into spec?
-    // jp is the context of the call which triggered us
-
+  /**
+   * @param spec
+   * @param jp method invocation triggering this schedule spec
+   */
+  public scheduleExec<A, B>(spec: ScheduleSpec<A, B>, jp?: Joinpoint<A, B>) {
     const scheduledTick = spec.relativeTime + F.elvis(this.dispatchTime(), Game.time);
 
     const taskList = F.expand(
@@ -146,8 +150,17 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
       this.eventMemory(), true) as AnyIS[];
 
     const event = spec.clone();
-    event.definition.objectId = jp.objectId;
-    // TODO action must be resolved to a Named instance
+    if (jp === undefined) {
+      // this is a directly scheduled event on a specific instance (set upstream of this method)
+      // TODO definition needed? (yes because everything wants jp defined in the loops)
+      event.definition = new Joinpoint<A, B>("__events__", "custom", "?");
+    } else {
+      // jp is the context of the call which triggered us
+      event.definition.objectId = jp.objectId;
+      event.definition.args = jp.args;
+      event.definition.returnValue = jp.returnValue;
+    }
+    // TODO delete scheduledTick?
     taskList.push(event);
   }
 
@@ -160,19 +173,25 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     const timeline = F.expand([ "timeline" ], this.eventMemory());
 
     while (last++ < time) {
-      let tick = timeline["" + last] as SpecMap<ScheduleSpec<any, any>>;
+      let tick = timeline["" + last] as SpecMap<AnyIS>;
       if (tick !== undefined) {
         for (const className in tick) {
-          const classSpec: ClassSpec<ScheduleSpec<any, any>> = tick[className];
+          const classSpec: ClassSpec<AnyIS> = tick[className];
           for (const methodName in classSpec) {
-            const tasks: ScheduleSpec<any, any>[] = classSpec[methodName];
+            const tasks: AnyIS[] = classSpec[methodName];
             for (const task of tasks) {
-              debugger;
               // TODO attach ScheduledSpec.prototype into task
               // TODO replace State with generic named object registry to do callbacks that survive sharding
               const jp = task.definition;
-              jp.target = State.vright(jp.className, jp.objectId as string); // TODO cache target?
-              task.invoke(jp, this); // TODO NPE, really... prototype!
+              jp.target = State.vright(jp.className, jp.objectId as string);
+              // InterceptorSpec invoke is immediate execution
+              // ScheduleSpec invoke will re-schedule
+              Object.setPrototypeOf(task, InterceptorSpec.prototype); // TODO does this bind?
+              if (!task.isInvokable()) {
+                debugger; // task not invokable
+                throw new Error("cannot invoke");
+              }
+              task.invoke(jp, this);
             }
           }
         }
@@ -186,6 +205,9 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
   // TODO mutate or simply return?
   protected beforeCall(jp: Joinpoint<any, any>): Function {
+    if (!jp.isCaptured()) {
+      debugger; // jp not captured before call
+    }
     // : BeforeCallback<any> = (className, objectId, func, result, args) => {
     const interceptors = this.getInterceptors(jp, InterceptorSpec.BEFORE_CALL);
     if (interceptors === undefined || interceptors.length === 0) {
@@ -203,6 +225,9 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
   }
 
   protected afterFail(jp: Joinpoint<any, any>): any {
+    if (!jp.isFailed()) {
+      debugger; // jp not captured before call
+    }
     const interceptors = this.getInterceptors(jp, InterceptorSpec.AFTER_FAIL);
     if (interceptors === undefined || interceptors.length === 0) {
       throw jp.thrownException;

@@ -393,7 +393,7 @@ export function getType(instance: any) {
     if (instance.className === undefined) {
       return getApiName(instance);
     } else {
-      return instance.className();
+      return instance.className(); // TODO className > constructor.name???
     }
   }
   return name;

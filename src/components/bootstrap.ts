@@ -16,6 +16,7 @@ import ConstructionState from "./state/constructionState";
 import {registerType, registerTypeAs} from "./types";
 import registerBehaviorProvider from "./impl/behaviorProvider";
 import InterceptorService from "./event/impl/interceptorService";
+import AnonCache from "./event/impl/anonCache";
 
 export const bootstrap: (() => void)[] = [];
 
@@ -38,6 +39,7 @@ bootstrap.push(() => {
   registerTypeAs(SpawnState, STRUCTURE_SPAWN);
 
   registerType(InterceptorService);
+  registerType(AnonCache);
 });
 
 bootstrap.push(() => {

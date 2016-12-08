@@ -3,7 +3,7 @@ export type AnyJP = Joinpoint<any, any>;
 export default class Joinpoint<I, T> {
   public className: string;
   public objectId?: string;
-  public target: I;
+  public target?: I;
   public method: string;
   public args: any[];
   public proceedApply: Function;
@@ -17,9 +17,45 @@ export default class Joinpoint<I, T> {
     this.objectId = objectId;
   }
 
-  public isValid(): boolean {
-    return !(this.className === undefined || this.objectId === undefined || this.target === undefined
-      || this.method === undefined || this.args === undefined || this.proceedApply === undefined);
+  public clone<R extends Joinpoint<I, T>>(into?: R): R {
+    if (into === undefined) {
+      into = new Joinpoint<I, T>(this.className, this.method, this.objectId) as R;
+    }
+    into.target = this.target;
+    into.args = this.args;
+    into.proceedApply = this.proceedApply;
+    into.returnValue = this.returnValue;
+    into.thrownException = this.thrownException;
+    into.source = this.source;
+    return into;
+  }
+
+  public isRegisterable(): boolean {
+    return !(this.className === undefined
+      || this.method === undefined
+    );
+  }
+
+  public isCaptured(): boolean {
+    return !(this.className === undefined
+      || this.method === undefined
+      || this.objectId === undefined
+      || this.target === undefined
+      || this.proceedApply === undefined
+    );
+  }
+
+  public isReturned(): boolean {
+    // TODO undefined holder for void return value?
+    return !(this.className === undefined
+      || this.method === undefined
+      || this.objectId === undefined
+      || this.thrownException !== undefined
+    );
+  }
+
+  public isFailed(): boolean {
+    return !(this.thrownException === undefined);
   }
 
   public proceed(): T {

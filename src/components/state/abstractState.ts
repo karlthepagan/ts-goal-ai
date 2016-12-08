@@ -82,8 +82,9 @@ abstract class State<T> implements Named {
     State.events = events;
   }
 
-  public static vright<I>(className: string, id: string): State<I> {
-    return (getConstructor(className) as any).vright(id); // TODO startPool and transaction?
+  public static vright<I>(className: string, id: string): State<I>|undefined {
+    const ctor = (getConstructor(className) as any);
+    return ctor === undefined ? undefined : ctor.vright(id); // TODO startPool and transaction?
   }
 
   protected static events: EventRegistry;

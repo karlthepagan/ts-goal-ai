@@ -28,6 +28,11 @@ interface Commands {
    * procedural idle
    */
   hardidle: boolean;
+
+  /**
+   * breakpoint at start of builders
+   */
+  debugBuilders: boolean;
 }
 
 interface Options {

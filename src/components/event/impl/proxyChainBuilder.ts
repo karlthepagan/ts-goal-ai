@@ -2,10 +2,10 @@ import * as F from "../../functions";
 import {AnyIS} from "./interceptorSpec";
 
 const _terminal: any = {
-  callAnd: 1,
-  call: 3,
-  apply: 1,
-  fireEvent: 1,
+  callAnd: 2,
+  call: 4,
+  apply: 2,
+  fireEvent: 2,
 };
 
 type StackHandler<O extends AnyIS> = (value: O, ...push: any[]) => [O, Function];
@@ -68,10 +68,10 @@ export default class ProxyChainBuilder<O extends AnyIS> implements ProxyHandler<
 
   public apply(target: Accumulator, thisArg: any, argArray?: any): any {
     thisArg = thisArg;
-    const next = newTarget(target, argArray);
+    target = newTarget(target, argArray);
     if (target.terminal === 0) {
       this._callback(target.stack); // target.step(target.stack, ...argArray)[0]); // unwrap
     }
-    return next.step === undefined ? undefined : new Proxy(next, this);
+    return target.step === undefined ? undefined : new Proxy(target, this);
   }
 }

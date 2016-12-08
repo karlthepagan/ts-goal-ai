@@ -8,7 +8,11 @@ import Joinpoint from "../api/joinpoint";
  */
 export default class ScheduleSpec<I, T> extends InterceptorSpec<I, T> {
   public relativeTime: number;
-  // public childInterceptor; // TODO this will be mutated as it travels down the builder chain
+
+  constructor() {
+    super();
+    this.callState = InterceptorSpec.AFTER_CALL;
+  }
 
   // context gives us a handle on scheduler, which we use to register the event
   public invoke(jp: Joinpoint<any, any>, context: InterceptorService): boolean {

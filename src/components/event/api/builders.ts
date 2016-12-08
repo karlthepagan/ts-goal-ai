@@ -2,13 +2,14 @@ import {AnyIS} from "../impl/interceptorSpec";
 import {interceptorService} from "../behaviorContext";
 import {OnIntercept} from "./index";
 import ScheduleSpec from "../impl/scheduledSpec";
+import AnonCache from "../impl/anonCache";
 
 export function actionGet(select?: Function) {
   return (is: AnyIS, actionName: string) => {
     switch (actionName) {
       case "fireEvent":
+        is = is.clone();
         is.setAction(interceptorService, i => i.triggerBehaviors);
-        // TODO set instance as the named global interceptorService
         return [is, assignArgsThen(actionGet(select))];
 
       case "andThen":
@@ -20,6 +21,10 @@ export function actionGet(select?: Function) {
 
       case "wait":
         return [is, waitApply(actionGet(select))];
+
+      case "call":
+        // call returns a proxy of the instance which captures method name and args
+        return [is, skip(instanceGet)];
 
       default:
         throw new Error("undefined action=" + actionName);
@@ -51,13 +56,21 @@ export function waitApply(next: Function) {
 }
 
 export function actionApplyApply(is: AnyIS, action: OnIntercept<any, any>) {
-  // is.action = action;
-  // TODO NOW, anonymous function cache
+  // anonymous function cache
+  is = is.clone();
+  is.setAction(AnonCache.instance, AnonCache.instance.wrap(action));
   return [is, undefined];
+}
+
+export function instanceGet(is: AnyIS, methodName: string) {
+  is = is.clone();
+  is.actionMethod = methodName;
+  return [is, assignArgsThen(undefined)];
 }
 
 export function assignArgsThen(next?: Function) {
   return (is: AnyIS, ...args: any[]) => {
+    is = is.clone();
     is.actionArgs = args;
     return [is, next];
   };

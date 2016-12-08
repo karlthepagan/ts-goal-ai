@@ -4,9 +4,15 @@ import Joinpoint from "../event/api/joinpoint";
 import CreepState from "../state/creepState";
 import RoomState from "../state/roomState";
 import {log} from "../support/log";
+import {botMemory} from "../../config/config";
 
 export default function registerBehaviorProvider(em: EventRegistry) {
-  debugger;
+  const commands = botMemory() as Commands;
+
+  if (commands.debugBuilders) {
+    debugger; // Commands.debugBuilders = true
+  }
+
   em.intercept(SpawnState).after(i => i.createCreep).wait(1).fireEvent("spawn");
 
   em.when().aggro().ofAll().apply((jp: Joinpoint<RoomState, void>) => {
@@ -21,7 +27,8 @@ export default function registerBehaviorProvider(em: EventRegistry) {
     const apiCreep = Game.creeps[creepName];
     const creep = CreepState.left(apiCreep);
 
-    const whenBorn = em.schedule(time - 1, creep);
+    const whenBorn = em.schedule(time - 1, creep); // jp in this builder is undefined!
+    // TODO consider assigning jp into the schedule chain? SRC => DST stuff!!!!
     const mem = jp.args[2];
     if (mem !== undefined) {
       whenBorn.call().setMemory(jp.args[2]); // args from createCreep call, TODO type constrain?
