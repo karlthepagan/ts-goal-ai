@@ -1,6 +1,7 @@
 import Joinpoint from "../api/joinpoint";
 import {OnIntercept} from "../api/index";
 import InterceptorService from "./interceptorService";
+import Named from "../../named";
 
 export type AnyIS = InterceptorSpec<any, any>;
 
@@ -12,7 +13,7 @@ class InterceptorSpec<I, T> {
   public definition: Joinpoint<I, T>;
   public targetConstructor?: Constructor<I>;
   public callState: number;
-  public action: OnIntercept<I, T>; // only valid for immediate execution, doesn't survive sharding
+  private action?: OnIntercept<I, T>; // only valid for immediate execution, doesn't survive sharding
   public actionArgs: any[] = [];
 
   public isValid(): boolean {
@@ -57,6 +58,13 @@ class InterceptorSpec<I, T> {
     into.definition = this.definition;
     into.targetConstructor = this.targetConstructor;
     return into;
+  }
+
+  public setAction<T extends Named>(instance: T, method: (i: T) => Function ) {
+    let name = instance.constructor.name as string;
+    if (name === undefined || name.length === 0) {
+      // TODO name capture stuff
+    }
   }
 }
 
