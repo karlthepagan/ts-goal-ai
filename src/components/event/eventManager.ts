@@ -1,15 +1,14 @@
-import {log} from "../support/log";
 import * as F from "../functions";
 import Named from "../named";
-import {EventRegistry} from "./index";
+import {EventRegistry} from "../behavior/impl/index";
 import ProxyChainBuilder from "../behavior/proxyChainBuilder";
 import {registerBehavior} from "../behavior/behaviorContext";
 import {AnyIS, default as InterceptorSpec} from "../behavior/interceptorSpec";
 import Joinpoint from "../behavior/joinpoint";
-import {eventSelectorGet} from "./eventSpecBuilder";
-import {whenClosureGet} from "./interceptorSpecBuilders";
+import {eventSelectorGet} from "../behavior/impl/eventSpecBuilder";
+import {whenClosureGet} from "../behavior/impl/interceptorSpecBuilders";
 import {actionGet} from "./builders";
-import ScheduleSpec from "./scheduledSpec";
+import ScheduleSpec from "../behavior/scheduledSpec";
 
 export default class EventManager implements EventRegistry {
   private _events = new ProxyChainBuilder<AnyIS>(
@@ -69,9 +68,10 @@ export default class EventManager implements EventRegistry {
     (spec) => {
       // TODO clone? or NOT to clone?, continue to pass it down the chain and let it be built????
       // TODO delete spec.targetConstructor; // will be cleaned up in next action
-      const relativeTime = spec.relativeTime;
-
-      log.debug("TODO schedule event for ", relativeTime);
+      // const relativeTime = spec.relativeTime;
+      const is = spec.clone();
+      delete is.targetConstructor;
+      registerBehavior("scheduled", is); // action
     }
   );
 

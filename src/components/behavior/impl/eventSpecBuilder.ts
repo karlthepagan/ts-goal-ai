@@ -1,6 +1,6 @@
-import * as Builders from "./builders";
-import {AnyIS, default as InterceptorSpec} from "../behavior/interceptorSpec";
-import Joinpoint from "../behavior/joinpoint";
+import * as Builders from "../../event/builders";
+import {AnyIS, default as InterceptorSpec} from "../interceptorSpec";
+import Joinpoint from "../joinpoint";
 
 /**
  * @see "./index.d.ts":EventSelector

@@ -1,4 +1,4 @@
-import {EventRegistry} from "../event/index";
+import {EventRegistry} from "../behavior/impl/index";
 import SpawnState from "../state/spawnState";
 import Joinpoint from "../behavior/joinpoint";
 import CreepState from "../state/creepState";

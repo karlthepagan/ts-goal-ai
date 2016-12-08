@@ -3,7 +3,7 @@ import * as F from "../functions";
 import * as Config from "../../config/config";
 import Named from "../named";
 import {botMemory} from "../../config/config";
-import EventRegistry from "../event/index";
+import EventRegistry from "../behavior/impl/index";
 import CreepState from "./creepState";
 import getType from "../types";
 

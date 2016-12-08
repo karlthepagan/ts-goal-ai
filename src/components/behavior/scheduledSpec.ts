@@ -1,6 +1,6 @@
-import InterceptorSpec from "../behavior/interceptorSpec";
-import InterceptorService from "../behavior/interceptorService";
-import Joinpoint from "../behavior/joinpoint";
+import InterceptorSpec from "./interceptorSpec";
+import InterceptorService from "./interceptorService";
+import Joinpoint from "./joinpoint";
 
 /**
  * @param I - captured? joinpoint's instance type

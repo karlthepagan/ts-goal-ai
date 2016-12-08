@@ -1,9 +1,9 @@
-import Named from "../named";
-import CreepState from "../state/creepState";
-import Joinpoint from "../behavior/joinpoint";
-import State from "../state/abstractState";
-import EnemyCreepState from "../state/enemyCreepState";
-import RoomState from "../state/roomState";
+import Named from "../../named";
+import CreepState from "../../state/creepState";
+import Joinpoint from "../joinpoint";
+import State from "../../state/abstractState";
+import EnemyCreepState from "../../state/enemyCreepState";
+import RoomState from "../../state/roomState";
 
 type OnMove<R> = (jp: Joinpoint<CreepState, void>, fromPos: RoomPosition, forwardDir: number, ...args: any[]) => R;
 
