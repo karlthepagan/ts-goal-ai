@@ -1,11 +1,11 @@
-import {log} from "../support/log";
-import State from "../state/abstractState";
-import Joinpoint from "../event/joinpoint";
-import InterceptorSpec from "./interceptorSpec";
-import {AnyIS} from "./interceptorSpec";
-import * as F from "../functions";
-import {botMemory} from "../../config/config";
-import ScheduleSpec from "./scheduledSpec";
+import {log} from "../../support/log";
+import State from "../../state/abstractState";
+import Joinpoint from "../joinpoint";
+import InterceptorSpec from "../../behavior/interceptorSpec";
+import {AnyIS} from "../../behavior/interceptorSpec";
+import * as F from "../../functions";
+import {botMemory} from "../../../config/config";
+import ScheduleSpec from "../../behavior/scheduledSpec";
 
 type ClassSpec<T extends InterceptorSpec<any, any>> = { [methodName: string]: T[] };
 export type SpecMap<T extends InterceptorSpec<any, any>> = { [className: string]: ClassSpec<T> };

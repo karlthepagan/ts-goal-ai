@@ -1,4 +1,4 @@
-import InterceptorService from "../behavior/interceptorService";
+import InterceptorService from "./impl/interceptorService";
 import State from "../state/abstractState";
 import * as F from "../functions";
 import {botMemory} from "../../config/config";
