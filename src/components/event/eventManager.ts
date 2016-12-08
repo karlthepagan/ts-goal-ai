@@ -4,11 +4,12 @@ import Named from "../named";
 import {EventRegistry} from "./index";
 import ProxyChainBuilder from "../behavior/proxyChainBuilder";
 import {registerBehavior} from "../behavior/behaviorContext";
-import {ScheduleSpec, AnyIS, default as InterceptorSpec} from "./interceptorSpec";
+import {AnyIS, default as InterceptorSpec} from "./interceptorSpec";
 import Joinpoint from "./joinpoint";
 import {eventSelectorGet} from "./eventSpecBuilder";
 import {whenClosureGet} from "./interceptorSpecBuilders";
 import {actionGet} from "./builders";
+import ScheduleSpec from "./scheduledSpec";
 
 export default class EventManager implements EventRegistry {
   private _events = new ProxyChainBuilder<AnyIS>(

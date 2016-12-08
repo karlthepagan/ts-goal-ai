@@ -1,5 +1,5 @@
 import * as Builders from "./builders";
-import {AnyIS, AFTER_CALL, default as InterceptorSpec} from "./interceptorSpec";
+import {AnyIS, default as InterceptorSpec} from "./interceptorSpec";
 import Joinpoint from "./joinpoint";
 
 /**
@@ -19,7 +19,7 @@ move(): WhenEvent<CreepState, OnMove<void>>;
 export function eventSelectorGet(name: string): [AnyIS, Function] {
   const is = new InterceptorSpec<any, any>();
   is.definition = new Joinpoint<any, any>("__events__", name);
-  is.callState = AFTER_CALL;
+  is.callState = InterceptorSpec.AFTER_CALL;
   // is.targetConstructor = constructor; // TODO event typing
   return [is, eventSelectorApply];
 }

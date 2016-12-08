@@ -4,9 +4,8 @@ import Joinpoint from "../event/joinpoint";
 import InterceptorSpec from "../event/interceptorSpec";
 import {AnyIS} from "../event/interceptorSpec";
 import * as F from "../functions";
-import {AFTER_CALL, AFTER_FAIL, BEFORE_CALL} from "../event/interceptorSpec";
-import {ScheduleSpec} from "../event/interceptorSpec";
 import {botMemory} from "../../config/config";
+import ScheduleSpec from "../event/scheduledSpec";
 
 type ClassSpec = { [methodName: string]: AnyIS[] };
 export type SpecMap = { [className: string]: ClassSpec };
@@ -91,7 +90,7 @@ export default class InterceptorService implements ProxyHandler<State<any>> {
   }
 
   public dispatch(jp: Joinpoint<any, any>): any {
-    const interceptors = this.getInterceptors(jp, AFTER_CALL);
+    const interceptors = this.getInterceptors(jp, InterceptorSpec.AFTER_CALL);
     if (interceptors === undefined || interceptors.length === 0) {
       return jp.returnValue; // TODO apply within?
     }
@@ -158,7 +157,7 @@ export default class InterceptorService implements ProxyHandler<State<any>> {
   // TODO mutate or simply return?
   protected beforeCall(jp: Joinpoint<any, any>): Function {
     // : BeforeCallback<any> = (className, objectId, func, result, args) => {
-    const interceptors = this.getInterceptors(jp, BEFORE_CALL);
+    const interceptors = this.getInterceptors(jp, InterceptorSpec.BEFORE_CALL);
     if (interceptors === undefined || interceptors.length === 0) {
       return jp.proceed(); // TODO apply within?
     }
@@ -174,7 +173,7 @@ export default class InterceptorService implements ProxyHandler<State<any>> {
   }
 
   protected afterFail(jp: Joinpoint<any, any>): any {
-    const interceptors = this.getInterceptors(jp, AFTER_FAIL);
+    const interceptors = this.getInterceptors(jp, InterceptorSpec.AFTER_FAIL);
     if (interceptors === undefined || interceptors.length === 0) {
       throw jp.thrownException;
     }
