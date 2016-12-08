@@ -1,7 +1,7 @@
 import {AnyIS} from "../impl/interceptorSpec";
 import {triggerBehaviors} from "../behaviorContext";
 import {OnIntercept} from "./index";
-import ScheduleSpec from "../../behavior/scheduledSpec";
+import ScheduleSpec from "../impl/scheduledSpec";
 
 export function actionGet(select?: Function) {
   return (is: AnyIS, actionName: string) => {

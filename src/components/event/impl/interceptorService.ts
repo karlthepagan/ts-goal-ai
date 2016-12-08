@@ -5,7 +5,7 @@ import InterceptorSpec from "./interceptorSpec";
 import {AnyIS} from "./interceptorSpec";
 import * as F from "../../functions";
 import {botMemory} from "../../../config/config";
-import ScheduleSpec from "../../behavior/scheduledSpec";
+import ScheduleSpec from "./scheduledSpec";
 
 type ClassSpec<T extends InterceptorSpec<any, any>> = { [methodName: string]: T[] };
 export type SpecMap<T extends InterceptorSpec<any, any>> = { [className: string]: ClassSpec<T> };

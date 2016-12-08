@@ -8,7 +8,7 @@ import Joinpoint from "./joinpoint";
 import {eventSelectorGet} from "./api/eventSpecBuilder";
 import {whenClosureGet} from "./api/interceptorSpecBuilders";
 import {actionGet} from "./api/builders";
-import ScheduleSpec from "../behavior/scheduledSpec";
+import ScheduleSpec from "./impl/scheduledSpec";
 
 export default class EventManager implements EventRegistry {
   private _events = new ProxyChainBuilder<AnyIS>(
