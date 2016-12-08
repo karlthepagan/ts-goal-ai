@@ -1,5 +1,5 @@
 import {AnyIS} from "../../behavior/interceptorSpec";
-import * as Builders from "../../behavior/impl/builders";
+import * as Builders from "./builders";
 
 const matchMethodName = /\.([^\(\s]+)/;
 

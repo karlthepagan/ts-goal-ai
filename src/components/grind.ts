@@ -12,7 +12,7 @@ import MemoIterator = _.MemoIterator;
 import LookForIterator from "./util/lookForIterator";
 import {FindCallback} from "./util/lookForIterator";
 import SpawnState from "./state/spawnState";
-import api from "./behavior/behaviorContext";
+import api from "./event/behaviorContext";
 
 const cachedIdleActions: { [id: string]: FindCallback<any> } = {};
 

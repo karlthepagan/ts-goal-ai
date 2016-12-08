@@ -6,7 +6,7 @@ import {grind} from "./components/grind";
 import {importManager} from "./components/import/importSingleton";
 import {throttle} from "./components/util/throttle";
 import monkeypatch from "./monkeypatch";
-import {dispatchTick} from "./components/behavior/behaviorContext";
+import {dispatchTick} from "./components/event/behaviorContext";
 
 // Any code written outside the `loop()` method is executed only when the
 // Screeps system reloads your script.

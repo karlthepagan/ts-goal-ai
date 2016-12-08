@@ -1,10 +1,10 @@
-import InterceptorService from "./interceptorService";
+import InterceptorService from "../behavior/interceptorService";
 import State from "../state/abstractState";
 import * as F from "../functions";
 import {botMemory} from "../../config/config";
-import {AnyIS} from "./interceptorSpec";
+import {AnyIS} from "../behavior/interceptorSpec";
 import {log} from "../support/log";
-import {AnyJP, default as Joinpoint} from "../event/joinpoint";
+import {AnyJP, default as Joinpoint} from "./joinpoint";
 
 const _interceptors = new InterceptorService();
 

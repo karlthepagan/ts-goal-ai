@@ -1,4 +1,4 @@
-import * as Builders from "../../behavior/impl/builders";
+import * as Builders from "./builders";
 import {AnyIS, default as InterceptorSpec} from "../../behavior/interceptorSpec";
 import Joinpoint from "../joinpoint";
 
