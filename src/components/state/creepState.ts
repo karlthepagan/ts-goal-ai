@@ -4,7 +4,7 @@ import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 import {TERRAIN_ROAD, TERRAIN_PLAIN, TERRAIN_SWAMP} from "../constants";
 import LookForIterator from "../util/lookForIterator";
-import Joinpoint from "../event/joinpoint";
+import Joinpoint from "../behavior/joinpoint";
 // const BiMap = require("bimap"); // TODO BiMap
 
 const MOVE_KEYS = {

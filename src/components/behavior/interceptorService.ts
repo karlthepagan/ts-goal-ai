@@ -1,6 +1,6 @@
 import {log} from "../support/log";
 import State from "../state/abstractState";
-import Joinpoint from "../event/joinpoint";
+import Joinpoint from "./joinpoint";
 import InterceptorSpec from "../event/interceptorSpec";
 import {AnyIS} from "../event/interceptorSpec";
 import * as F from "../functions";

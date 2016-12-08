@@ -4,7 +4,7 @@ import * as F from "../functions";
 import {botMemory} from "../../config/config";
 import {AnyIS} from "../event/interceptorSpec";
 import {log} from "../support/log";
-import {AnyJP, default as Joinpoint} from "../event/joinpoint";
+import {AnyJP, default as Joinpoint} from "./joinpoint";
 
 const _interceptors = new InterceptorService();
 
