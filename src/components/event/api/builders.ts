@@ -1,5 +1,5 @@
 import {AnyIS} from "../impl/interceptorSpec";
-import {triggerBehaviors} from "../behaviorContext";
+import {interceptorService} from "../behaviorContext";
 import {OnIntercept} from "./index";
 import ScheduleSpec from "../impl/scheduledSpec";
 
@@ -7,7 +7,7 @@ export function actionGet(select?: Function) {
   return (is: AnyIS, actionName: string) => {
     switch (actionName) {
       case "fireEvent":
-        is.action = triggerBehaviors; // TODO never concrete, always named
+        is.setAction(interceptorService, i => i.triggerBehaviors);
         // TODO set instance as the named global interceptorService
         return [is, assignArgsThen(actionGet(select))];
 
@@ -51,7 +51,8 @@ export function waitApply(next: Function) {
 }
 
 export function actionApplyApply(is: AnyIS, action: OnIntercept<any, any>) {
-  is.action = action;
+  // is.action = action;
+  // TODO NOW, anonymous function cache
   return [is, undefined];
 }
 

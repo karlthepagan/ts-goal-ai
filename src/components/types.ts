@@ -32,13 +32,13 @@ export function getApiName(func: Function): string|undefined {
   return undefined;
 }
 
-export default function getType(name: string): Constructor<any>|undefined {
-  const typeFunction = types[name];
+export default function getConstructor(className: string): Constructor<any>|undefined {
+  const typeFunction = types[className];
   if (typeFunction !== undefined) {
     return typeFunction;
   }
 
-  switch (name) {
+  switch (className) {
     case "Creep":
       return Creep as Constructor<Creep>;
     case "Room":

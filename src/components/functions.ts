@@ -1,5 +1,6 @@
 import {log} from "./support/log";
 import State from "./state/abstractState";
+import {getApiName} from "./types";
 
 // export type GoalLambda<T> = (resource: Plan<T>) => Goal<any, T, State<any>>;
 // export type GoalFactory<T> = { [key: string]: GoalLambda<T> };
@@ -384,6 +385,18 @@ export function add<T>(array: T[], item: T): boolean {
     return true;
   }
   return false;
+}
+
+export function getType(instance: any) {
+  let name = instance.constructor.name as string;
+  if (name === undefined || name.length === 0) {
+    if (instance.className === undefined) {
+      return getApiName(instance);
+    } else {
+      return instance.className();
+    }
+  }
+  return name;
 }
 
 export function dummy() {

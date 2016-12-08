@@ -1,4 +1,4 @@
-export default class MethodCapture implements ProxyHandler<any> {
+export default class NameCapture implements ProxyHandler<any> {
   public get (target: any, p: PropertyKey, receiver: any): any {
     if (receiver.captured === undefined) {
       receiver.captured = target;

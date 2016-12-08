@@ -6,6 +6,8 @@ import {AnyIS} from "./interceptorSpec";
 import * as F from "../../functions";
 import {botMemory} from "../../../config/config";
 import ScheduleSpec from "./scheduledSpec";
+import Named from "../../named";
+import {interceptorService} from "../behaviorContext";
 
 type ClassSpec<T extends InterceptorSpec<any, any>> = { [methodName: string]: T[] };
 export type SpecMap<T extends InterceptorSpec<any, any>> = { [className: string]: ClassSpec<T> };
@@ -22,10 +24,22 @@ interface EventMemory {
   timeline: { [key: string]: SpecMap<ScheduleSpec<any, any>> };
 }
 
-export default class InterceptorService implements ProxyHandler<State<any>> {
+export default class InterceptorService implements ProxyHandler<State<any>>, Named {
+  public static vright(id: string) {
+    id = id;
+    return interceptorService; // TODO singleton
+  }
+
   private _interceptors: SpecMap<AnyIS>[] = [{}, {}, {}];
   private _dispatchTime: number|undefined;
 
+  public className(): string {
+    return "InterceptorService";
+  }
+
+  public getId(): string {
+    return "global";
+  }
   /**
    * the current time if called from inside the execution context
    */
@@ -87,6 +101,21 @@ export default class InterceptorService implements ProxyHandler<State<any>> {
       // TODO queue unresolvable? return no-op
       throw Error("cannot resolve class=" + target.className() + " id=" + target.getId() + " for get=" + method);
     }
+  }
+
+  // TODO should InterspectorSpec pollute this API?
+  public triggerBehaviors(jp: Joinpoint<any, any>, eventName: string) {
+    debugger; // triggerBehaviors
+    jp = jp;
+    log.debug("trigger behaviors event=", eventName);
+    // construct event
+    // TODO map
+    const event = new Joinpoint<any, any>("__events__", eventName);
+    // jp.target; // TODO this is the event source
+    event.returnValue = jp.returnValue;
+    event.args = jp.args;
+
+    this.dispatch(event);
   }
 
   public dispatch(jp: Joinpoint<any, any>): any {

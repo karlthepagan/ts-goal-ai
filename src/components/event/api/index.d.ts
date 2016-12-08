@@ -132,7 +132,7 @@ export interface Action<CALLBACK, TYPE, SELECT> { // TODO TYPE for origin of the
   // TODO callback will be method reference like intercept(Class).after(c=>c.methodName)
   callAnd       (instance: TYPE, callback: CALLBACK, ...args: any[]): Action<CALLBACK, TYPE, SELECT>;
   call          (): TYPE; // direct call, captured by proxy
-  apply         (func: Function): void; // direct function invoke, TODO index of anonymous functions?
+  // apply         (func: Function): void; // direct function invoke, TODO index of anonymous functions!!!
   fireEvent     (eventName: string): Action<CALLBACK, TYPE, SELECT>; // TODO is this voodoomagic?
   wait          (relativeTime: number): Action<CALLBACK, TYPE, SELECT>;
   // TODO filter on source or destination
