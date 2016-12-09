@@ -3,9 +3,9 @@
   e=>Game.rooms.W74S57.find(FIND_MY_CREEPS).map(c=>e.map(i=>c.pickup(i))));
 
 // kill weakest enemy
-[_(Game.rooms.W74S57.find(FIND_HOSTILE_CREEPS)).sortBy(t=>t.hits).first()].map(
-  e=>Game.rooms.W74S57.find(FIND_MY_STRUCTURES, {filter: s=>s.structureType === STRUCTURE_TOWER})
-    .map(c=>c.attack(e)));
+[Game.rooms.W74S57.find(FIND_MY_STRUCTURES, {filter: s=>s.structureType === STRUCTURE_TOWER})].map(
+  c=>_(Game.rooms.W74S57.find(FIND_HOSTILE_CREEPS)).sortBy(t=>t.hits).some(
+  e=>e?c.attack(e):false));
 
 // repair weakest wall
 Game.rooms.W74S57.find(FIND_MY_STRUCTURES, {filter: s=>s.structureType === STRUCTURE_TOWER}).map(x=>
@@ -22,5 +22,12 @@ Game.rooms.W74S57.find(FIND_MY_STRUCTURES, {filter: s=>s.structureType === STRUC
   e=>Game.rooms.W74S57.find(FIND_MY_STRUCTURES, {filter: s=>s.structureType === STRUCTURE_TOWER})
     .map(c=>e.map(i=>i.transfer(c, RESOURCE_ENERGY))));
 
+_(Game.rooms.W74S57.find(FIND_MY_CREEPS)).map(
+  e=>e.upgradeController(Game.rooms.W74S57.controller));
+
 // build diagonal wall
 [0,1,2,3,4,5].map(i=>Game.rooms.W74S57.createConstructionSite(33-i,40+i,STRUCTURE_WALL));
+
+_(Game.rooms.W74S57.find(FIND_MY_CREEPS)).some(
+  c=>_(Game.rooms.W74S57.lookForAt(LOOK_CREEPS,c.pos.x-1,c.pos.y-1)).some(
+    t=>c.transfer(t, RESOURCE_ENERGY)));
