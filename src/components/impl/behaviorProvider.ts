@@ -70,15 +70,25 @@ TODO TypeError: jp.target.memory is not a function
  */
   const moveTo = em.intercept(CreepState).after(i => i.moveTo);
   const moveByPath = em.intercept(CreepState).after(i => i.moveByPath);
-  [moveTo, moveByPath].map(i => i.apply((jp: Joinpoint<CreepState, void>) => {
-    debugger;
-    if (jp.target === undefined) {
-      return;
-    }
-    const trying = jp.target.memory("try");
-    delete trying.dir;
-    trying.pos = jp.target.pos();
-  }));
+``  [moveTo, moveByPath].map(i => {
+    i.apply((jp: Joinpoint<CreepState, void>) => {
+      debugger;
+      if (jp.target === undefined) {
+        return;
+      }
+      const trying = jp.target.memory("try");
+      delete trying.dir;
+      trying.pos = jp.target.pos();
+    });
+    i.wait(1).apply((jp: Joinpoint<CreepState, void>) => {
+      debugger;
+      if (jp.target === undefined) {
+        return;
+      }
+      const trying = jp.target.memory("try");
+      jp.target.touching(jp, trying.pos, trying.dir);
+    });
+  });
   // em.intercept(CreepState).after(i => i.moveTo)
   // em.intercept(CreepState).after(i => i.moveByPath)
 }

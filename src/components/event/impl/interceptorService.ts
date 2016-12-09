@@ -58,7 +58,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
       debugger; // invalid spec
       throw new Error("invalid spec=" + JSON.stringify(spec));
     }
-    log.debug("register", name, spec.callState, spec.definition.className, spec.definition.method);
+    // log.debug("register", name, spec.callState, spec.definition.className, spec.definition.method);
     const specs = F.expand(
       [ spec.callState, spec.definition.className, spec.definition.method ],
       this._interceptors, true) as AnyIS[];
@@ -109,7 +109,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
   // TODO should InterspectorSpec pollute this API?
   public triggerBehaviors(jp: Joinpoint<any, any>, eventName: string) {
     jp = jp;
-    log.debug("trigger behaviors event=", eventName);
+    // log.debug("trigger behaviors event=", eventName);
     // construct event
     const event = new Joinpoint<any, any>("__events__", eventName, "?"); // TODO objectId for definition?
     // jp.target; // TODO this is the event source, inject it into event?
