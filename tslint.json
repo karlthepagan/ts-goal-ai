@@ -9,6 +9,7 @@
     "no-debugger": false,
     "no-var-requires": false,
     "object-literal-sort-keys": false,
+    "max-line-length": false, // TODO remove
     "variable-name": [
       true,
       "ban-keywords",

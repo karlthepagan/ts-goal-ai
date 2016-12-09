@@ -26,7 +26,7 @@ bootstrap.push(() => {
 });
 
 bootstrap.push(() => {
-  log.debug("registering state types");
+  // log.debug("registering state types");
   registerType(CreepState);
   registerType(ConstructionState);
   registerType(EnemyCreepState);
@@ -43,12 +43,12 @@ bootstrap.push(() => {
 });
 
 bootstrap.push(() => {
-  log.debug("registering score functions");
+  // log.debug("registering score functions");
   registerStateScoreProvider();
 });
 
 bootstrap.push(() => {
-  log.debug("registering event builders");
+  // log.debug("registering event builders");
 
   State.setEventRegistry(eventManager);
 

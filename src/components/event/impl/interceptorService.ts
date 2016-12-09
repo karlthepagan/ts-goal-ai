@@ -54,6 +54,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
    * @param spec - test input was like [[createCreep],[],[ofAll],[],[apply],[function]]
    */
   public register(name: string, spec: AnyIS) {
+    name = name;
     if (!spec.isRegisterable()) {
       debugger; // invalid spec
       throw new Error("invalid spec=" + JSON.stringify(spec));

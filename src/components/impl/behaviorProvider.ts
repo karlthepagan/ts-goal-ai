@@ -70,7 +70,7 @@ TODO TypeError: jp.target.memory is not a function
  */
   const moveTo = em.intercept(CreepState).after(i => i.moveTo);
   const moveByPath = em.intercept(CreepState).after(i => i.moveByPath);
-``  [moveTo, moveByPath].map(i => {
+  [moveTo, moveByPath].map(i => {
     i.apply((jp: Joinpoint<CreepState, void>) => {
       debugger;
       if (jp.target === undefined) {
