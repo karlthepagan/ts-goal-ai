@@ -291,8 +291,6 @@ export default class CreepState extends State<Creep> {
     jp = jp;
     fromPos = fromPos;
     forwardDir = forwardDir;
-    // TODO reactive behaviors?
-    debugger;
 
     const selfpos = this.pos();
     if (fromPos.x === selfpos.x && fromPos.y === selfpos.y) {
@@ -343,18 +341,27 @@ export default class CreepState extends State<Creep> {
     const oldCreeps = F.elvis(this.memory("touch").creep, []);
     const oldEnergy = F.elvis(this.memory("touch").energy, []);
 
-    debugger; // touching
     const self = this;
     const creeps = changes(oldCreeps, newCreeps);
 
-    iterateNeighbors(creeps.removed, () => CreepState, "onPart", (dir) => [self, dir]);
-    iterateNeighbors(creeps.added, () => CreepState, "onMeet", (dir) => [self, dir]);
+    iterateNeighbors(creeps.removed, () => CreepState, "onPart", (dir) => [self, F.reverse(dir)]);
+    iterateNeighbors(creeps.added, () => CreepState, "onMeet", (dir) => [self, F.reverse(dir)]);
 
     const structs = changes(oldEnergy, newEnergy);
 
-    iterateNeighbors(structs.removed, dir => energyTypes[dir], "onPart", (dir) => [self, dir]);
-    iterateNeighbors(structs.added, dir => energyTypes[dir], "onMeet", (dir) => [self, dir]);
-
+    iterateNeighbors(structs.removed, dir => energyTypes[dir], "onPart", (dir) => [self, F.reverse(dir)]);
+    iterateNeighbors(structs.added, dir => energyTypes[dir], "onMeet", (dir) => [self, F.reverse(dir)]);
+/*
+TODO TypeError: Cannot read property 'onMeet' of undefined
+ at iterateNeighbors (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :4747:19)
+ at CreepState.touching (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :4941:10)
+ at InterceptorSpec.invoke (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :6031:33)
+ at InterceptorService.dispatchTick (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :5863:35)
+ at Object.dispatchTick (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :5705:33)
+ at Object.loop (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :84:28)
+ at __run___mainLoop (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :1:15387)
+ at eval (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :2:4)
+ */
     this.memory("touch").creep = newCreeps;
     this.memory("touch").energy = newEnergy;
   }

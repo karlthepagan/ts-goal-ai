@@ -58,7 +58,16 @@ export default function registerBehaviorProvider(em: EventRegistry) {
     const trying = jp.target.memory("try");
     jp.target.touching(jp, trying.pos, trying.dir);
   });
-
+/*
+TODO TypeError: jp.target.memory is not a function
+ at AnonCache.i.apply (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :6455:35)
+ at InterceptorSpec.invoke (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :6031:33)
+ at InterceptorService.dispatch (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :5824:54)
+ at Object.apply (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :5789:42)
+ at tryHarvest (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :6838:79)
+ at state.sources.map.filter.sortBy.reverse.map (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :6733:30)
+ at ib (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:27076)
+ */
   const moveTo = em.intercept(CreepState).after(i => i.moveTo);
   const moveByPath = em.intercept(CreepState).after(i => i.moveByPath);
   [moveTo, moveByPath].map(i => i.apply((jp: Joinpoint<CreepState, void>) => {

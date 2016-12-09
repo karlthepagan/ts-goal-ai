@@ -45,7 +45,6 @@ export function grind(state: GlobalState) {
 
     if (creeps.length > 0) {
       if (commands.hardxfer) {
-        debugger; // hardxfer
         doTransfers(state, creeps, tasked);
       }
 
@@ -224,7 +223,7 @@ export function doTransfers(state: GlobalState,
 
   return state.spawns().map(spawnState => {
     const spawn = spawnState.subject();
-    if (spawn.energy < 0.7 * spawn.energyCapacity) {
+    if (spawn.energy < spawn.energyCapacity) {
       // energy hungry, feed me!
       LookForIterator.search<OwnedStructure>(spawn.pos, 3, spawn, [{
         key: LOOK_CREEPS,

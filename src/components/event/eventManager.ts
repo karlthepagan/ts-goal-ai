@@ -1,4 +1,3 @@
-import * as F from "../functions";
 import Named from "../named";
 import {EventRegistry} from "./api/index";
 import ProxyChainBuilder from "./impl/proxyChainBuilder";
@@ -9,7 +8,7 @@ import {eventSelectorGet} from "./api/eventSpecBuilder";
 import {whenClosureGet} from "./api/interceptorSpecBuilders";
 import {actionGet} from "./api/builders";
 import ScheduleSpec from "./impl/scheduledSpec";
-import {getType} from "../functions";
+import * as F from "../functions";
 
 export default class EventManager implements EventRegistry {
   private _events = new ProxyChainBuilder<AnyIS>(
@@ -46,7 +45,7 @@ export default class EventManager implements EventRegistry {
 
   private _scheduler = new ProxyChainBuilder<ScheduleSpec<any, any>>(
     (initial: ScheduleSpec<any, any>, relativeTime: number, instance: Named) => {
-      // TODO instance? YES it becomes the parameter in my joinpoint
+      // TODO use instance param? YES it becomes the parameter in my joinpoint
       // waitApply(actionGet(undefined))(initial, relativeTime)
       if (isNaN(relativeTime)) {
         debugger; // illegal relativeTime
@@ -54,16 +53,13 @@ export default class EventManager implements EventRegistry {
       }
       if (relativeTime < 1) {
         throw new Error("illegal relativeTime=" + relativeTime);
-      } else {
-        relativeTime += F.elvis(this.dispatchTime(), Game.time); // TODO should we fastforward ever?
-        // tick = F.expand([ "timeline", "" + relativeTime ], this.memory()) as Tick;
       }
 
       initial = initial;
       // dst
       const is = new ScheduleSpec<any, any>();
       is.relativeTime = relativeTime; // schedule case is like a no-op followed by .wait(number)
-      is.instanceType = getType(instance);
+      is.instanceType = F.getType(instance);
       is.instanceId = instance.getId();
       // src (same as dst??) TODO this could come from builder
       is.definition = new Joinpoint<any, any>("__events__", "runtime-reactive", "?");
@@ -74,7 +70,6 @@ export default class EventManager implements EventRegistry {
       // TODO delete spec.targetConstructor; // will be cleaned up in next action
       // const relativeTime = spec.relativeTime;
       spec = spec.clone() as any;
-      debugger; // TODO check splice here?
       delete spec.targetConstructor;
       spec.actionArgs.splice(0, 1);
       scheduleExec("scheduled", spec);

@@ -154,7 +154,6 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
       // this is a directly scheduled event on a specific instance (set upstream of this method)
       // TODO definition needed? (yes because everything wants jp defined in the loops)
       event.definition = new Joinpoint<A, B>("__events__", "custom", "?");
-      debugger; // TODO check splice here?
     } else {
       // jp is the context of the call which triggered us
       event.definition.objectId = jp.objectId;
