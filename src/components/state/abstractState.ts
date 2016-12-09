@@ -6,6 +6,7 @@ import {botMemory} from "../../config/config";
 import EventRegistry from "../event/api/index";
 import CreepState from "./creepState";
 import getConstructor from "../types";
+import {scoreManager} from "../score/scoreSingleton";
 
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
@@ -220,6 +221,10 @@ abstract class State<T> implements Named {
     this.memory("touch.creep", true)[direction] = other.getId();
     const dirs = this.memory("touch.dir", true) as number[];
     F.add(dirs, direction);
+  }
+
+  public score(stat: string) {
+    scoreManager.rescore(this, this.memory(), stat, Game.time);
   }
 
   protected abstract _accessAddress(): string[];

@@ -287,54 +287,22 @@ export default class CreepState extends State<Creep> {
     return Math.ceil(this.maxMovePenalty(terrain) * CARRY_RECIPROCAL) + this.minMoveFatigue(terrain);
   }
 
-  public move(direction: number): number {
-    const result = this.subject().move(direction);
-    // const em = State.events;
-
-    if (typeof result === "number") {
-      // em.failure(this).move(result, direction);
-      return result;
-    }
-
-    // TODO is this ok? dispatch an interrupt notify creeps at the location i'm moving into
-    // em.dispatch(this).preMove(F.dirToPosition(this.pos())(direction));
-
-    // schedule an event to examine bumps / behaviors at the new position
-    // em.schedule(1, this).onMove().thenCall(this.touching);
-
-    return result;
-  }
-
-  public moveTo(target: RoomPosition | { pos: RoomPosition; }, opts?: MoveToOpts & FindPathOpts): number {
-    const result = this.subject().moveTo(target, opts);
-    // const em = State.events;
-
-    if (result !== 0) {
-      // em.failure(this).moveTo(result, target, opts);
-      return result;
-    }
-
-    // TODO look up _move and translate that to a direction
-    // em.dispatch(this).preMove(F.dirToPosition(this.pos())(direction));
-
-    // schedule an event to examine bumps / behaviors at the new position
-    // em.intercept(this).afterMove(i => em.schedule()
-    // em.schedule(1, this).onMove().thenCall(this.touching);
-
-    return result;
-  }
-
   public touching(jp: Joinpoint<CreepState, void>, fromPos: RoomPosition, forwardDir: number) {
     jp = jp;
     fromPos = fromPos;
     forwardDir = forwardDir;
     // TODO reactive behaviors?
+    debugger;
+
+    const selfpos = this.pos();
+    if (fromPos.x === selfpos.x && fromPos.y === selfpos.y) {
+      return;
+    }
 
     const newCreeps: string[] = [];
     const newEnergy: string[] = [];
     const energyTypes: string[] = [];
-    // energy,
-    const selfpos = this.pos();
+
     const posToDir = F.posToDirection(selfpos);
     LookForIterator.search(selfpos, 1, this, [{
       key: LOOK_CREEPS, value: (creep: Creep, range: number) => {
@@ -376,15 +344,16 @@ export default class CreepState extends State<Creep> {
     const oldEnergy = F.elvis(this.memory("touch").energy, []);
 
     debugger; // touching
+    const self = this;
     const creeps = changes(oldCreeps, newCreeps);
 
-    iterateNeighbors(creeps.removed, () => CreepState, "onPart", (dir) => [this, dir]);
-    iterateNeighbors(creeps.added, () => CreepState, "onMeet", (dir) => [this, dir]);
+    iterateNeighbors(creeps.removed, () => CreepState, "onPart", (dir) => [self, dir]);
+    iterateNeighbors(creeps.added, () => CreepState, "onMeet", (dir) => [self, dir]);
 
     const structs = changes(oldEnergy, newEnergy);
 
-    iterateNeighbors(structs.removed, dir => energyTypes[dir], "onPart", (dir) => [this, dir]);
-    iterateNeighbors(structs.added, dir => energyTypes[dir], "onMeet", (dir) => [this, dir]);
+    iterateNeighbors(structs.removed, dir => energyTypes[dir], "onPart", (dir) => [self, dir]);
+    iterateNeighbors(structs.added, dir => energyTypes[dir], "onMeet", (dir) => [self, dir]);
 
     this.memory("touch").creep = newCreeps;
     this.memory("touch").energy = newEnergy;

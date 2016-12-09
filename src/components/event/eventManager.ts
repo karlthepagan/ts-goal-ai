@@ -74,7 +74,9 @@ export default class EventManager implements EventRegistry {
       // TODO delete spec.targetConstructor; // will be cleaned up in next action
       // const relativeTime = spec.relativeTime;
       spec = spec.clone() as any;
+      debugger; // TODO check splice here?
       delete spec.targetConstructor;
+      spec.actionArgs.splice(0, 1);
       scheduleExec("scheduled", spec);
     }
   );

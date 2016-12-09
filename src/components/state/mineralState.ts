@@ -46,7 +46,7 @@ export default class MineralState extends State<Mineral> {
   }
 
   public nodesAsPos(): RoomPosition[] {
-    return (this._memory.nodes as number[]).map(F.dirToPosition(this.subject().pos));
+    return (this._memory.nodes as number[]).map(F.dirToPositionCall(this.subject().pos));
   }
 
   protected _accessAddress() {

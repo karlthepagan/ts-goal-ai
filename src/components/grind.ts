@@ -267,7 +267,7 @@ export function doHarvest(state: GlobalState,
       const source: SourceState = value;
       let failed: any = {};
 
-      const dirToPosition = F.dirToPosition(source.pos());
+      const dirToPosition = F.dirToPositionCall(source.pos());
       const scoreEnergy = distanceEnergyFitness(source.pos());
 
       const workers = source.memory("workers", true);
@@ -288,7 +288,7 @@ export function doHarvest(state: GlobalState,
         }
       }
 
-      log.debug(F.str(creeps, compactSize), "left");
+      // log.debug(F.str(creeps, compactSize), "left"); // number before candidate processing
 
       let candidates = _.chain(creeps).compact().filter((creep: Creep) => {
         const taskId = tasked[creep.id];
@@ -315,6 +315,8 @@ export function doHarvest(state: GlobalState,
         // no creeps to harvest this source!
         return source;
       }
+
+      log.debug(candidates.length, "left");
 
       let sites = source.nodeDirs();
       // special quick start ranking!

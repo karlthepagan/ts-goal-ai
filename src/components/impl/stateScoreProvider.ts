@@ -19,7 +19,7 @@ type StateScoreImpl<T> = { [key: string]: ScoreHandler<T, GlobalState> };
 // TODO distance weight relates to creep movement capability
 export const DISTANCE_WEIGHT = 9;
 export const FATIGUE_WEIGHT = 4;
-export const WORK_WEIGHT = 2;
+export const ENERGY_WORK_WEIGHT = 2; // harvest 2 units per tick
 export const ROAD_WEIGHT = 3; // cost to maintain roads
 export const SWAMP_WEIGHT = 1; // cost to route around swamps
 export const COMBAT_DANGER = 10; // TODO implement risk
@@ -42,14 +42,15 @@ function scoreMove(state: CreepState, score: ScoreManager<GlobalState>, time: nu
   return FATIGUE_WEIGHT / state.moveFatigue(2);
 }
 
-function scoreWork(state: CreepState): number {
+function scoreWork(multiplier: number): (state: CreepState) => number {
+  return (state: CreepState) => {
+    const creep = state.subject();
+    if (creep === undefined) {
+      return 0;
+    }
 
-  const creep = state.subject();
-  if (creep === undefined) {
-    return 0;
-  }
-
-  return WORK_WEIGHT * _.sum(creep.body, (s: BodyPartDefinition) => s.type === WORK ? 1 : 0);
+    return multiplier * _.sum(creep.body, (s: BodyPartDefinition) => s.type === WORK ? 1 : 0);
+  };
 }
 
 function scoreTtl(state: CreepState): number {
@@ -93,7 +94,8 @@ const impl = {
   // CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS CREEPS
   creepState: {
     move: scoreMove,
-    venergy: scoreWork,
+    vwork: scoreWork(1), // TODO cascade into dependent stats
+    venergy: scoreWork(ENERGY_WORK_WEIGHT), // TODO make this dependent on vwork
     ttl: scoreTtl,
     road: scoreRoad, // this goes very low if the creep gets no benefit from roads and has large part count
     swamp: scoreSwamp, // this goes very low when the creep gains large fatigue from swamps

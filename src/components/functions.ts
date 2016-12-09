@@ -166,12 +166,14 @@ export function dirTransform<D extends XY>(origin: D, dir: number): D {
 
 // TODO consider options for clone
 // http://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript#
-export function dirToPosition(origin: RoomPosition) {
-  return (dir: number) => {
-    const result = new RoomPosition(origin.x, origin.y, origin.roomName);
-    // log.debug(origin, "dir", dir, "=", result);
-    return dirTransform( result, dir);
-  };
+export function dirToPositionCall(origin: RoomPosition) {
+  return (dir: number) => dirToPosition(origin, dir);
+}
+
+export function dirToPosition(origin: RoomPosition, dir: number) {
+  const result = new RoomPosition(origin.x, origin.y, origin.roomName);
+  // log.debug(origin, "dir", dir, "=", result);
+  return dirTransform( result, dir);
 }
 
 export function room(subject: any): string {
