@@ -7,6 +7,7 @@ import EventRegistry from "../event/api/index";
 import CreepState from "./creepState";
 import getConstructor from "../types";
 import {scoreManager} from "../score/scoreSingleton";
+import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
@@ -207,7 +208,7 @@ abstract class State<T> implements Named {
 
   public rescan() {
     delete this._memory.seen;
-    this.init(this._memory);
+    this.init(botMemory());
   }
 
   public onPart(other: CreepState, direction: number) {
@@ -218,13 +219,22 @@ abstract class State<T> implements Named {
   }
 
   public onMeet(other: CreepState, direction: number) {
+    debugger; // REMOVE ME on meet
     this.memory("touch.creep", true)[direction] = other.getId();
     const dirs = this.memory("touch.dir", true) as number[];
     F.add(dirs, direction);
   }
 
+  public touchedCreepIds(): LoDashExplicitArrayWrapper<string> {
+    return _.chain(this.memory("touch.creep", true)).filter(F.isReal);
+  }
+
   public score(stat: string) {
     scoreManager.rescore(this, this.memory(), stat, Game.time);
+  }
+
+  public isEnergyMover() {
+    return false;
   }
 
   protected abstract _accessAddress(): string[];

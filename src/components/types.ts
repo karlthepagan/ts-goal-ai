@@ -20,13 +20,18 @@ export function registerTypeAs<T>(type: Constructor<T>, alias: string) {
 }
 
 // TODO Constructor<any> ?
-export function getApiName(func: Function): string|undefined {
-  switch (func) {
-    case Creep:
-      return "Creep";
-    case Room:
-      return "Room";
-    default:
+export function getApiName(obj: any): string|undefined {
+  if (Creep.prototype === obj.prototype) {
+    return "Creep";
+  }
+  if (Spawn.prototype === obj.prototype) {
+    return "Spawn";
+  }
+  if (Room.prototype === obj.prototype) {
+    return "Room";
+  }
+  if (ConstructionSite.prototype === obj.prototype) {
+    return "ConstructionSite";
   }
 
   return undefined;

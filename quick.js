@@ -26,8 +26,36 @@ _(Game.rooms.W74S57.find(FIND_MY_CREEPS)).map(
   e=>e.upgradeController(Game.rooms.W74S57.controller));
 
 // build diagonal wall
-[0,1,2,3,4,5].map(i=>Game.rooms.W74S57.createConstructionSite(33-i,40+i,STRUCTURE_WALL));
+[0,1,2,3,4,5].map(i=>Game.rooms.W74S57.createConstructionSite(29-i,47,STRUCTURE_WALL));
 
 _(Game.rooms.W74S57.find(FIND_MY_CREEPS)).some(
   c=>_(Game.rooms.W74S57.lookForAt(LOOK_CREEPS,c.pos.x-1,c.pos.y-1)).some(
     t=>c.transfer(t, RESOURCE_ENERGY)));
+
+_(Game.rooms.W74S57.find(FIND_MY_CREEPS)).filter(c=>c.carry.energy > 200).map(c =>
+  _(Game.rooms.W74S57.lookForAtArea(LOOK_STRUCTURES, c.pos.y-3, c.pos.x-3, c.pos.y+3, c.pos.x+3, true))
+    .filter(s => s.structure.hits > 1)
+    .some(s => c.repair(s.structure) === 0));
+
+const room = Game.rooms.W74S57;
+const towerRepairRange = 10;
+room.find(FIND_MY_STRUCTURES, {filter: s=>s.structureType === STRUCTURE_TOWER}).map(c=>
+    _(room.find(FIND_HOSTILE_CREEPS)).sortBy(t=>t.hits)
+        .some(e=>e?c.attack(e):false)
+    || c.energy < 700
+    || _(ramparts).filter(s=>s.hits<1000).sortBy(s=>s.hits).some(s=>c.repair(s) === 0)
+    || c.energy < 800
+    || _(room.lookForAtArea(LOOK_STRUCTURES,
+          c.pos.y-towerRepairRange, c.pos.x-towerRepairRange, c.pos.y+towerRepairRange, c.pos.x+towerRepairRange, true))
+      .map(s=>s.structure).filter(s => s.hits > 1).sortBy(s => s.hits).some(s => c.repair(s) === 0)
+);
+
+let towerRepairRange = 11;
+_(Game.rooms.W74S57.lookForAtArea(LOOK_STRUCTURES,
+  40-towerRepairRange, 36-towerRepairRange, 40+towerRepairRange, 36+towerRepairRange, true))
+  .map(s=>s.structure).filter(s => s.hits > 1).sortBy(s => s.hits);
+
+Game.rooms.W74S57.find(FIND_MY_STRUCTURES, {filter: s=>s.structureType === STRUCTURE_TOWER}).map(
+  c=>Game.rooms.W74S57.lookForAtArea(LOOK_STRUCTURES, c.pos.y - towerRepairRange, c.pos.x - towerRepairRange, c.pos.y + towerRepairRange, c.pos.x + towerRepairRange, true).map(JSON.stringify))
+
+Game.spawns.Spawn1.createCreep(_.times(12, _.constant(WORK)).concat(CARRY, MOVE));

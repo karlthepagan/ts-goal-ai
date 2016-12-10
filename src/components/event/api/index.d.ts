@@ -160,7 +160,6 @@ export interface When<TYPE> {
 }
 
 export interface WhenClosure<INST, API> {
-  // TODO reconcile method extract call and OnIntercept spec?
   before(method: (i: API) => Function): Action<OnIntercept<API, void>, INST, WhenClosure<INST, API>>;
   after(method: (i: API) => Function): Action<OnIntercept<API, any>, INST, WhenClosure<INST, API>>;
   failure(method: (i: API) => Function): Action<OnIntercept<API, void>, INST, WhenClosure<INST, API>>;
@@ -175,7 +174,7 @@ export interface EventRegistry { // TODO instances declared in this context are 
   schedule        <INST extends Named>(relativeTime: number, instance: INST): Action<OnScheduled, INST, void>;
   // schedule      <INST extends Named>(relativeTime: number, instance: INST): Schedule<INST>;
   // interceptOne  <INST extends State<any>>(instance: INST): When<ApiCalls<INST>>;
-  intercept       <API>(implType: Constructor<State<API>>): WhenClosure<State<API>, API>; // TODO INST type
+  intercept       <API, INST extends State<API>>(implType: Constructor<INST & State<API>>): WhenClosure<INST, API>; // TODO INST type
   // next          <INST extends State<any>>(instance: INST): When<ApiCalls<INST>>;
   // run           <INST extends Named>(instance: INST): Action<Function, void, void>;
   // dispatch        (instance: Named): TriggeredEvents;

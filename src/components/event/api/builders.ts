@@ -71,7 +71,7 @@ export function instanceGet(is: AnyIS, methodName: string) {
 export function assignArgsThen(next?: Function) {
   return (is: AnyIS, ...args: any[]) => {
     is = is.clone();
-    is.actionArgs = args;
+    is.actionArgs = args; // TODO remove jp?
     return [is, next];
   };
 }

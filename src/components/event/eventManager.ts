@@ -62,7 +62,7 @@ export default class EventManager implements EventRegistry {
       is.instanceType = F.getType(instance);
       is.instanceId = instance.getId();
       // src (same as dst??) TODO this could come from builder
-      is.definition = new Joinpoint<any, any>("__events__", "runtime-reactive", "?");
+      is.definition = new Joinpoint<any, any>(is.instanceType, "__events__", is.instanceId);
       return [is, actionGet(undefined)];
     },
     (spec) => {

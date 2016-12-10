@@ -13,12 +13,18 @@ import LookForIterator from "./util/lookForIterator";
 import {FindCallback} from "./util/lookForIterator";
 import SpawnState from "./state/spawnState";
 import api from "./event/behaviorContext";
+import StructureState from "./state/structureState";
 
 const cachedIdleActions: { [id: string]: FindCallback<any> } = {};
 
 export function grind(state: GlobalState) {
   const commands = state.memory() as Commands;
   const opts = state.memory("config") as Options;
+
+  if (commands.break) {
+    debugger; // break command
+    delete commands.break;
+  }
 
   if (commands.shuffle || commands.last === undefined
       || (Game.time - commands.last) > F.elvis(opts.failedTicksToShuffle, 5)) { // TODO integrate into event manager
@@ -213,6 +219,35 @@ function byScore<T extends State<any>>(metric: string, decorator?: MemoIterator<
   };
 }
 
+/**
+ * @param state wants more energy! go get it
+ * @param ignore don't steal from these id's
+ */
+export function doQuickTransfers(state: State<any>, ignore: any): void {
+  ignore[state.getId()] = true;
+  if (state.isEnergyMover()) {
+    // creeps can withdraw
+    const creep = state as CreepState;
+    creep.touchedStorageIds().reject(F.onKeys(ignore)).map(StructureState.vright).value().forEach(c => {
+      debugger; // REMOVE ME touched storage ids
+      c.resolve();
+      api(creep).withdraw(c.subject(), RESOURCE_ENERGY);
+      doQuickTransfers(c, ignore);
+    });
+  } else {
+    // structures have to find creep neighbors
+    state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).value().forEach(c => {
+      c.resolve();
+      api(c).transfer(state.subject(), RESOURCE_ENERGY);
+      // TODO don't ignore unless full?
+      ignore[c.getId()] = true;
+      doQuickTransfers(c, ignore);
+    });
+  }
+}
+
+// TODO planned transfers, calculate venergy of all participants and move to meet deadline
+
 export function doTransfers(state: GlobalState,
                             creeps: (Creep|null)[],
                             tasked: { [creepIdToSourceId: string]: string }): (SpawnState|null)[] {
@@ -405,12 +440,18 @@ export function doSpawn(state: GlobalState, commands: Options) {
   }).value();
 }
 
+const movePartCost = BODYPART_COST.move;
+const carryPartCost = BODYPART_COST.move;
+const workerBody = [CARRY, WORK, MOVE, MOVE];
+const workerBodyCost = _(workerBody).sum(i => BODYPART_COST[i]);
+
 function spawnCreeps(state: GlobalState, spawnState: SpawnState) {
   state = state;
 
   const spawn = spawnState.subject();
 
-  switch (state.creeps().value().length) {
+  const creepCount = state.creeps().value().length;
+  switch (creepCount) {
     case 0:
       if (spawn.room.energyAvailable < 200) {
         return;
@@ -421,6 +462,7 @@ function spawnCreeps(state: GlobalState, spawnState: SpawnState) {
     case 1:
     case 2:
       if (spawn.room.energyAvailable < 300) {
+        doQuickTransfers(spawnState, {});
         return;
       }
       api(spawnState).createCreep([CARRY, WORK, WORK, MOVE]);
@@ -428,27 +470,28 @@ function spawnCreeps(state: GlobalState, spawnState: SpawnState) {
 
     default:
       if (spawn.room.energyAvailable < spawn.room.energyCapacityAvailable) {
+        doQuickTransfers(spawnState, {});
         return;
       }
-      const majorSize = Math.floor(spawn.room.energyCapacityAvailable / 250);
-      let remaining = spawn.room.energyCapacityAvailable % 250;
-      let cost = majorSize * 250;
+      const majorSize = Math.floor(spawn.room.energyCapacityAvailable / workerBodyCost);
+      let remaining = spawn.room.energyCapacityAvailable % workerBodyCost;
+      let cost = majorSize * workerBodyCost;
       const body: string[] = [];
       for (let i = 0; i < majorSize; i++) {
-        body.push(CARRY, WORK, MOVE, MOVE);
+        body.push(...workerBody);
       }
-      while (remaining >= 50) {
-        remaining -= 50;
-        cost += 50;
+      while (remaining >= carryPartCost) {
+        remaining = remaining - carryPartCost;
+        cost = cost + carryPartCost;
         body.push(CARRY);
-        if (remaining >= 50) {
-          remaining -= 50;
-          cost += 50;
+        if (remaining >= carryPartCost) {
+          remaining = remaining - carryPartCost;
+          cost = cost + carryPartCost;
           body.push(CARRY);
         }
-        if (remaining >= 50) {
-          remaining -= 50;
-          cost += 50;
+        if (remaining >= movePartCost) {
+          remaining = remaining - movePartCost;
+          cost = cost + movePartCost;
           body.push(MOVE);
         }
       }
@@ -485,6 +528,7 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
             creep.say("💩", false); // poo
           }
 
+          debugger; // REMOVE ME moveTo
           const moveResult = api(creepState).moveTo(pos);
           if (moveResult !== 0) {
             log.debug("move failed", sourceState, "moveTo=", moveResult, creepState);

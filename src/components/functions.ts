@@ -72,6 +72,14 @@ export function isMovable(lookAt: LookAtResultWithPos): boolean {
   return elvis(movable[lookAt.terrain as string], FALSE as Filter<any>)(lookAt);
 }
 
+export function isReal(x: any) {
+  return !(x === undefined || x === null);
+}
+
+export function onKeys(x: any) {
+  return (y: PropertyKey) => isReal(x[y]);
+}
+
 export function pad(num: number, size: number) {
   if (num === undefined || num === null) {
     throw new Error(num + "");
@@ -132,6 +140,7 @@ export function posToDirection(origin: XY): (dst: XY) => number {
   };
 }
 
+// preincrement voodoo! http://discuss.fogcreek.com/joelonsoftware/default.asp?cmd=show&ixPost=171881
 export function dirTransform<D extends XY>(origin: D, dir: number): D {
   switch (dir) {
     case TOP_RIGHT:
@@ -164,15 +173,14 @@ export function dirTransform<D extends XY>(origin: D, dir: number): D {
   return origin;
 }
 
-// TODO consider options for clone
-// http://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript#
 export function dirToPositionCall(origin: RoomPosition) {
   return (dir: number) => dirToPosition(origin, dir);
 }
 
 export function dirToPosition(origin: RoomPosition, dir: number) {
+  // TODO consider options for clone
+  // http://stackoverflow.com/questions/122102/what-is-the-most-efficient-way-to-deep-clone-an-object-in-javascript#
   const result = new RoomPosition(origin.x, origin.y, origin.roomName);
-  // log.debug(origin, "dir", dir, "=", result);
   return dirTransform( result, dir);
 }
 
@@ -390,13 +398,12 @@ export function add<T>(array: T[], item: T): boolean {
 }
 
 export function getType(instance: any) {
+  if (instance.className !== undefined) {
+    return instance.className();
+  }
   let name = instance.constructor.name as string;
   if (name === undefined || name.length === 0) {
-    if (instance.className === undefined) {
-      return getApiName(instance);
-    } else {
-      return instance.className(); // TODO className > constructor.name???
-    }
+    return getApiName(instance.constructor);
   }
   return name;
 }

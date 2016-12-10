@@ -1,23 +1,25 @@
-export interface CaptureTarget {
+type NameAndArgs = {name: string, args: any[]|undefined };
+
+interface CaptureTarget {
   count?: number;
-  callback?: (names: string[]) => any;
-  names: string[]; // TODO this will only be strings, see HACK below
+  callback?: (properties: NameAndArgs[]) => any;
+  properties: NameAndArgs[];
 }
 
 export class NameCapture implements ProxyHandler<CaptureTarget> {
-  public newTarget(count?: number, callback?: (names: string[]) => any) {
+  public newTarget(count?: number, callback?: (properties: NameAndArgs[]) => any) {
     if (count !== undefined && callback === undefined) {
       throw new Error("callback required");
     }
-    const names: string[] = [];
-    return {names, count, callback};
+    const properties = [];
+    return {properties, count, callback} as CaptureTarget;
   }
 
   public capture(method: (i: any) => Function): string {
     const gets = this.newTarget();
     const capture = new Proxy(gets, this) as any;
     method(capture);
-    return gets.names[0];
+    return gets.properties[0].name;
   }
 
   /**
@@ -32,15 +34,16 @@ export class NameCapture implements ProxyHandler<CaptureTarget> {
    *
    * Intermediate function calls are too complex for this class, use proxyChainBuilder for that.
    */
-  public captureAsync<T>(count: number, callback: (names: string[]) => T): (i: any) => T {
+  public captureAsync<T>(count: number, callback: (properties: NameAndArgs[]) => T): (i: any) => T {
     debugger; // TODO test this
     const gets = this.newTarget(count, callback); // TODO test deep replacement
     return new Proxy(gets, this) as any;
   }
 
-  public get (target: CaptureTarget, p: string, receiver: any): any {
+  public get (target: CaptureTarget, name: string, receiver: any): any {
     // Proxy coerces p into a string
-    target.names.push(p);
+    const args = undefined;
+    target.properties.push({name, args});
     if (target.count !== undefined) {
       target.count--;
     }
@@ -51,8 +54,10 @@ export class NameCapture implements ProxyHandler<CaptureTarget> {
   public apply(target: CaptureTarget, thisArg: any, argArray?: any): any {
     if (target.count === 0) {
       // TODO assertion function?
-      return (target.callback as any)(target.names)(argArray) as any;
+      return (target.callback as any)(target.properties)(argArray) as any;
     }
+
+    target.properties[target.properties.length - 1].args = argArray;
 
     return thisArg;
   }

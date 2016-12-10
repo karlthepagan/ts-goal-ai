@@ -26,4 +26,9 @@ export default class ScheduleSpec<I, T> extends InterceptorSpec<I, T> {
     covariant.relativeTime = this.relativeTime;
     return covariant as any;
   }
+
+  public unresolve() {
+    super.unresolve();
+    delete this.relativeTime;
+  }
 }

@@ -33,6 +33,11 @@ interface Commands {
    * breakpoint at start of builders
    */
   debugBuilders: boolean;
+
+  /**
+   * start a breakpoint in grind
+   */
+  break: boolean;
 }
 
 interface Options {

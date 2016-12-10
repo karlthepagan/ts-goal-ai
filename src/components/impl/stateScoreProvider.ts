@@ -122,9 +122,9 @@ const impl = {
         let rval = 0;
         // TODO source access bonus
         // energy velocity for each source
-        rval += score.getOrRescore(source, source.memory(SCORE_KEY), "venergy", time);
+        rval = rval + score.getOrRescore(source, source.memory(SCORE_KEY), "venergy", time);
         // energy transport score for each source
-        rval += score.getOrRescore(source, source.memory(SCORE_KEY), "tenergy", time);
+        rval = rval + score.getOrRescore(source, source.memory(SCORE_KEY), "tenergy", time);
         // military risk is folded into the SourceState's raw score
         // also the score delta between global.energy and sum of sources? TODO consider
         return rval;
@@ -143,9 +143,9 @@ const impl = {
         // TODO weights per mineral type
         // TODO mineral access bonus
         // mineral velocity for each mine
-        rval += score.getOrRescore(source, source.memory(SCORE_KEY), "vminerals", time);
+        rval = rval + score.getOrRescore(source, source.memory(SCORE_KEY), "vminerals", time);
         // mineral transport score for each mine
-        rval += score.getOrRescore(source, source.memory(SCORE_KEY), "tminerals", time);
+        rval = rval + score.getOrRescore(source, source.memory(SCORE_KEY), "tminerals", time);
         // military risk is folded into the MineralState's raw score
         // also the score delta between global.energy and sum of sources? TODO consider
         return rval;

@@ -8,6 +8,7 @@ import {botMemory} from "../../../config/config";
 import ScheduleSpec from "./scheduledSpec";
 import Named from "../../named";
 import {interceptorService} from "../behaviorContext";
+import {getType} from "../../functions";
 
 type ClassSpec<T extends InterceptorSpec<any, any>> = { [methodName: string]: T[] };
 export type SpecMap<T extends InterceptorSpec<any, any>> = { [className: string]: ClassSpec<T> };
@@ -20,8 +21,6 @@ interface EventMemory {
 
   /**
    * Map of tick numbers to lists of ScheduleSpecs
-   *
-   * TODO discard scheduledTick info and make this an InterceptorSpec?
    */
   timeline: { [key: string]: SpecMap<ScheduleSpec<any, any>> };
 }
@@ -68,9 +67,6 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
   public get(target: State<any>, p: PropertyKey, receiver: any): any {
     receiver = receiver;
-
-    const className = target.constructor.name;
-    const objectId = target.getId();
     const method = p as string; // TODO really?
 
     if (target.resolve()) {
@@ -78,6 +74,8 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
       const value = subject[p];
 
       if (typeof value === "function") {
+        const className = getType(subject);
+        const objectId = target.getId();
         const jp = new Joinpoint<any, any>(className, method, objectId);
         jp.target = subject;
 
@@ -129,7 +127,8 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
       return jp.returnValue; // TODO apply within?
     }
 
-    for (const interceptor of interceptors) {
+    for (let i = 0; i < interceptors.length; i++) {
+      const interceptor = interceptors[i];
       // TODO how to handle interceptor invoke decisions
       if (interceptor.test(jp) && interceptor.invoke(jp, this)) { // TODO circular reference?
         return jp.returnValue;
@@ -150,18 +149,15 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
       [ "timeline", scheduledTick, spec.definition.className, spec.definition.method],
       this.eventMemory(), true) as AnyIS[];
 
-    const event = spec.clone();
-    if (jp === undefined) {
-      // this is a directly scheduled event on a specific instance (set upstream of this method)
-      // TODO definition needed? (yes because everything wants jp defined in the loops)
-      event.definition = new Joinpoint<A, B>("__events__", "custom", "?");
-    } else {
+    const event = spec.clone() as ScheduleSpec<A, B>;
+    // this is a directly scheduled event on a specific instance (which is set upstream of this method)
+    if (jp !== undefined) {
       // jp is the context of the call which triggered us
       event.definition.objectId = jp.objectId;
       event.definition.args = jp.args;
       event.definition.returnValue = jp.returnValue;
     }
-    // TODO delete scheduledTick?
+    event.unresolve();
     taskList.push(event);
   }
 
@@ -180,14 +176,15 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
           const classSpec: ClassSpec<AnyIS> = tick[className];
           for (const methodName in classSpec) {
             const tasks: AnyIS[] = classSpec[methodName];
-            for (const task of tasks) {
-              // TODO attach ScheduledSpec.prototype into task
-              // TODO replace State with generic named object registry to do callbacks that survive sharding
-              const jp = task.definition;
+            for (let i = 0; i < tasks.length; i++) {
+              const task = tasks[i];
+              Object.setPrototypeOf(task, InterceptorSpec.prototype);
+              Object.setPrototypeOf(task.definition, Joinpoint.prototype);
+              const jp = task.definition.clone();
+              debugger; // REMOVE ME event loop break
               jp.target = State.vright(jp.className, jp.objectId as string);
               // InterceptorSpec invoke is immediate execution
-              // ScheduleSpec invoke will re-schedule
-              Object.setPrototypeOf(task, InterceptorSpec.prototype); // TODO does this bind?
+              // ScheduleSpec invoke will re-schedule when invoked
               if (!task.isInvokable()) {
                 debugger; // task not invokable
                 throw new Error("cannot invoke");
@@ -215,7 +212,8 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
       return jp.proceed(); // TODO apply within?
     }
 
-    for (const interceptor of interceptors) {
+    for (let i = 0; i < interceptors.length; i++) {
+      const interceptor = interceptors[i];
       // TODO how to handle interceptor invoke decisions
       if (interceptor.test(jp) && interceptor.invoke(jp, this)) {
         return jp.returnValue;
@@ -234,7 +232,8 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
       throw jp.thrownException;
     }
 
-    for (const interceptor of interceptors) {
+    for (let i = 0; i < interceptors.length; i++) {
+      const interceptor = interceptors[i];
       // TODO how to handle interceptor invoke decisions
       if (interceptor.test(jp) && interceptor.invoke(jp, this)) {
         return jp.returnValue;

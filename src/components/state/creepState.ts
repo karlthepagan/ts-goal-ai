@@ -5,6 +5,7 @@ import * as F from "../functions";
 import {TERRAIN_ROAD, TERRAIN_PLAIN, TERRAIN_SWAMP} from "../constants";
 import LookForIterator from "../util/lookForIterator";
 import Joinpoint from "../event/api/joinpoint";
+import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 // const BiMap = require("bimap"); // TODO BiMap
 
 const MOVE_KEYS = {
@@ -89,6 +90,9 @@ function iterateNeighbors(neighborIds: string[],
       continue;
     }
     const instance = State.vright(type(dir), id) as any;
+    if (instance === undefined) {
+      throw new Error("cannot resolve " + id + " from " + JSON.stringify(type(dir)));
+    }
     instance[callbackName](...args(dir));
   }
 }
@@ -117,7 +121,7 @@ export default class CreepState extends State<Creep> {
       if (body[i++].type !== TOUGH) {
         break;
       }
-      armor += 100;
+      armor = armor + 100;
     }
 
     let hull = armor;
@@ -125,7 +129,7 @@ export default class CreepState extends State<Creep> {
       if (body[i++].type === MOVE) {
         break;
       }
-      hull += 100;
+      hull = hull + 100;
     }
     return { armor, hull };
   }
@@ -287,13 +291,14 @@ export default class CreepState extends State<Creep> {
     return Math.ceil(this.maxMovePenalty(terrain) * CARRY_RECIPROCAL) + this.minMoveFatigue(terrain);
   }
 
-  public touching(jp: Joinpoint<CreepState, void>, fromPos: RoomPosition, forwardDir: number) {
+  public touching(jp: Joinpoint<Creep, void>, fromPos: RoomPosition, forwardDir: number) {
     jp = jp;
     fromPos = fromPos;
     forwardDir = forwardDir;
 
     const selfpos = this.pos();
     if (fromPos.x === selfpos.x && fromPos.y === selfpos.y) {
+      debugger; // touching, same position, move failed?
       return;
     }
 
@@ -342,40 +347,28 @@ export default class CreepState extends State<Creep> {
     const oldEnergy = F.elvis(this.memory("touch").energy, []);
 
     const self = this;
-    const creeps = changes(oldCreeps, newCreeps);
-
-    iterateNeighbors(creeps.removed, () => CreepState, "onPart", (dir) => [self, F.reverse(dir)]);
-    iterateNeighbors(creeps.added, () => CreepState, "onMeet", (dir) => [self, F.reverse(dir)]);
-
     const structs = changes(oldEnergy, newEnergy);
 
     iterateNeighbors(structs.removed, dir => energyTypes[dir], "onPart", (dir) => [self, F.reverse(dir)]);
     iterateNeighbors(structs.added, dir => energyTypes[dir], "onMeet", (dir) => [self, F.reverse(dir)]);
-/*
-TODO TypeError: Cannot read property 'onMeet' of undefined
- at iterateNeighbors (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :4747:19)
- at CreepState.touching (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :4941:10)
- at InterceptorSpec.invoke (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :6031:33)
- at InterceptorService.dispatchTick (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :5863:35)
- at Object.dispatchTick (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :5705:33)
- at Object.loop (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :84:28)
- at __run___mainLoop (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :1:15387)
- at eval (eval at exports.evalCode (blob:https://screeps.com/b854e371-5702-48a3-8d1a-a9419b04a5ae:2:21162), :2:4)
- */
+
+    const creeps = changes(oldCreeps, newCreeps);
+
+    iterateNeighbors(creeps.removed, () => "CreepState", "onPart", (dir) => [self, F.reverse(dir)]);
+    iterateNeighbors(creeps.added, () => "CreepState", "onMeet", (dir) => [self, F.reverse(dir)]);
+
     this.memory("touch").creep = newCreeps;
     this.memory("touch").energy = newEnergy;
   }
 
   public onPart(other: CreepState, direction: number) {
-    other = other;
-    direction = direction;
+    super.onPart(other, direction);
     log.debug("bye");
   }
 
   public onMeet(other: CreepState, direction: number) {
-    other = other;
-    direction = direction;
-    log.debug("hi");
+    super.onMeet(other, direction);
+    log.debug("bye");
   }
 
   public keepSaying(say: string, toPublic?: boolean, count?: number) {
@@ -408,6 +401,14 @@ TODO TypeError: Cannot read property 'onMeet' of undefined
 
   public isReady() {
     return this.resolve() && this.subject().ticksToLive !== undefined;
+  }
+
+  public isEnergyMover() {
+    return true;
+  }
+
+  public touchedStorageIds(): LoDashExplicitArrayWrapper<string> {
+    return _.chain(this.memory("touch.energy", true)).filter(F.isReal);
   }
 
   protected _accessAddress() {

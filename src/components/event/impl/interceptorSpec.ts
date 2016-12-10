@@ -33,7 +33,9 @@ class InterceptorSpec<I, T> {
     into.definition = this.definition.clone(); // TODO deep prototype
     into.targetConstructor = this.targetConstructor;
     into.callState = this.callState;
-    into.actionArgs = this.actionArgs;
+    if (this.actionArgs !== undefined) {
+      into.actionArgs = this.actionArgs.concat();
+    }
     into.instanceType = this.instanceType;
     into.instanceId = this.instanceId;
     into.actionMethod = this.actionMethod;
@@ -89,6 +91,11 @@ class InterceptorSpec<I, T> {
     this.instanceType = getType(instance);
     this.instanceId = instance.getId();
     this.actionMethod = NAME_CAPTURE.capture(method);
+  }
+
+  public unresolve() {
+    this.definition.unresolve();
+    delete this.targetConstructor;
   }
 
   protected resolve(): I {

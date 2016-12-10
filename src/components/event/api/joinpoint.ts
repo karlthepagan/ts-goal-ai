@@ -6,10 +6,10 @@ export default class Joinpoint<I, T> {
   public target?: I;
   public method: string;
   public args: any[];
-  public proceedApply: Function;
+  public proceedApply?: Function;
   public returnValue?: T;
   public thrownException?: string|Error;
-  public source?: any;
+  // public source?: any;
 
   constructor(className: string, method: string, objectId?: string) {
     this.className = className;
@@ -22,11 +22,13 @@ export default class Joinpoint<I, T> {
       into = new Joinpoint<I, T>(this.className, this.method, this.objectId) as R;
     }
     into.target = this.target;
-    into.args = this.args;
+    if (this.args !== undefined) {
+      into.args = this.args.concat();
+    }
     into.proceedApply = this.proceedApply;
     into.returnValue = this.returnValue;
     into.thrownException = this.thrownException;
-    into.source = this.source;
+    // into.source = this.source;
     return into;
   }
 
@@ -60,7 +62,7 @@ export default class Joinpoint<I, T> {
 
   public proceed(): T {
     try {
-      return this.returnValue = this.proceedApply.apply(this.target, this.args);
+      return this.returnValue = (this.proceedApply as Function).apply(this.target, this.args);
     } catch (err) {
       this.thrownException = err;
       throw err;
@@ -74,5 +76,13 @@ export default class Joinpoint<I, T> {
   public map<R>(f: () => R): Joinpoint<I, R> {
     f = f; // TODO write transformation
     return this as any;
+  }
+
+  /**
+   * throw out anything that won't survive memory
+   */
+  public unresolve() {
+    delete this.target;
+    delete this.proceedApply;
   }
 }

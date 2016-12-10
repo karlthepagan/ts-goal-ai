@@ -21,7 +21,7 @@ export default function registerBehaviorProvider(em: EventRegistry) {
     log.debug("AGGRO! TODO find turrets and FIRE! later do enemy priority scoring & elections");
   });
 
-  em.when().spawn().ofAll().apply((jp: Joinpoint<any, string>) => {
+  em.when().spawn().ofAll().apply((jp: Joinpoint<Creep, string>) => {
     // const creep = jp.target as CreepState; // TODO implement event domain target resolution
     const time = jp.args[0].length * 3; // TODO get event source? Spawn.spawning.remainingTime?
     const creepName = jp.returnValue as string;
@@ -41,22 +41,15 @@ export default function registerBehaviorProvider(em: EventRegistry) {
   });
 
   const move = em.intercept(CreepState).after(i => i.move); // .or() later
-  move.apply((jp: Joinpoint<CreepState, void>) => {
+  move.apply((jp: Joinpoint<Creep, void>) => {
     debugger;
     if (jp.target === undefined) {
+      debugger; // target undefined, after move
       return;
     }
-    const trying = jp.target.memory("try");
-    trying.dir = jp.args[0];
-    trying.pos = jp.target.pos();
-  });
-  move.wait(1).apply((jp: Joinpoint<CreepState, void>) => {
-    debugger;
-    if (jp.target === undefined) {
-      return;
-    }
-    const trying = jp.target.memory("try");
-    jp.target.touching(jp, trying.pos, trying.dir);
+    // const trying = jp.target.memory("try");
+    // trying.dir = jp.args[0];
+    // trying.pos = jp.target.pos;
   });
 /*
 TODO TypeError: jp.target.memory is not a function
@@ -70,23 +63,25 @@ TODO TypeError: jp.target.memory is not a function
  */
   const moveTo = em.intercept(CreepState).after(i => i.moveTo);
   const moveByPath = em.intercept(CreepState).after(i => i.moveByPath);
-  [moveTo, moveByPath].map(i => {
-    i.apply((jp: Joinpoint<CreepState, void>) => {
+  [moveTo, moveByPath].map(i => i.apply((jp: Joinpoint<Creep, void>) => {
+    debugger;
+    if (jp.target === undefined) {
+      debugger; // target undefined after moveTo
+      return;
+    }
+    // const trying = jp.target.memory("try");
+    // delete trying.dir;
+    // trying.pos = jp.target.pos;
+  }));
+  [move, moveTo, moveByPath].map(i => {
+    i.wait(1).apply((jp: Joinpoint<Creep, void>) => {
       debugger;
       if (jp.target === undefined) {
+        debugger; // target undefined, 1 tick after move
         return;
       }
-      const trying = jp.target.memory("try");
-      delete trying.dir;
-      trying.pos = jp.target.pos();
-    });
-    i.wait(1).apply((jp: Joinpoint<CreepState, void>) => {
-      debugger;
-      if (jp.target === undefined) {
-        return;
-      }
-      const trying = jp.target.memory("try");
-      jp.target.touching(jp, trying.pos, trying.dir);
+      // const trying = jp.target.memory("try");
+      // jp.target.touching(jp, trying.pos, trying.dir);
     });
   });
   // em.intercept(CreepState).after(i => i.moveTo)
