@@ -4,7 +4,8 @@ export default class Joinpoint<I, T> {
   public className: string;
   public objectId?: string;
   public target?: I;
-  // public targetType?: string; // TODO consider this to disambiguate event dispatch from source (also useful for intercepting!)
+  // thiss to disambiguates event dispatch from source for events & intercepts
+  public targetType?: string;
   public method: string;
   public args: any[];
   public proceedApply?: Function;

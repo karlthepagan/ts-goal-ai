@@ -3,11 +3,13 @@ import Joinpoint from "../api/joinpoint";
 import InterceptorService from "./interceptorService";
 import getConstructor from "../../types";
 import State from "../../state/abstractState";
+import {getType} from "../../functions";
 
 export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements ProxyHandler<Function> {
   public static fromConstructor(constructor: Constructor<State<any>>) {
     const is = new InterceptorSpec<any, any>();
-    is.definition = new Joinpoint<any, any>(constructor.name, "?"); // TODO intercepts go on the wrapper class... ick
+    is.definition = new Joinpoint<any, any>(constructor.name, "?");
+    // jp.targetType is specified by the invocation
     is.targetConstructor = constructor;
     return is;
   }
@@ -22,6 +24,7 @@ export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements Pr
     const objectId = target.getId();
     const jp = new Joinpoint<any, any>(className, method, objectId);
     jp.target = target.subject();
+    jp.targetType = getType(jp.target);
     return jp;
   }
 
