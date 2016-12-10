@@ -1,5 +1,5 @@
 import * as Builders from "./builders";
-import {AnyEvent, default as EventSpec} from "../impl/interceptorSpec";
+import {AnyEvent, default as EventSpec} from "../impl/eventSpec";
 import Joinpoint from "./joinpoint";
 
 /**

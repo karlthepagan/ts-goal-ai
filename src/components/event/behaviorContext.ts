@@ -2,7 +2,7 @@ import InterceptorService from "./impl/interceptorService";
 import State from "../state/abstractState";
 import * as F from "../functions";
 import {botMemory} from "../../config/config";
-import {AnyEvent} from "./impl/interceptorSpec";
+import {AnyEvent} from "./impl/eventSpec";
 import ScheduleSpec from "./impl/scheduledSpec";
 
 export const interceptorService = new InterceptorService();

@@ -1,5 +1,5 @@
 import * as F from "../../functions";
-import {AnyEvent} from "./interceptorSpec";
+import {AnyEvent} from "./eventSpec";
 
 const _terminal: any = {
   callAnd: 2,

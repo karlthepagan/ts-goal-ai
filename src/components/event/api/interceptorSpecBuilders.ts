@@ -1,4 +1,4 @@
-import {AnyEvent} from "../impl/interceptorSpec";
+import {AnyEvent} from "../impl/eventSpec";
 import * as Builders from "./builders";
 import NAME_CAPTURE from "../impl/nameCapture";
 

@@ -2,7 +2,7 @@ import Named from "../named";
 import {EventRegistry} from "./api/index";
 import ProxyChainBuilder from "./impl/proxyChainBuilder";
 import {registerBehavior, scheduleExec} from "./behaviorContext";
-import {AnyEvent, default as EventSpec} from "./impl/interceptorSpec";
+import {AnyEvent, default as EventSpec} from "./impl/eventSpec";
 import Joinpoint from "./api/joinpoint";
 import {eventSelectorGet} from "./api/eventSpecBuilder";
 import {whenClosureGet} from "./api/interceptorSpecBuilders";

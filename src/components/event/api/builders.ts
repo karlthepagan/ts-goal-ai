@@ -1,4 +1,4 @@
-import {AnyEvent} from "../impl/interceptorSpec";
+import {AnyEvent} from "../impl/eventSpec";
 import {interceptorService} from "../behaviorContext";
 import {OnIntercept} from "./index";
 import ScheduleSpec from "../impl/scheduledSpec";
