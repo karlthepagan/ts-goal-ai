@@ -26,7 +26,7 @@ _(Game.rooms.W74S57.find(FIND_MY_CREEPS)).map(
   e=>e.upgradeController(Game.rooms.W74S57.controller));
 
 // build diagonal wall
-[0,1,2,3,4,5].map(i=>Game.rooms.W74S57.createConstructionSite(29-i,47,STRUCTURE_WALL));
+[0,1,2].map(i=>Game.rooms.W74S57.createConstructionSite(29+i,2+i,STRUCTURE_WALL));
 
 _(Game.rooms.W74S57.find(FIND_MY_CREEPS)).some(
   c=>_(Game.rooms.W74S57.lookForAt(LOOK_CREEPS,c.pos.x-1,c.pos.y-1)).some(

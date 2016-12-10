@@ -2,7 +2,7 @@ import InterceptorService from "./impl/interceptorService";
 import State from "../state/abstractState";
 import * as F from "../functions";
 import {botMemory} from "../../config/config";
-import {AnyIS} from "./impl/interceptorSpec";
+import {AnyEvent} from "./impl/interceptorSpec";
 import ScheduleSpec from "./impl/scheduledSpec";
 
 export const interceptorService = new InterceptorService();
@@ -11,7 +11,7 @@ export function dispatchTick(time: number) {
   interceptorService.dispatchTick(time);
 }
 
-export function registerBehavior(name: string, spec: AnyIS) {
+export function registerBehavior(name: string, spec: AnyEvent) {
   interceptorService.register(name, spec);
 }
 

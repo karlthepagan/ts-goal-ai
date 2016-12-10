@@ -1,11 +1,11 @@
-import {AnyIS} from "../impl/interceptorSpec";
+import {AnyEvent} from "../impl/interceptorSpec";
 import {interceptorService} from "../behaviorContext";
 import {OnIntercept} from "./index";
 import ScheduleSpec from "../impl/scheduledSpec";
 import AnonCache from "../impl/anonCache";
 
 export function actionGet(select?: Function) {
-  return (is: AnyIS, actionName: string) => {
+  return (is: AnyEvent, actionName: string) => {
     switch (actionName) {
       case "fireEvent":
         is = Object.create(is); // was .clone();
@@ -38,7 +38,7 @@ export function actionGet(select?: Function) {
  * scheduling that to occur later
  */
 export function waitApply(next: Function) {
-  return (is: AnyIS, relativeTime: number) => {
+  return (is: AnyEvent, relativeTime: number) => {
     // TODO compose two joinpoints together??? - one to be applied immediately, and one to be executed after a delay
     const ss = is.clone(new ScheduleSpec<any, any>());
     if (isNaN(relativeTime)) {
@@ -55,21 +55,21 @@ export function waitApply(next: Function) {
   };
 }
 
-export function actionApplyApply(is: AnyIS, action: OnIntercept<any, any>) {
+export function actionApplyApply(is: AnyEvent, action: OnIntercept<any, any>) {
   // anonymous function cache
   is = Object.create(is); // was .clone();
   is.setAction(AnonCache.instance, AnonCache.instance.wrap(action));
   return [is, undefined];
 }
 
-export function instanceGet(is: AnyIS, methodName: string) {
+export function instanceGet(is: AnyEvent, methodName: string) {
   is = Object.create(is); // was .clone();
   is.actionMethod = methodName;
   return [is, assignArgsThen(undefined)];
 }
 
 export function assignArgsThen(next?: Function) {
-  return (is: AnyIS, ...args: any[]) => {
+  return (is: AnyEvent, ...args: any[]) => {
     is = Object.create(is); // was .clone();
     is.actionArgs = args; // TODO remove jp?
     return [is, next];
@@ -77,5 +77,5 @@ export function assignArgsThen(next?: Function) {
 }
 
 export function skip(next: Function) { // TODO unexport
-  return (is: AnyIS) => [is, next];
+  return (is: AnyEvent) => [is, next];
 }

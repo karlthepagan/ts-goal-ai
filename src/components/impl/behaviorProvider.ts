@@ -13,6 +13,7 @@ export default function registerBehaviorProvider(em: EventRegistry) {
   if (commands.debugBuilders) {
     debugger; // Commands.debugBuilders = true
   }
+  debugger; // REMOVE
 
   em.intercept(SpawnState).after(i => i.createCreep).wait(1).fireEvent("spawn");
 

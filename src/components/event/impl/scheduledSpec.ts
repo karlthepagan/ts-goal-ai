@@ -1,4 +1,4 @@
-import InterceptorSpec from "./interceptorSpec";
+import EventSpec from "./interceptorSpec";
 import InterceptorService from "./interceptorService";
 import Joinpoint from "../api/joinpoint";
 
@@ -6,12 +6,12 @@ import Joinpoint from "../api/joinpoint";
  * @param I - captured? joinpoint's instance type
  * @param T - captured? joinpoint's return value
  */
-export default class ScheduleSpec<I, T> extends InterceptorSpec<I, T> {
+export default class ScheduleSpec<I, T> extends EventSpec<I, T> {
   public relativeTime: number;
 
   constructor() {
     super();
-    this.callState = InterceptorSpec.AFTER_CALL;
+    this.callState = EventSpec.AFTER_CALL;
   }
 
   // context gives us a handle on scheduler, which we use to register the event
@@ -20,7 +20,7 @@ export default class ScheduleSpec<I, T> extends InterceptorSpec<I, T> {
     return false; // never stop execution for scheduled events
   }
 
-  public clone<R extends InterceptorSpec<I, T>>(into?: R): R {
+  public clone<R extends EventSpec<I, T>>(into?: R): R {
     let covariant: ScheduleSpec<I, T> = into === undefined ? new ScheduleSpec<I, T>() : into as any;
     covariant = super.clone(covariant) as any;
     covariant.relativeTime = this.relativeTime;

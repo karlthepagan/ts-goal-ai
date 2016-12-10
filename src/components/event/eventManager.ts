@@ -2,7 +2,7 @@ import Named from "../named";
 import {EventRegistry} from "./api/index";
 import ProxyChainBuilder from "./impl/proxyChainBuilder";
 import {registerBehavior, scheduleExec} from "./behaviorContext";
-import {AnyIS, default as InterceptorSpec} from "./impl/interceptorSpec";
+import {AnyEvent, default as EventSpec} from "./impl/interceptorSpec";
 import Joinpoint from "./api/joinpoint";
 import {eventSelectorGet} from "./api/eventSpecBuilder";
 import {whenClosureGet} from "./api/interceptorSpecBuilders";
@@ -11,8 +11,8 @@ import ScheduleSpec from "./impl/scheduledSpec";
 import * as F from "../functions";
 
 export default class EventManager implements EventRegistry {
-  private _events = new ProxyChainBuilder<AnyIS>(
-    (value: AnyIS, methodName: string) => {
+  private _events = new ProxyChainBuilder<AnyEvent>(
+    (value: AnyEvent, methodName: string) => {
       if (value === undefined) {
         return eventSelectorGet(methodName);
       } else {
@@ -27,10 +27,10 @@ export default class EventManager implements EventRegistry {
     }
   );
 
-  private _intercepts = new ProxyChainBuilder<AnyIS>(
-    (initial: AnyIS, constructor: Constructor<any>) => { // intercept
+  private _intercepts = new ProxyChainBuilder<AnyEvent>(
+    (initial: AnyEvent, constructor: Constructor<any>) => { // intercept
       initial = initial;
-      const is = new InterceptorSpec<any, any>();
+      const is = new EventSpec<any, any>();
       is.definition = new Joinpoint<any, any>(constructor.name, "?");
       is.targetConstructor = constructor;
       return [is, whenClosureGet];

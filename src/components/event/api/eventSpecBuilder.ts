@@ -1,5 +1,5 @@
 import * as Builders from "./builders";
-import {AnyIS, default as InterceptorSpec} from "../impl/interceptorSpec";
+import {AnyEvent, default as EventSpec} from "../impl/interceptorSpec";
 import Joinpoint from "./joinpoint";
 
 /**
@@ -16,15 +16,15 @@ empty<T extends CreepState|OwnedStructure>(): WhenEvent<T, OnEnergy<T, void>>;
 move(): WhenEvent<CreepState, OnMove<void>>;
 };
 */
-export function eventSelectorGet(name: string): [AnyIS, Function] { // TODO where called from?
-  const is = new InterceptorSpec<any, any>();
+export function eventSelectorGet(name: string): [AnyEvent, Function] { // TODO where called from?
+  const is = new EventSpec<any, any>();
   is.definition = new Joinpoint<any, any>("__events__", name, "?");
-  is.callState = InterceptorSpec.AFTER_CALL;
+  is.callState = EventSpec.AFTER_CALL;
   // is.targetConstructor = constructor; // TODO event typing
   return [is, eventSelectorApply];
 }
 
-function eventSelectorApply(is: AnyIS) { // ignored args
+function eventSelectorApply(is: AnyEvent) { // ignored args
   return [is, whenEventGet];
 }
 /*
@@ -33,7 +33,7 @@ function eventSelectorApply(is: AnyIS) { // ignored args
  ofAll(): Action<CALLBACK, INST, EventSelector>;
  occursAt(relativeTime: number, instance: INST): Action<CALLBACK, INST, EventSelector>;
  */
-function whenEventGet(is: AnyIS, when: string) {
+function whenEventGet(is: AnyEvent, when: string) {
   when = when; // TODO start filter
   switch (when) {
     case "of":
@@ -53,7 +53,7 @@ function whenEventGet(is: AnyIS, when: string) {
   return [is, whenApply];
 }
 
-function whenApply(is: AnyIS, args: any[]) {
+function whenApply(is: AnyEvent, args: any[]) {
   args = args; // TODO implement whenApply
   return [is, Builders.actionGet(eventSelectorGet)];
 }

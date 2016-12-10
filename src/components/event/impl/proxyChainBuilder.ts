@@ -1,5 +1,5 @@
 import * as F from "../../functions";
-import {AnyIS} from "./interceptorSpec";
+import {AnyEvent} from "./interceptorSpec";
 
 const _terminal: any = {
   callAnd: 2,
@@ -8,8 +8,8 @@ const _terminal: any = {
   fireEvent: 2,
 };
 
-type StackHandler<O extends AnyIS> = (value: O, ...push: any[]) => [O, Function];
-type TerminalCallback<O extends AnyIS> = (spec: O) => void;
+type StackHandler<O extends AnyEvent> = (value: O, ...push: any[]) => [O, Function];
+type TerminalCallback<O extends AnyEvent> = (spec: O) => void;
 
 interface Accumulator {
   stack: any;
@@ -37,7 +37,7 @@ function newTarget(last?: Accumulator, push?: any[], terminal?: number): Accumul
   return accumulator;
 }
 
-export default class ProxyChainBuilder<O extends AnyIS> implements ProxyHandler<Accumulator> {
+export default class ProxyChainBuilder<O extends AnyEvent> implements ProxyHandler<Accumulator> {
   private _stackHandler: StackHandler<O>;
   private _callback: TerminalCallback<O>;
 

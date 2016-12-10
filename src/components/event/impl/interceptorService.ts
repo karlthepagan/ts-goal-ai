@@ -1,8 +1,8 @@
 import {log} from "../../support/log";
 import State from "../../state/abstractState";
 import Joinpoint from "../api/joinpoint";
-import InterceptorSpec from "./interceptorSpec";
-import {AnyIS} from "./interceptorSpec";
+import EventSpec from "./interceptorSpec";
+import {AnyEvent} from "./interceptorSpec";
 import * as F from "../../functions";
 import {botMemory} from "../../../config/config";
 import ScheduleSpec from "./scheduledSpec";
@@ -10,8 +10,8 @@ import Named from "../../named";
 import {interceptorService} from "../behaviorContext";
 import {getType} from "../../functions";
 
-type ClassSpec<T extends InterceptorSpec<any, any>> = { [methodName: string]: T[] };
-export type SpecMap<T extends InterceptorSpec<any, any>> = { [className: string]: ClassSpec<T> };
+type ClassSpec<T extends EventSpec<any, any>> = { [methodName: string]: T[] };
+export type SpecMap<T extends EventSpec<any, any>> = { [className: string]: ClassSpec<T> };
 
 interface EventMemory {
   /**
@@ -31,7 +31,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     return interceptorService; // TODO singleton
   }
 
-  private _interceptors: SpecMap<AnyIS>[] = [{}, {}, {}];
+  private _interceptors: SpecMap<AnyEvent>[] = [{}, {}, {}];
   private _dispatchTime: number|undefined;
 
   public className(): string {
@@ -52,7 +52,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
    * @param name - descirbes the builder
    * @param spec - test input was like [[createCreep],[],[ofAll],[],[apply],[function]]
    */
-  public register(name: string, spec: AnyIS) {
+  public register(name: string, spec: AnyEvent) {
     name = name;
     if (!spec.isRegisterable()) {
       debugger; // invalid spec
@@ -61,7 +61,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     // log.debug("register", name, spec.callState, spec.definition.className, spec.definition.method);
     const specs = F.expand(
       [ spec.callState, spec.definition.className, spec.definition.method ],
-      this._interceptors, true) as AnyIS[];
+      this._interceptors, true) as AnyEvent[];
     specs.push(spec);
   }
 
@@ -122,7 +122,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     if (!jp.isReturned()) {
       debugger; // jp not captured before call
     }
-    const interceptors = this.getInterceptors(jp, InterceptorSpec.AFTER_CALL);
+    const interceptors = this.getInterceptors(jp, EventSpec.AFTER_CALL);
     if (interceptors === undefined || interceptors.length === 0) {
       return jp.returnValue; // TODO apply within?
     }
@@ -145,9 +145,10 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
   public scheduleExec<A, B>(spec: ScheduleSpec<A, B>, jp?: Joinpoint<A, B>) {
     const scheduledTick = spec.relativeTime + F.elvis(this.dispatchTime(), Game.time);
 
+    debugger;
     const taskList = F.expand(
       [ "timeline", scheduledTick, spec.definition.className, spec.definition.method],
-      this.eventMemory(), true) as AnyIS[];
+      this.eventMemory(), true) as AnyEvent[];
 
     const event = spec.clone() as ScheduleSpec<A, B>;
     // this is a directly scheduled event on a specific instance (which is set upstream of this method)
@@ -170,20 +171,20 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     const timeline = F.expand([ "timeline" ], this.eventMemory());
 
     while (last++ < time) {
-      let tick = timeline["" + last] as SpecMap<AnyIS>;
+      let tick = timeline["" + last] as SpecMap<AnyEvent>;
       if (tick !== undefined) {
         for (const className in tick) {
-          const classSpec: ClassSpec<AnyIS> = tick[className];
+          const classSpec: ClassSpec<AnyEvent> = tick[className];
           for (const methodName in classSpec) {
-            const tasks: AnyIS[] = classSpec[methodName];
+            const tasks: AnyEvent[] = classSpec[methodName];
             for (let i = 0; i < tasks.length; i++) {
               const task = tasks[i];
-              Object.setPrototypeOf(task, InterceptorSpec.prototype);
+              Object.setPrototypeOf(task, EventSpec.prototype);
               Object.setPrototypeOf(task.definition, Joinpoint.prototype);
               const jp = task.definition.clone();
               debugger; // REMOVE ME event loop break
               jp.target = State.vright(jp.className, jp.objectId as string);
-              // InterceptorSpec invoke is immediate execution
+              // EventSpec invoke is immediate execution
               // ScheduleSpec invoke will re-schedule when invoked
               if (!task.isInvokable()) {
                 debugger; // task not invokable
@@ -207,7 +208,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
       debugger; // jp not captured before call
     }
     // : BeforeCallback<any> = (className, objectId, func, result, args) => {
-    const interceptors = this.getInterceptors(jp, InterceptorSpec.BEFORE_CALL);
+    const interceptors = this.getInterceptors(jp, EventSpec.BEFORE_CALL);
     if (interceptors === undefined || interceptors.length === 0) {
       return jp.proceed(); // TODO apply within?
     }
@@ -227,7 +228,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     if (!jp.isFailed()) {
       debugger; // jp not captured before call
     }
-    const interceptors = this.getInterceptors(jp, InterceptorSpec.AFTER_FAIL);
+    const interceptors = this.getInterceptors(jp, EventSpec.AFTER_FAIL);
     if (interceptors === undefined || interceptors.length === 0) {
       throw jp.thrownException;
     }
@@ -243,8 +244,8 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     throw jp.thrownException;
   }
 
-  protected getInterceptors(jp: Joinpoint<any, any>, callState: number): InterceptorSpec<any, any>[] {
-    return F.expand([ callState, jp.className, jp.method ], this._interceptors, true) as AnyIS[];
+  protected getInterceptors(jp: Joinpoint<any, any>, callState: number): EventSpec<any, any>[] {
+    return F.expand([ callState, jp.className, jp.method ], this._interceptors, true) as AnyEvent[];
   }
 
   // TODO method to look for the ticks remaining to and subject of a pending event

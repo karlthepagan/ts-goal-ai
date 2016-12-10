@@ -6,9 +6,9 @@ import {getType} from "../../functions";
 import getConstructor from "../../types";
 import NAME_CAPTURE from "./nameCapture";
 
-export type AnyIS = InterceptorSpec<any, any>;
+export type AnyEvent = EventSpec<any, any>;
 
-class InterceptorSpec<I, T> {
+class EventSpec<I, T> {
   public static BEFORE_CALL = 0; // TODO enum?
   public static AFTER_CALL = 1;
   public static AFTER_FAIL = 2;
@@ -22,10 +22,10 @@ class InterceptorSpec<I, T> {
   public instanceId: string;
   public actionMethod: string;
 
-  public clone<R extends InterceptorSpec<I, T>>(into?: R): R {
+  public clone<R extends EventSpec<I, T>>(into?: R): R {
     // TODO THIS IS SO COOL, instead of literal clone, just use a prototype!!!!
     if (into === undefined) {
-      into = new InterceptorSpec<I, T>() as R;
+      into = new EventSpec<I, T>() as R;
     }
     if (this.definition === undefined) {
       debugger; // spec definition is undef
@@ -70,14 +70,14 @@ class InterceptorSpec<I, T> {
     inst[this.actionMethod](jp, ...this.actionArgs);
 
     switch (this.callState) { // TODO abstraction
-      case InterceptorSpec.BEFORE_CALL:
+      case EventSpec.BEFORE_CALL:
         // TODO call intercept and process it
         break;
 
-      case InterceptorSpec.AFTER_CALL:
+      case EventSpec.AFTER_CALL:
         break;
 
-      case InterceptorSpec.AFTER_FAIL:
+      case EventSpec.AFTER_FAIL:
         break;
 
       default:
@@ -104,4 +104,4 @@ class InterceptorSpec<I, T> {
   }
 }
 
-export default InterceptorSpec;
+export default EventSpec;
