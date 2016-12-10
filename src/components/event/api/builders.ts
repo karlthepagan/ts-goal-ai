@@ -8,7 +8,7 @@ export function actionGet(select?: Function) {
   return (is: AnyIS, actionName: string) => {
     switch (actionName) {
       case "fireEvent":
-        is = is.clone();
+        is = Object.create(is); // was .clone();
         is.setAction(interceptorService, i => i.triggerBehaviors);
         return [is, assignArgsThen(actionGet(select))];
 
@@ -57,20 +57,20 @@ export function waitApply(next: Function) {
 
 export function actionApplyApply(is: AnyIS, action: OnIntercept<any, any>) {
   // anonymous function cache
-  is = is.clone();
+  is = Object.create(is); // was .clone();
   is.setAction(AnonCache.instance, AnonCache.instance.wrap(action));
   return [is, undefined];
 }
 
 export function instanceGet(is: AnyIS, methodName: string) {
-  is = is.clone();
+  is = Object.create(is); // was .clone();
   is.actionMethod = methodName;
   return [is, assignArgsThen(undefined)];
 }
 
 export function assignArgsThen(next?: Function) {
   return (is: AnyIS, ...args: any[]) => {
-    is = is.clone();
+    is = Object.create(is); // was .clone();
     is.actionArgs = args; // TODO remove jp?
     return [is, next];
   };

@@ -160,6 +160,7 @@ export interface When<TYPE> {
 }
 
 export interface WhenClosure<INST, API> {
+  // TODO move intercept to INST?
   before(method: (i: API) => Function): Action<OnIntercept<API, void>, INST, WhenClosure<INST, API>>;
   after(method: (i: API) => Function): Action<OnIntercept<API, any>, INST, WhenClosure<INST, API>>;
   failure(method: (i: API) => Function): Action<OnIntercept<API, void>, INST, WhenClosure<INST, API>>;
