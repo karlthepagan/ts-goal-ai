@@ -291,7 +291,7 @@ export default class CreepState extends State<Creep> {
     return Math.ceil(this.maxMovePenalty(terrain) * CARRY_RECIPROCAL) + this.minMoveFatigue(terrain);
   }
 
-  public touching(jp: Joinpoint<Creep, void>, fromPos: RoomPosition, forwardDir: number) {
+  public touching(jp: Joinpoint<CreepState, void>, fromPos: RoomPosition, forwardDir: number) {
     jp = jp;
     fromPos = fromPos;
     forwardDir = forwardDir;

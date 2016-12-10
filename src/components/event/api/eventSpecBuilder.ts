@@ -1,6 +1,5 @@
 import * as Builders from "./builders";
 import {AnyEvent, default as EventSpec} from "../impl/eventSpec";
-import Joinpoint from "./joinpoint";
 
 /**
  * @see "./index.d.ts":EventSelector
@@ -17,11 +16,8 @@ move(): WhenEvent<CreepState, OnMove<void>>;
 };
 */
 export function eventSelectorGet(name: string): [AnyEvent, Function] { // TODO where called from?
-  const is = new EventSpec<any, any>();
-  is.definition = new Joinpoint<any, any>("__events__", name, "?");
-  is.callState = EventSpec.AFTER_CALL;
-  // is.targetConstructor = constructor; // TODO event typing
-  return [is, eventSelectorApply];
+  const es = EventSpec.fromEventName(name);
+  return [es, eventSelectorApply];
 }
 
 function eventSelectorApply(is: AnyEvent) { // ignored args

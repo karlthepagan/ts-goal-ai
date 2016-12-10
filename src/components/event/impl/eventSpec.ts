@@ -13,6 +13,14 @@ class EventSpec<I, T> {
   public static AFTER_CALL = 1;
   public static AFTER_FAIL = 2;
 
+  public static fromEventName(name: string) {
+    const is = new EventSpec<any, any>();
+    is.definition = new Joinpoint<any, any>("__events__", name, "?");
+    is.callState = EventSpec.AFTER_CALL;
+    // is.targetConstructor = constructor; // TODO event typing
+    return is;
+  }
+
   public definition: Joinpoint<I, T>; // TODO this is basically the "source" of the event/call/intercept
   public targetConstructor?: Constructor<I>;
   public callState: number;
@@ -62,29 +70,11 @@ class EventSpec<I, T> {
   }
 
   public invoke(jp: Joinpoint<any, any>, context: InterceptorService): boolean {
-    jp = jp; // jp is the actual call invocation
     context = context; // context used to schedule dependent actions
     const inst = this.resolve() as any;
-
-    // TODO break this out and call in switch (for beforecall handling)
     inst[this.actionMethod](jp, ...this.actionArgs);
 
-    switch (this.callState) { // TODO abstraction
-      case EventSpec.BEFORE_CALL:
-        // TODO call intercept and process it
-        break;
-
-      case EventSpec.AFTER_CALL:
-        break;
-
-      case EventSpec.AFTER_FAIL:
-        break;
-
-      default:
-        throw new Error("illegal callState: " + this.callState);
-    }
-
-    return false; // TODO return true indicates filtering, stop all JP processing
+    return false; // never interrupt execution for normal events TODO preventDefault?
   }
 
   public setAction<T extends Named>(instance: T, method: (i: T) => OnIntercept<I, T> ): void {
@@ -99,6 +89,7 @@ class EventSpec<I, T> {
   }
 
   protected resolve(): I {
+    // TODO resolve the wrapped call
     const ctor = getConstructor(this.instanceType) as any;
     return ctor.vright(this.instanceId) as any; // TODO silly convention
   }

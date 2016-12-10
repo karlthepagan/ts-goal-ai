@@ -45,7 +45,7 @@ export function waitApply(next: Function) {
       debugger; // illegal relativeTime
       throw new Error("illegal relativeTime=NaN");
     }
-    if (relativeTime < 1) {
+    if (relativeTime < 1 || relativeTime === undefined || relativeTime === null) {
       throw new Error("illegal relativeTime=" + relativeTime);
     }
 

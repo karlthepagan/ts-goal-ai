@@ -4,30 +4,22 @@ import Joinpoint from "../event/api/joinpoint";
 import CreepState from "../state/creepState";
 import RoomState from "../state/roomState";
 import {log} from "../support/log";
-import {botMemory} from "../../config/config";
 // import * as F from "../functions";
 
 export default function registerBehaviorProvider(em: EventRegistry) {
-  const commands = botMemory() as Commands;
-
-  if (commands.debugBuilders) {
-    debugger; // Commands.debugBuilders = true
-  }
-  debugger; // REMOVE
-
-  em.intercept(SpawnState).after(i => i.createCreep).wait(1).fireEvent("spawn");
+  em.intercept(SpawnState).after(i => i.createCreep).wait(1).fireEvent("spawn"); // TODO NOW => fireEvent passes state but
 
   em.when().aggro().ofAll().apply((jp: Joinpoint<RoomState, void>) => {
     jp = jp;
     log.debug("AGGRO! TODO find turrets and FIRE! later do enemy priority scoring & elections");
   });
 
-  em.when().spawn().ofAll().apply((jp: Joinpoint<Creep, string>) => {
+  em.when().spawn().ofAll().apply((jp: Joinpoint<CreepState, string>) => {
     // const creep = jp.target as CreepState; // TODO implement event domain target resolution
     const time = jp.args[0].length * 3; // TODO get event source? Spawn.spawning.remainingTime?
     const creepName = jp.returnValue as string;
     const apiCreep = Game.creeps[creepName];
-    const creep = CreepState.left(apiCreep);
+    const creep = CreepState.left(apiCreep); // TODO NOW ? use jp.target?
 
     const whenBorn = em.schedule(time - 1, creep); // jp in this builder is undefined!
     // TODO consider assigning jp into the schedule chain? SRC => DST stuff!!!!
@@ -52,9 +44,9 @@ export default function registerBehaviorProvider(em: EventRegistry) {
     // trying.dir = jp.args[0];
     // trying.pos = jp.target.pos;
   });
-  const moveTo = em.intercept(CreepState).after(i => i.moveTo);
+  const moveTo = em.intercept(CreepState).after(i => i.moveTo); // TODO NOW <= apply passes the literal jointpoint
   const moveByPath = em.intercept(CreepState).after(i => i.moveByPath);
-  [moveTo, moveByPath].map(i => i.apply((jp: Joinpoint<Creep, void>) => {
+  [moveTo, moveByPath].map(i => i.apply((jp: Joinpoint<CreepState, void>) => {
     debugger;
     if (jp.target === undefined) {
       debugger; // target undefined after moveTo
@@ -65,7 +57,7 @@ export default function registerBehaviorProvider(em: EventRegistry) {
     // trying.pos = jp.target.pos;
   }));
   [move, moveTo, moveByPath].map(i => {
-    i.wait(1).apply((jp: Joinpoint<Creep, void>) => {
+    i.wait(1).apply((jp: Joinpoint<CreepState, void>) => {
       debugger;
       if (jp.target === undefined) {
         debugger; // target undefined, 1 tick after move

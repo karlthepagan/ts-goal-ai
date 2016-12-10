@@ -8,7 +8,7 @@ import {botMemory} from "../../../config/config";
 import ScheduleSpec from "./scheduledSpec";
 import Named from "../../named";
 import {interceptorService} from "../behaviorContext";
-import {getType} from "../../functions";
+import InterceptorSpec from "./interceptorSpec";
 
 type ClassSpec<T extends EventSpec<any, any>> = { [methodName: string]: T[] };
 export type SpecMap<T extends EventSpec<any, any>> = { [className: string]: ClassSpec<T> };
@@ -67,17 +67,12 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
   public get(target: State<any>, p: PropertyKey, receiver: any): any {
     receiver = receiver;
-    const method = p as string; // TODO really?
-
     if (target.resolve()) {
       const subject = target.subject();
       const value = subject[p];
 
       if (typeof value === "function") {
-        const className = getType(subject);
-        const objectId = target.getId();
-        const jp = new Joinpoint<any, any>(className, method, objectId);
-        jp.target = subject;
+        const jp = InterceptorSpec.joinpointFor(target, p as string);
 
         // function proxy intercept the call
         return new Proxy(value, {
@@ -101,17 +96,14 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
       }
     } else {
       // TODO queue unresolvable? return no-op
-      throw Error("cannot resolve class=" + target.className() + " id=" + target.getId() + " for get=" + method);
+      throw Error("cannot resolve class=" + target.className() + " id=" + target.getId() + " for get=" + p.toString());
     }
   }
 
-  // TODO should InterspectorSpec pollute this API?
   public triggerBehaviors(jp: Joinpoint<any, any>, eventName: string) {
-    jp = jp;
-    // log.debug("trigger behaviors event=", eventName);
-    // construct event
-    const event = new Joinpoint<any, any>("__events__", eventName, "?"); // TODO objectId for definition?
-    // jp.target; // TODO this is the event source, inject it into event?
+    // TODO reconcile jp info from event definition? maybe EventSepc would help
+    const event = new Joinpoint<any, any>("__events__", eventName, jp.objectId);
+    event.target = jp.target; // this is the event source, inject it into event!
     event.returnValue = jp.returnValue;
     event.args = jp.args;
 
@@ -143,13 +135,6 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
    * @param jp method invocation triggering this schedule spec
    */
   public scheduleExec<A, B>(spec: ScheduleSpec<A, B>, jp?: Joinpoint<A, B>) {
-    const scheduledTick = spec.relativeTime + F.elvis(this.dispatchTime(), Game.time);
-
-    debugger;
-    const taskList = F.expand(
-      [ "timeline", scheduledTick, spec.definition.className, spec.definition.method],
-      this.eventMemory(), true) as AnyEvent[];
-
     const event = spec.clone() as ScheduleSpec<A, B>;
     // this is a directly scheduled event on a specific instance (which is set upstream of this method)
     if (jp !== undefined) {
@@ -159,6 +144,20 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
       event.definition.returnValue = jp.returnValue;
     }
     event.unresolve();
+    jp = event.definition;
+
+    const scheduledTick = spec.relativeTime + F.elvis(this.dispatchTime(), Game.time);
+    if (isNaN(scheduledTick)) {
+      throw new Error("NaN schedule time" + jp.className + "[" + jp.objectId + "]" + "." + jp.method
+        + "(" + JSON.stringify(jp.args) + ")");
+    }
+
+    const taskList = F.expand(
+      [ "timeline", scheduledTick, spec.definition.className, spec.definition.method],
+      this.eventMemory(), true) as AnyEvent[];
+
+    delete event.relativeTime; // relative time is used and discarded
+
     taskList.push(event);
   }
 

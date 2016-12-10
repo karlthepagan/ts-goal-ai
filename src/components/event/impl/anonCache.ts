@@ -16,7 +16,16 @@ export default class AnonCache extends Array implements Named {
   }
 
   public wrap<T extends Function>(func: T): (i: any) => T {
-    const n = this.push(func) - 1;
-    return ((i: any) => i[n]) as any; // telling the nameCapture proxy what our index is
+    const i = this.allocate(func);
+    return ((n: any) => n[i]) as any; // telling the nameCapture proxy what our index is
+  }
+
+  public allocate(func: Function): number {
+    for (let i = this.length - 1; i >= 0; i--) {
+      if (this[i] === func) {
+        return i;
+      }
+    }
+    return this.push(func) - 1;
   }
 }

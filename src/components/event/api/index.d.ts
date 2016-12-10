@@ -161,9 +161,9 @@ export interface When<TYPE> {
 
 export interface WhenClosure<INST, API> {
   // TODO move intercept to INST?
-  before(method: (i: API) => Function): Action<OnIntercept<API, void>, INST, WhenClosure<INST, API>>;
-  after(method: (i: API) => Function): Action<OnIntercept<API, any>, INST, WhenClosure<INST, API>>;
-  failure(method: (i: API) => Function): Action<OnIntercept<API, void>, INST, WhenClosure<INST, API>>;
+  before(method: (i: API) => Function): Action<OnIntercept<INST, void>, INST, WhenClosure<INST, API>>;
+  after(method: (i: API) => Function): Action<OnIntercept<INST, any>, INST, WhenClosure<INST, API>>;
+  failure(method: (i: API) => Function): Action<OnIntercept<INST, void>, INST, WhenClosure<INST, API>>;
   C(): WhenClosure<INST, API>; // open paren TODO difficult
 }
 

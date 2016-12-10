@@ -1,12 +1,34 @@
 import EventSpec from "./eventSpec";
 import InterceptorService from "./interceptorService";
 import Joinpoint from "../api/joinpoint";
+import {getType} from "../../functions";
+import Named from "../../named";
 
 /**
  * @param I - captured? joinpoint's instance type
  * @param T - captured? joinpoint's return value
  */
 export default class ScheduleSpec<I, T> extends EventSpec<I, T> {
+  public static fromTimeAndInstance(relativeTime: number, instance: Named) {
+    // instance param becomes the parameter in my joinpoint
+    if (isNaN(relativeTime)) {
+      debugger; // illegal relativeTime
+      throw new Error("illegal relativeTime");
+    }
+    if (relativeTime < 1) {
+      throw new Error("illegal relativeTime=" + relativeTime);
+    }
+
+    // dst
+    const is = new ScheduleSpec<any, any>();
+    is.relativeTime = relativeTime; // schedule case is like a no-op followed by .wait(number)
+    is.instanceType = getType(instance);
+    is.instanceId = instance.getId();
+    // src (same as dst??) TODO this could come from builder
+    is.definition = new Joinpoint<any, any>(is.instanceType, "__events__", is.instanceId);
+    return is;
+  }
+
   public relativeTime: number;
 
   constructor() {
@@ -29,6 +51,6 @@ export default class ScheduleSpec<I, T> extends EventSpec<I, T> {
 
   public unresolve() {
     super.unresolve();
-    delete this.relativeTime;
+    // keep relative time, in the case of "wait" the schedule trigger occurs after another event
   }
 }

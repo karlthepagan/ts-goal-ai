@@ -2,13 +2,13 @@ import Named from "../named";
 import {EventRegistry} from "./api/index";
 import ProxyChainBuilder from "./impl/proxyChainBuilder";
 import {registerBehavior, scheduleExec} from "./behaviorContext";
-import {AnyEvent, default as EventSpec} from "./impl/eventSpec";
-import Joinpoint from "./api/joinpoint";
+import {AnyEvent} from "./impl/eventSpec";
 import {eventSelectorGet} from "./api/eventSpecBuilder";
 import {whenClosureGet} from "./api/interceptorSpecBuilders";
 import {actionGet} from "./api/builders";
 import ScheduleSpec from "./impl/scheduledSpec";
-import * as F from "../functions";
+import InterceptorSpec from "./impl/interceptorSpec";
+import State from "../state/abstractState";
 
 export default class EventManager implements EventRegistry {
   private _events = new ProxyChainBuilder<AnyEvent>(
@@ -28,41 +28,23 @@ export default class EventManager implements EventRegistry {
   );
 
   private _intercepts = new ProxyChainBuilder<AnyEvent>(
-    (initial: AnyEvent, constructor: Constructor<any>) => { // intercept
+    (initial: AnyEvent, constructor: Constructor<State<any>>) => { // intercept
       initial = initial;
-      const is = new EventSpec<any, any>();
-      is.definition = new Joinpoint<any, any>(constructor.name, "?");
-      is.targetConstructor = constructor;
+      const is = InterceptorSpec.fromConstructor(constructor);
       return [is, whenClosureGet];
     },
     (spec) => {
       // cleanup, erase constructor info
       const is = spec.clone();
-      delete is.targetConstructor;
+      is.unresolve();
       registerBehavior("intercept", is);
     }
   );
 
   private _scheduler = new ProxyChainBuilder<ScheduleSpec<any, any>>(
     (initial: ScheduleSpec<any, any>, relativeTime: number, instance: Named) => {
-      // TODO use instance param? YES it becomes the parameter in my joinpoint
-      // waitApply(actionGet(undefined))(initial, relativeTime)
-      if (isNaN(relativeTime)) {
-        debugger; // illegal relativeTime
-        throw new Error("illegal relativeTime");
-      }
-      if (relativeTime < 1) {
-        throw new Error("illegal relativeTime=" + relativeTime);
-      }
-
       initial = initial;
-      // dst
-      const is = new ScheduleSpec<any, any>();
-      is.relativeTime = relativeTime; // schedule case is like a no-op followed by .wait(number)
-      is.instanceType = F.getType(instance);
-      is.instanceId = instance.getId();
-      // src (same as dst??) TODO this could come from builder
-      is.definition = new Joinpoint<any, any>(is.instanceType, "__events__", is.instanceId);
+      const is = ScheduleSpec.fromTimeAndInstance(relativeTime, instance);
       return [is, actionGet(undefined)];
     },
     (spec) => {
@@ -70,8 +52,8 @@ export default class EventManager implements EventRegistry {
       // TODO delete spec.targetConstructor; // will be cleaned up in next action
       // const relativeTime = spec.relativeTime;
       spec = spec.clone() as any;
-      delete spec.targetConstructor;
-      spec.actionArgs.splice(0, 1);
+      spec.unresolve();
+      spec.actionArgs.splice(0, 1); // TODO cleanup
       scheduleExec("scheduled", spec);
     }
   );

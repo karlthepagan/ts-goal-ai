@@ -17,6 +17,7 @@ import {registerType, registerTypeAs} from "./types";
 import registerBehaviorProvider from "./impl/behaviorProvider";
 import InterceptorService from "./event/impl/interceptorService";
 import AnonCache from "./event/impl/anonCache";
+import {botMemory} from "../config/config";
 
 export const bootstrap: (() => void)[] = [];
 
@@ -48,9 +49,13 @@ bootstrap.push(() => {
 });
 
 bootstrap.push(() => {
-  // log.debug("registering event builders");
-
   State.setEventRegistry(eventManager);
+
+  const commands = botMemory() as Commands;
+
+  if (commands.debugBuilders) {
+    debugger; // Commands.debugBuilders = true
+  }
 
   registerBehaviorProvider(eventManager);
 });
