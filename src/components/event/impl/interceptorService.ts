@@ -58,7 +58,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
       debugger; // invalid spec
       throw new Error("invalid spec=" + JSON.stringify(spec));
     }
-    // log.debug("register", name, spec.callState, spec.definition.className, spec.definition.method);
+    // log.debug("register", name, spec.callState, spec.definition.getMatchingClass(), spec.definition.method);
     const specs = F.expand(
       [ spec.callState, spec.definition.className, spec.definition.method ],
       this._interceptors, true) as AnyEvent[];
@@ -148,12 +148,12 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
     const scheduledTick = spec.relativeTime + F.elvis(this.dispatchTime(), Game.time);
     if (isNaN(scheduledTick)) {
-      throw new Error("NaN schedule time" + jp.className + "[" + jp.objectId + "]" + "." + jp.method
+      throw new Error("NaN schedule time" + jp.getMatchingClass() + "[" + jp.objectId + "]" + "." + jp.method
         + "(" + JSON.stringify(jp.args) + ")");
     }
 
     const taskList = F.expand(
-      [ "timeline", scheduledTick, spec.definition.className, spec.definition.method],
+      [ "timeline", scheduledTick, spec.definition.getMatchingClass(), spec.definition.method],
       this.eventMemory(), true) as AnyEvent[];
 
     delete event.relativeTime; // relative time is used and discarded
@@ -172,8 +172,8 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     while (last++ < time) {
       let tick = timeline["" + last] as SpecMap<AnyEvent>;
       if (tick !== undefined) {
-        for (const className in tick) {
-          const classSpec: ClassSpec<AnyEvent> = tick[className];
+        for (const category in tick) {
+          const classSpec: ClassSpec<AnyEvent> = tick[category];
           for (const methodName in classSpec) {
             const tasks: AnyEvent[] = classSpec[methodName];
             for (let i = 0; i < tasks.length; i++) {
@@ -201,7 +201,6 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     this._dispatchTime = undefined;
   }
 
-  // TODO mutate or simply return?
   protected beforeCall(jp: Joinpoint<any, any>): Function {
     if (!jp.isCaptured()) {
       debugger; // jp not captured before call
@@ -209,18 +208,18 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     // : BeforeCallback<any> = (className, objectId, func, result, args) => {
     const interceptors = this.getInterceptors(jp, EventSpec.BEFORE_CALL);
     if (interceptors === undefined || interceptors.length === 0) {
-      return jp.proceed(); // TODO apply within?
+      return jp.proceed();
     }
 
     for (let i = 0; i < interceptors.length; i++) {
       const interceptor = interceptors[i];
-      // TODO how to handle interceptor invoke decisions
+      // interceptor has full control over jp invocations
       if (interceptor.test(jp) && interceptor.invoke(jp, this)) {
         return jp.returnValue;
       }
     }
 
-    return jp.proceed(); // TODO apply within?
+    return jp.proceed();
   }
 
   protected afterFail(jp: Joinpoint<any, any>): any {
@@ -244,7 +243,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
   }
 
   protected getInterceptors(jp: Joinpoint<any, any>, callState: number): EventSpec<any, any>[] {
-    return F.expand([ callState, jp.className, jp.method ], this._interceptors, true) as AnyEvent[];
+    return F.expand([ callState, jp.getMatchingClass(), jp.method ], this._interceptors, true) as AnyEvent[];
   }
 
   // TODO method to look for the ticks remaining to and subject of a pending event

@@ -1,11 +1,12 @@
 export type AnyJP = Joinpoint<any, any>;
+import * as F from "../../functions";
 
 export default class Joinpoint<I, T> {
   public className: string;
   public objectId?: string;
   public target?: I;
-  // thiss to disambiguates event dispatch from source for events & intercepts
-  public targetType?: string;
+  // this disambiguates event dispatch from source for events & intercepts
+  public category?: string;
   public method: string;
   public args: any[];
   public proceedApply?: Function;
@@ -23,14 +24,24 @@ export default class Joinpoint<I, T> {
     if (into === undefined) {
       into = new Joinpoint<I, T>(this.className, this.method, this.objectId) as R;
     }
-    into.target = this.target;
+    if (this.category !== undefined) {
+      into.category = this.category;
+    }
+    if (this.target !== undefined) {
+      into.target = this.target;
+    }
     if (this.args !== undefined) {
       into.args = this.args.concat();
     }
-    into.proceedApply = this.proceedApply;
-    into.returnValue = this.returnValue;
-    into.thrownException = this.thrownException;
-    // into.source = this.source;
+    if (this.proceedApply !== undefined) {
+      into.proceedApply = this.proceedApply;
+    }
+    if (this.returnValue !== undefined) {
+      into.returnValue = this.returnValue;
+    }
+    if (this.thrownException !== undefined) {
+      into.thrownException = this.thrownException;
+    }
     return into;
   }
 
@@ -62,6 +73,16 @@ export default class Joinpoint<I, T> {
     return !(this.thrownException === undefined);
   }
 
+  public getMatchingClass(): string {
+    return F.elvis(this.category, this.className);
+  }
+
+  // public getInvocationClass(): string {
+    // for api intercepts this is the proceeding type
+    // for triggers following an intercept use the matching class
+    // for event triggers this is the materialized type
+  // }
+
   public proceed(): T {
     try {
       return this.returnValue = (this.proceedApply as Function).apply(this.target, this.args);
@@ -80,7 +101,7 @@ export default class Joinpoint<I, T> {
     return this as any;
   }
 
-  // TODO resolve takes targetType || className -> set target, method -> set proceedApply
+  // TODO resolve takes className -> set target, method -> set proceedApply - except for intercept proceed
 
   /**
    * throw out anything that won't survive memory

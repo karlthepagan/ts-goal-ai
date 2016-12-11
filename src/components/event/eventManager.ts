@@ -22,6 +22,7 @@ export default class EventManager implements EventRegistry {
     (spec) => {
       // cleanup, erase constructor info
       const is = spec.clone();
+      is.unresolve();
       delete is.targetConstructor;
       registerBehavior("event", is);
     }

@@ -10,7 +10,8 @@ export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements Pr
     const is = new InterceptorSpec<any, any>();
     is.definition = new Joinpoint<any, any>(constructor.name, "?");
     // jp.targetType is specified by the invocation
-    is.targetConstructor = constructor;
+    is.definition.category = constructor.name;
+    // is.targetConstructor = constructor; // TODO needed?
     return is;
   }
 
@@ -20,11 +21,11 @@ export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements Pr
   }
 
   public static joinpointFor(target: State<any>, method: string) {
-    const className = target.constructor.name; // constructor.name must match fromConstructor
     const objectId = target.getId();
-    const jp = new Joinpoint<any, any>(className, method, objectId);
-    jp.target = target.subject();
-    jp.targetType = getType(jp.target);
+    const subject = target.subject();
+    const jp = new Joinpoint<any, any>(getType(subject), method, objectId);
+    jp.target = subject;
+    jp.category = target.constructor.name; // constructor.name must match fromConstructor
     return jp;
   }
 

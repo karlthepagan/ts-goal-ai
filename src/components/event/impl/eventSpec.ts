@@ -25,7 +25,7 @@ class EventSpec<I, T> {
   public targetConstructor?: Constructor<I>;
   public callState: number;
   public actionArgs: any[] = [];
-  // TODO these be private? see eventManager.ts:_scheduler first arg (instanceType = instance.className())
+  // TODO these be private? see eventManager.ts:_scheduler first arg (instanceType = instance.className() / category?)
   public instanceType: string; // TODO this is basically the "destination" of the event/call/intercept
   public instanceId: string;
   public actionMethod: string;
