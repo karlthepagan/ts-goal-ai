@@ -181,7 +181,6 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
               Object.setPrototypeOf(task, EventSpec.prototype);
               Object.setPrototypeOf(task.definition, Joinpoint.prototype);
               const jp = task.definition.clone();
-              debugger; // REMOVE ME event loop break
               jp.target = State.vright(jp.className, jp.objectId as string);
               // EventSpec invoke is immediate execution
               // ScheduleSpec invoke will re-schedule when invoked
@@ -226,6 +225,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     if (!jp.isFailed()) {
       debugger; // jp not captured before call
     }
+    jp.unresolve(); // TODO conditional?
     const interceptors = this.getInterceptors(jp, EventSpec.AFTER_FAIL);
     if (interceptors === undefined || interceptors.length === 0) {
       throw jp.thrownException;

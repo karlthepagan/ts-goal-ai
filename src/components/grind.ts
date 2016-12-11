@@ -13,7 +13,7 @@ import LookForIterator from "./util/lookForIterator";
 import {FindCallback} from "./util/lookForIterator";
 import SpawnState from "./state/spawnState";
 import api from "./event/behaviorContext";
-import StructureState from "./state/structureState";
+import {isReal} from "./functions";
 
 const cachedIdleActions: { [id: string]: FindCallback<any> } = {};
 
@@ -228,10 +228,20 @@ export function doQuickTransfers(state: State<any>, ignore: any): void {
   if (state.isEnergyMover()) {
     // creeps can withdraw
     const creep = state as CreepState;
-    creep.touchedStorageIds().reject(F.onKeys(ignore)).map(StructureState.vright).value().forEach(c => {
-      debugger; // REMOVE ME touched storage ids
+    creep.touchedStorage().value().forEach(c => {
+      if (!isReal(ignore[c.getId()])) {
+        return;
+      }
+      debugger;
       c.resolve();
       api(creep).withdraw(c.subject(), RESOURCE_ENERGY);
+      doQuickTransfers(c, ignore);
+    });
+    state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).value().forEach(c => {
+      c.resolve();
+      api(c).transfer(state.subject(), RESOURCE_ENERGY);
+      // TODO don't ignore unless full?
+      ignore[c.getId()] = true;
       doQuickTransfers(c, ignore);
     });
   } else {
@@ -528,7 +538,6 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
             creep.say("💩", false); // poo
           }
 
-          debugger; // REMOVE ME moveTo
           const moveResult = api(creepState).moveTo(pos);
           if (moveResult !== 0) {
             log.debug("move failed", sourceState, "moveTo=", moveResult, creepState);

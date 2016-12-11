@@ -37,7 +37,7 @@ export default class LookForIterator<T> implements Iterable<boolean>, Iterator<b
               callbackFailure?: (found: any, callback?: FindCallback<T>) => boolean ) {
     this._start = pos;
     this._itr = new PositionIterable(pos);
-    this._minY = pos.y - maxDistance - 1;
+    this._minY = pos.y - maxDistance;
     this._findCallbacks = findCallbacks;
     this._thisArg = thisArg;
     this._callbackFailure = callbackFailure;

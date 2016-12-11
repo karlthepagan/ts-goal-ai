@@ -304,7 +304,7 @@ export default class CreepState extends State<Creep> {
 
     const newCreeps: string[] = [];
     const newEnergy: string[] = [];
-    const energyTypes: string[] = [];
+    const newTypes: string[] = [];
 
     const posToDir = F.posToDirection(selfpos);
     LookForIterator.search(selfpos, 1, this, [{
@@ -314,6 +314,7 @@ export default class CreepState extends State<Creep> {
         }
         const dir = posToDir(creep.pos);
         newCreeps[dir] = creep.id;
+        newTypes[dir] = "CreepState";
         return true;
       },
     }, {
@@ -322,7 +323,7 @@ export default class CreepState extends State<Creep> {
         const i = posToDir(struct.pos);
         switch (struct.structureType) {
           case STRUCTURE_SPAWN:
-            energyTypes[i] = struct.structureType;
+            newTypes[i] = struct.structureType;
           case STRUCTURE_CONTAINER:
           case STRUCTURE_EXTENSION:
           case STRUCTURE_STORAGE:
@@ -345,12 +346,13 @@ export default class CreepState extends State<Creep> {
     // TODO transact touch directions
     const oldCreeps = F.elvis(this.memory("touch").creep, []);
     const oldEnergy = F.elvis(this.memory("touch").energy, []);
+    const oldTypes = F.elvis(this.memory("touch").types, []);
 
     const self = this;
     const structs = changes(oldEnergy, newEnergy);
 
-    iterateNeighbors(structs.removed, dir => energyTypes[dir], "onPart", (dir) => [self, F.reverse(dir)]);
-    iterateNeighbors(structs.added, dir => energyTypes[dir], "onMeet", (dir) => [self, F.reverse(dir)]);
+    iterateNeighbors(structs.removed, dir => oldTypes[dir], "onPart", (dir) => [self, F.reverse(dir)]);
+    iterateNeighbors(structs.added, dir => newTypes[dir], "onMeet", (dir) => [self, F.reverse(dir)]);
 
     const creeps = changes(oldCreeps, newCreeps);
 
@@ -359,6 +361,7 @@ export default class CreepState extends State<Creep> {
 
     this.memory("touch").creep = newCreeps;
     this.memory("touch").energy = newEnergy;
+    this.memory("touch").types = newTypes;
   }
 
   public onPart(other: CreepState, direction: number) {
@@ -407,8 +410,10 @@ export default class CreepState extends State<Creep> {
     return true;
   }
 
-  public touchedStorageIds(): LoDashExplicitArrayWrapper<string> {
-    return _.chain(this.memory("touch.energy", true)).filter(F.isReal);
+  public touchedStorage(): LoDashExplicitArrayWrapper<State<any>> {
+    const types = this.memory("touch.types", true);
+    return _.chain(this.memory("touch.energy", true)).filter(F.isReal)
+      .map((s, i) => State.vright(types[i], s) as State<any>).filter(F.isReal);
   }
 
   protected _accessAddress() {

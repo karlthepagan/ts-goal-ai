@@ -58,4 +58,12 @@ _(Game.rooms.W74S57.lookForAtArea(LOOK_STRUCTURES,
 Game.rooms.W74S57.find(FIND_MY_STRUCTURES, {filter: s=>s.structureType === STRUCTURE_TOWER}).map(
   c=>Game.rooms.W74S57.lookForAtArea(LOOK_STRUCTURES, c.pos.y - towerRepairRange, c.pos.x - towerRepairRange, c.pos.y + towerRepairRange, c.pos.x + towerRepairRange, true).map(JSON.stringify))
 
-Game.spawns.Spawn1.createCreep(_.times(12, _.constant(WORK)).concat(CARRY, MOVE));
+Game.spawns.Spawn1.createCreep(_.times(17, _.constant(WORK)).concat(CARRY, MOVE));
+
+Room.serializePath([
+  {"x":15,"y":35,"dx":-1,"dy":1,"direction":6},
+  {"x":14,"y":34,"dx":-1,"dy":-1,"direction":8},
+  {"x":13,"y":33,"dx":-1,"dy":-1,"direction":8},
+  {"x":13,"y":32,"dx":0,"dy":-1,"direction":1},
+  {"x":14,"y":32,"dx":1,"dy":0,"direction":3}
+]);

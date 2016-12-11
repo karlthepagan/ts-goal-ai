@@ -4,6 +4,7 @@ import Joinpoint from "./joinpoint";
 import State from "../../state/abstractState";
 import EnemyCreepState from "../../state/enemyCreepState";
 import RoomState from "../../state/roomState";
+import StructureState from "../../state/structureState";
 
 type OnMove<R> = (jp: Joinpoint<CreepState, void>, fromPos: RoomPosition, forwardDir: number, ...args: any[]) => R;
 
@@ -12,8 +13,8 @@ type OnMove<R> = (jp: Joinpoint<CreepState, void>, fromPos: RoomPosition, forwar
  * TODO lifecycle is a good example of difference between call and apply. Maybe apply needs an extra argument which
  * describes the subject of the event? Maybe call can go to any object not just the subject of the event?
  */
-type OnLifecycle<DST extends CreepState|OwnedStructure, R> = (jp: Joinpoint<DST, string>, ...args: any[]) => R;
-type OnEnergy<DST extends CreepState|OwnedStructure, R> = (jp: Joinpoint<DST, string>, ...args: any[]) => R;
+type OnLifecycle<DST extends CreepState|StructureState, R> = (jp: Joinpoint<DST, string>, ...args: any[]) => R;
+type OnEnergy<DST extends CreepState|StructureState, R> = (jp: Joinpoint<DST, string>, ...args: any[]) => R;
 type OnScheduled = (jp: Joinpoint<any, void>, ...args: any[]) => void;
 export type OnIntercept<DST, R> = (jp: Joinpoint<DST, R>, ...args: any[]) => void;
 type OnInfo<DST> = (jp: Joinpoint<DST, any>, ...args: any[]) => void;
@@ -53,19 +54,19 @@ export interface EventSelector {
    * src structure
    * dst structure
    */
-  decay<T extends OwnedStructure>(): WhenEvent<T, OnLifecycle<T, void>>;
+  decay<T extends StructureState>(): WhenEvent<T, OnLifecycle<T, void>>;
   /**
    * energy will be full
    * src creep|struct other! (who is filling me)
    * dst creep|struct
    */
-  full<T extends CreepState|OwnedStructure>(): WhenEvent<T, OnEnergy<T, void>>; // TODO structure state
+  full<T extends CreepState|StructureState>(): WhenEvent<T, OnEnergy<T, void>>; // TODO structure state
   /**
    * energy will be empty
    * src creep|struct (who am I working?) - source of the drain
    * dst creep|struct
    */
-  empty<T extends CreepState|OwnedStructure>(): WhenEvent<T, OnEnergy<T, void>>;
+  empty<T extends CreepState|StructureState>(): WhenEvent<T, OnEnergy<T, void>>;
   /**
    * creep moved in last tick
    * TODO ambiguous with the command? before -> after
@@ -84,7 +85,7 @@ export interface EventSelector {
    * src EnemyCreepState
    * dst creep|struct
    */
-  attacked(): WhenEvent<EnemyCreepState, OnInfo<CreepState|OwnedStructure>>;
+  attacked(): WhenEvent<EnemyCreepState, OnInfo<CreepState|StructureState>>;
 }
 
 interface ProgressInfo {

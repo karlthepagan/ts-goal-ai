@@ -4,68 +4,72 @@ import Joinpoint from "../event/api/joinpoint";
 import CreepState from "../state/creepState";
 import RoomState from "../state/roomState";
 import {log} from "../support/log";
-// import * as F from "../functions";
+import InterceptorSpec from "../event/impl/interceptorSpec";
+import * as F from "../functions";
+import StructureState from "../state/structureState";
 
 export default function registerBehaviorProvider(em: EventRegistry) {
-  em.intercept(SpawnState).after(i => i.createCreep).wait(1).fireEvent("spawn"); // TODO NOW => fireEvent passes state but
+  em.intercept(SpawnState).after(i => i.createCreep).wait(1).fireEvent("spawn");
 
   em.when().aggro().ofAll().apply((jp: Joinpoint<RoomState, void>) => {
     jp = jp;
     log.debug("AGGRO! TODO find turrets and FIRE! later do enemy priority scoring & elections");
   });
 
-  em.when().spawn().ofAll().apply((jp: Joinpoint<CreepState, string>) => {
+  em.when().spawn().ofAll().apply((jp: Joinpoint<SpawnState, string>) => {
     // const creep = jp.target as CreepState; // TODO implement event domain target resolution
-    const time = jp.args[0].length * 3; // TODO get event source? Spawn.spawning.remainingTime?
     const creepName = jp.returnValue as string;
     const apiCreep = Game.creeps[creepName];
-    const creep = CreepState.left(apiCreep); // TODO NOW ? use jp.target?
+    const creep = CreepState.left(apiCreep);
 
-    const whenBorn = em.schedule(time - 1, creep); // jp in this builder is undefined!
+    jp.target.resolve();
+    const whenBorn = em.schedule(jp.target.subject().spawning.remainingTime, creep);
     // TODO consider assigning jp into the schedule chain? SRC => DST stuff!!!!
     const mem = jp.args[2];
     if (mem !== undefined) {
-      whenBorn.call().setMemory(jp.args[2]); // args from createCreep call, TODO type constrain?
+      whenBorn.call().setMemory(mem); // args from createCreep call, TODO type constrain?
     }
     whenBorn.call().rescan();
 
-    // TODO construct virtual move event TOP is WAG (usually the case)
-    whenBorn.call().touching(jp.asVoid(), creep.pos(), TOP);
+    // TODO TOP is WAG (usually the case)
+    const vjp = InterceptorSpec.joinpointFor(creep, "move");
+    vjp.unresolve();
+    whenBorn.call().touching(vjp, creep.pos(), TOP); // TODO automatic joinpoint from dispatch?
   });
 
   const move = em.intercept(CreepState).after(i => i.move); // .or() later
-  move.apply((jp: Joinpoint<Creep, void>) => {
-    debugger;
-    if (jp.target === undefined) {
-      debugger; // target undefined, after move
-      return;
-    }
-    // const trying = jp.target.memory("try");
-    // trying.dir = jp.args[0];
-    // trying.pos = jp.target.pos;
+  move.apply((jp: Joinpoint<CreepState, void>) => {
+    const trying = jp.target.memory("try");
+    trying.dir = jp.args[0];
+    trying.pos = jp.target.pos();
   });
-  const moveTo = em.intercept(CreepState).after(i => i.moveTo); // TODO NOW <= apply passes the literal jointpoint
+  const moveTo = em.intercept(CreepState).after(i => i.moveTo);
   const moveByPath = em.intercept(CreepState).after(i => i.moveByPath);
   [moveTo, moveByPath].map(i => i.apply((jp: Joinpoint<CreepState, void>) => {
-    debugger;
-    if (jp.target === undefined) {
-      debugger; // target undefined after moveTo
-      return;
-    }
-    // const trying = jp.target.memory("try");
-    // delete trying.dir;
-    // trying.pos = jp.target.pos;
+    const trying = jp.target.memory("try");
+    delete trying.dir;
+    trying.pos = jp.target.pos();
   }));
   [move, moveTo, moveByPath].map(i => {
     i.wait(1).apply((jp: Joinpoint<CreepState, void>) => {
-      debugger;
-      if (jp.target === undefined) {
-        debugger; // target undefined, 1 tick after move
-        return;
+      const trying = jp.target.memory("try");
+      if (trying.dir === undefined) {
+        // figuring out dir from positions
+        trying.dir = F.posToDirection(trying.pos)(jp.target.pos()); // TODO if 0?
       }
-      // const trying = jp.target.memory("try");
-      // jp.target.touching(jp, trying.pos, trying.dir);
+      jp.target.touching(jp, trying.pos, trying.dir);
     });
+  });
+
+  em.when().attacked().ofAll().apply((jp: Joinpoint<CreepState|StructureState, string>) => {
+    // TODO clear assignment and retreat to spawn
+    if (jp.target instanceof StructureState) {
+      // LATER what do?
+    } else {
+      // TODO fear pheremone on current assignment, and room location
+      const creep = jp.target as CreepState;
+      log.debug("HELP!", creep);
+    }
   });
 }
 /*

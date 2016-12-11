@@ -214,13 +214,14 @@ abstract class State<T> implements Named {
   public onPart(other: CreepState, direction: number) {
     other = other;
     this.memory("touch.creep", true)[direction] = null;
+    this.memory("touch.types", true)[direction] = null;
     const dirs = this.memory("touch.dir", true) as number[];
     F.remove(dirs, direction);
   }
 
   public onMeet(other: CreepState, direction: number) {
-    debugger; // REMOVE ME on meet
     this.memory("touch.creep", true)[direction] = other.getId();
+    this.memory("touch.types", true)[direction] = "CreepState";
     const dirs = this.memory("touch.dir", true) as number[];
     F.add(dirs, direction);
   }

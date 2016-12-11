@@ -4,7 +4,7 @@ import * as F from "../../functions";
 export default class Joinpoint<I, T> {
   public className: string;
   public objectId?: string;
-  public target?: I;
+  public target: I;
   // this disambiguates event dispatch from source for events & intercepts
   public category?: string;
   public method: string;

@@ -18,6 +18,7 @@ export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements Pr
   public static forProxyGet<S>(target: State<S>, method: string) {
     const is = new InterceptorSpec<S, any>();
     is.definition = InterceptorSpec.joinpointFor(target, method);
+    return is;
   }
 
   public static joinpointFor(target: State<any>, method: string) {
@@ -35,12 +36,14 @@ export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements Pr
 
   // context gives us a handle on scheduler, which we use to register the event
   public invoke(jp: Joinpoint<any, any>, context: InterceptorService): boolean {
-    jp = jp; // jp is the actual call invocation
     context = context; // context used to schedule dependent actions
-    const inst = this.resolve() as any;
 
+    // special case for intercepted objects, use category for the target
+    const wrapped = Object.create(jp);
+    wrapped.target = State.vright(wrapped.category as string, wrapped.objectId as string);
+    const inst = this.resolve() as any;
     // TODO break this out and call in switch (for beforecall handling)
-    inst[this.actionMethod](jp, ...this.actionArgs);
+    inst[this.actionMethod](wrapped, ...this.actionArgs);
 
     switch (this.callState) { // TODO abstraction
       case EventSpec.BEFORE_CALL:
