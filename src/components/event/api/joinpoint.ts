@@ -3,19 +3,18 @@ import getConstructor from "../../types";
 
 export default class Joinpoint<I, T> {
   public static forInstance<T>(instance: T, id: string) {
-    return new Joinpoint<T, any>(F.getType(instance), "?", id);
+    const jp = new Joinpoint<T, any>();
+    jp.className = F.getType(instance);
+    jp.objectId = id;
+    return jp;
   }
 
   public static newEvent(name: string, template?: Joinpoint<any, any>) {
-    if (template === undefined) {
-      return new Joinpoint<any, any>("__events__", name);
-    } else {
-      // TODO? refactor from "__events__", name to targetType, "__event__$name"
-      const jp = Object.create(template);
-      jp.category = "__events__";
-      jp.method = name;
-      return jp;
-    }
+    const jp = template === undefined ? new Joinpoint<any, any>() : Object.create(template);
+    // TODO? refactor from "__events__", name to targetType, "__events__$name"
+    jp.category = "__events__";
+    jp.method = name;
+    return jp;
   }
 
   public static withSource<X>(src: Joinpoint<any, any>, dstInstance?: X, dstId?: string) {
@@ -25,8 +24,9 @@ export default class Joinpoint<I, T> {
       jp.source = jp.clone();
       return jp;
     }
-    const jp = new Joinpoint<X, any>(F.getType(dstInstance), "?", dstId);
-    // TODO set source on jp?
+    const jp = new Joinpoint<X, any>();
+    jp.className = F.getType(dstInstance);
+    jp.objectId = dstId;
     jp.args = src.args.concat();
     jp.target = dstInstance;
     jp.returnValue = src.returnValue;
@@ -48,15 +48,14 @@ export default class Joinpoint<I, T> {
   public thrownException?: string|Error;
   public source?: Joinpoint<any, any>;
 
-  constructor(className: string, method: string, objectId?: string) {
-    this.className = className;
-    this.method = method;
-    this.objectId = objectId;
-  }
-
   public clone<R extends Joinpoint<I, T>>(into?: R): R {
     if (into === undefined) {
-      into = new Joinpoint<I, T>(this.className, this.method, this.objectId) as R;
+      into = new Joinpoint<I, T>() as R;
+    }
+    into.className = this.className;
+    into.method = this.method;
+    if (this.objectId !== undefined) {
+      into.objectId = this.objectId;
     }
     if (this.category !== undefined) {
       into.category = this.category;
@@ -83,7 +82,7 @@ export default class Joinpoint<I, T> {
   }
 
   public isRegisterable(): boolean {
-    return !(this.className === undefined
+    return !(this.getMatchingClass() === undefined
       || this.method === undefined
     );
   }

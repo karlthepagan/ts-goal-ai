@@ -51,8 +51,14 @@ function RAMPART(s: any): boolean {
   return s.my;
 }
 
-export function elvis<T>(x: T|undefined, y: T): T {
-  return x === undefined || x === null ? y : x;
+export function elvis<T>(...x: (T|undefined)[]): T {
+  for (let i = 0; i < x.length; i++) {
+    if (x[i] !== undefined && x[i] != null) {
+      return x[i] as T;
+    }
+  }
+
+  throw new Error("none defined");
 }
 
 export function elvisLazy<T>(x: T|undefined, y: T|(() => T)): T {
@@ -214,6 +220,7 @@ export function deleteExpand(address: (PropertyKey|undefined)[], memory: any, ar
   for (let i = 0; i < last; i++) {
     const node = address[i];
     if (node === undefined) {
+      debugger; // bad address
       throw new Error("bad address: " + JSON.stringify(address));
     }
     memory = buildFollow(memory, node, {});
@@ -221,6 +228,7 @@ export function deleteExpand(address: (PropertyKey|undefined)[], memory: any, ar
 
   const key = address[last];
   if (key === undefined) {
+    debugger; // bad address
     throw new Error("bad address: " + JSON.stringify(address));
   }
   if (array) {
@@ -245,6 +253,7 @@ export function expand(address: (PropertyKey|undefined)[], memory: any, array?: 
   for (let i = 0; i < last; i++) {
     const node = address[i];
     if (node === undefined) {
+      debugger; // bad address
       throw new Error("bad address: " + JSON.stringify(address));
     }
     memory = buildFollow(memory, node, {});
@@ -252,6 +261,7 @@ export function expand(address: (PropertyKey|undefined)[], memory: any, array?: 
 
   const node = address[last];
   if (node === undefined) {
+    debugger; // bad address
     throw new Error("bad address: " + JSON.stringify(address));
   }
   return buildFollow(memory, node, array ? [] : {});

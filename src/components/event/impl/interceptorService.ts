@@ -61,13 +61,12 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     }
     // log.debug("register", name, spec.callState, spec.definition.getMatchingClass(), spec.definition.method);
     const specs = F.expand(
-      [ spec.callState, spec.definition.className, spec.definition.method ],
+      [ spec.callState, spec.definition.getMatchingClass(), spec.definition.method ],
       this._interceptors, true) as AnyEvent[];
     specs.push(spec);
   }
 
   public get(target: State<any>, p: PropertyKey, receiver: any): any {
-    debugger;
     receiver = receiver;
     if (target.resolve()) {
       const subject = target.subject();
@@ -123,15 +122,17 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
       return jp.returnValue; // TODO apply within?
     }
 
+    const unwrapped = Object.create(jp);
+    unwrapped.resolve();
     for (let i = 0; i < interceptors.length; i++) {
       const interceptor = interceptors[i];
       // TODO how to handle interceptor invoke decisions
-      if (interceptor.test(jp) && interceptor.invoke(jp, this)) { // TODO circular reference?
-        return jp.returnValue;
+      if (interceptor.test(unwrapped) && interceptor.invoke(unwrapped, this)) { // TODO circular reference?
+        return unwrapped.returnValue;
       }
     }
 
-    return jp.returnValue; // TODO apply within?
+    return unwrapped.returnValue; // TODO apply within?
   }
 
   /**
@@ -217,11 +218,13 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
       return jp.proceed();
     }
 
+    const unwrapped = Object.create(jp);
+    unwrapped.resolve();
     for (let i = 0; i < interceptors.length; i++) {
       const interceptor = interceptors[i];
       // interceptor has full control over jp invocations
-      if (interceptor.test(jp) && interceptor.invoke(jp, this)) {
-        return jp.returnValue;
+      if (interceptor.test(unwrapped) && interceptor.invoke(unwrapped, this)) {
+        return unwrapped.returnValue;
       }
     }
 
@@ -238,15 +241,17 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
       throw jp.thrownException;
     }
 
+    const unwrapped = Object.create(jp);
+    unwrapped.resolve();
     for (let i = 0; i < interceptors.length; i++) {
       const interceptor = interceptors[i];
       // TODO how to handle interceptor invoke decisions
-      if (interceptor.test(jp) && interceptor.invoke(jp, this)) {
-        return jp.returnValue;
+      if (interceptor.test(unwrapped) && interceptor.invoke(unwrapped, this)) {
+        return unwrapped.returnValue;
       }
     }
 
-    throw jp.thrownException;
+    throw unwrapped.thrownException;
   }
 
   protected getInterceptors(jp: Joinpoint<any, any>, callState: number): EventSpec<any, any>[] {

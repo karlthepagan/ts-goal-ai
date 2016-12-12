@@ -2,7 +2,7 @@ import Joinpoint from "../api/joinpoint";
 import {OnIntercept, OnBuildTarget} from "../api/index";
 import InterceptorService from "./interceptorService";
 import Named from "../../named";
-import {getType} from "../../functions";
+import * as F from "../../functions";
 import getConstructor from "../../types";
 import NAME_CAPTURE from "./nameCapture";
 
@@ -24,7 +24,7 @@ class EventSpec<I, T> {
   public definition: Joinpoint<I, T>; // TODO this is basically the "source" of the event/call/intercept
   public targetConstructor?: Constructor<I>;
   public callState: number;
-  public actionArgs: any[] = [];
+  public actionArgs: any[];
   // TODO these be private? see eventManager.ts:_scheduler first arg (instanceType = instance.className() / category?)
   public instanceType: string; // TODO this is basically the "destination" of the event/call/intercept
   public instanceId: string;
@@ -75,19 +75,19 @@ class EventSpec<I, T> {
 
   public invoke(jp: Joinpoint<any, any>, context: InterceptorService): boolean {
     context = context; // context used to schedule dependent actions
-    const inst = this.resolve() as any;
+    const inst = this.resolve(jp) as any;
     if (this.targetBuilder !== undefined) {
       debugger; // TODO observe target builder
-      inst[this.actionMethod](this.targetBuilder(jp, ...this.actionArgs), ...this.actionArgs);
+      inst[this.actionMethod](this.targetBuilder(jp, ...this.actionArgs), ...this.resolveArgs(jp));
     } else {
-      inst[this.actionMethod](jp, ...this.actionArgs);
+      inst[this.actionMethod](jp, ...this.resolveArgs(jp));
     }
 
     return false; // never interrupt execution for normal events TODO preventDefault?
   }
 
   public setAction<T extends Named>(instance: T, method: (i: T) => OnIntercept<I, T> ): void {
-    this.instanceType = getType(instance);
+    this.instanceType = F.getType(instance);
     this.instanceId = instance.getId();
     this.actionMethod = NAME_CAPTURE.capture(method);
   }
@@ -97,10 +97,19 @@ class EventSpec<I, T> {
     delete this.targetConstructor;
   }
 
-  protected resolve(): I {
-    // TODO resolve the wrapped call
-    const ctor = getConstructor(this.instanceType) as any;
-    return ctor.vright(this.instanceId) as any; // TODO silly convention
+  protected resolve(jp: Joinpoint<any, any>): I {
+    // fall back to definition / joinpoint to determine our target
+    const id = F.elvis(this.instanceId, this.definition.objectId, jp.objectId);
+    const type = F.elvis(this.instanceType, this.definition.className, jp.className);
+    const ctor = getConstructor(type) as any;
+    return ctor.vright(id) as any; // TODO silly convention
+  }
+
+  protected resolveArgs(jp: Joinpoint<any, any>): any[] {
+    if (this.actionArgs === undefined) {
+      return jp.args;
+    }
+    return this.actionArgs;
   }
 }
 

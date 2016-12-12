@@ -25,7 +25,10 @@ export default class ScheduleSpec<I, T> extends EventSpec<I, T> {
     is.instanceType = getType(instance);
     is.instanceId = instance.getId();
     // src (same as dst??) TODO this could come from builder
-    is.definition = new Joinpoint<any, any>(is.instanceType, "__events__", is.instanceId);
+    is.definition = new Joinpoint<any, any>();
+    is.definition.className = is.instanceType;
+    is.definition.method = "__events__";
+    is.definition.objectId = is.instanceId; // TODO redundant?
     return is;
   }
 
@@ -39,8 +42,7 @@ export default class ScheduleSpec<I, T> extends EventSpec<I, T> {
   // context gives us a handle on scheduler, which we use to register the event
   public invoke(jp: Joinpoint<any, any>, context: InterceptorService): boolean {
     if (this.targetBuilder !== undefined) {
-      debugger; // TODO observe target builder
-      context.scheduleExec(this, this.targetBuilder(jp, ...this.actionArgs));
+      context.scheduleExec(this, this.targetBuilder(jp));
     } else {
       context.scheduleExec(this, jp);
     }

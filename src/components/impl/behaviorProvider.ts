@@ -13,7 +13,6 @@ const $ = {} as any;
 
 export function defineEvents(em: EventRegistry) {
   em.intercept(SpawnState).after(i => i.createCreep).wait(1).apply((jp: Joinpoint<SpawnState, string>) => {
-    debugger;
     const creepName = jp.returnValue as string;
     const apiCreep = Game.creeps[creepName]; // complex because creep doesn't exist until now
     if (apiCreep === undefined) {
@@ -26,31 +25,37 @@ export function defineEvents(em: EventRegistry) {
     interceptorService.triggerBehaviors(eventJp, "spawn"); // .fireEvent("spawn") equivalent
   });
 
+  // TODO try to move most apply calls into targetBuilder calls
   em.when().spawn().ofAll().apply((jp: Joinpoint<CreepState, string>) => {
-    log.debug("dying", jp.objectId);
-    // TODO death calculation, 1499 ticks from birth?
+    const creep = jp.target;
+    const spawn = jp.source.target as SpawnState;
+    spawn.resolve();
+    em.schedule(spawn.subject().spawning.remainingTime + 1499, creep).fireEvent("death");
   });
 
-  em.intercept(CreepState).after(i => i.move).wait(1, (jp: Joinpoint<CreepState, void>) => {
+  em.intercept(CreepState).after(i => i.move).wait(1, (jp: Joinpoint<CreepState, void>, dir: number) => {
     const ejp = Joinpoint.withSource(jp);
-    ejp.args = [jp.target.pos(), jp.args[0]]; // OnMove spec: fromPos: RoomPosition, forwardDir: number
+    ejp.args = [jp.target.pos(), dir]; // OnMove spec: fromPos: RoomPosition, forwardDir: number
     return ejp;
   }).fireEvent("move");
   const moveTo = em.intercept(CreepState).after(i => i.moveTo);
   const moveByPath = em.intercept(CreepState).after(i => i.moveByPath);
   [moveTo, moveByPath].map(i =>
     i.wait(1, (jp: Joinpoint<CreepState, void>) => {
-      debugger;
       const ejp = Joinpoint.withSource(jp);
+      ejp.resolve(); // TODO hack to unwrap the intercepted target, should be repeated when InterceptorSpec dispatches
       ejp.args = [jp.target.pos()]; // OnMove spec: fromPos: RoomPosition, forwardDir: number
       return ejp;
-    }).apply((jp: Joinpoint<CreepState, number>) => {
-      debugger;
+    }).apply((jp: Joinpoint<CreepState, number>, fromPos: RoomPosition) => {
       jp.target.resolve();
-      jp.args[1] = F.posToDirection(jp.args[0])(jp.target.pos()); // TODO if 0?
+      jp.args[1] = F.posToDirection(fromPos)(jp.target.pos()); // TODO if 0?
       interceptorService.triggerBehaviors(jp, "move");
+
+      // interceptorService.scheduleExec() // TODO rested event
     })
   );
+
+
 }
 
 export default function registerBehaviorProvider(em: EventRegistry) {
@@ -61,17 +66,12 @@ export default function registerBehaviorProvider(em: EventRegistry) {
     log.debug("AGGRO! TODO find turrets and FIRE! later do enemy priority scoring & elections");
   });
 
-  em.when().spawn().ofAll().apply((jp: Joinpoint<CreepState, string>) => {
-    if (jp.source === undefined) {
-      debugger; // TODO no source set
-      return;
-    }
+  em.when().spawn().ofAll().apply((jp: Joinpoint<CreepState, string>, body: string[], mem?: any) => {
+    debugger;
     const creep = jp.target;
     const spawn = jp.source.target as SpawnState;
     spawn.resolve();
     const whenBorn = em.schedule(spawn.subject().spawning.remainingTime, creep);
-    // TODO consider assigning jp into the schedule chain? SRC => DST stuff!!!!
-    const mem = jp.args[2];
     if (mem !== undefined) {
       whenBorn.call().setMemory(mem); // args from createCreep call, TODO type constrain?
     }

@@ -72,6 +72,7 @@ export function actionApplyApply(is: AnyEvent, action: OnIntercept<any, any>) {
 
 export function instanceGet(is: AnyEvent, methodName: string) {
   is = Object.create(is); // was .clone();
+  // GET means that we're invoking a method on the call target, this is the default behavior for EventSpec.resolve
   is.actionMethod = methodName;
   return [is, assignArgsThen(undefined)];
 }

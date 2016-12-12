@@ -7,9 +7,10 @@ import State from "../../state/abstractState";
 export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements ProxyHandler<Function> {
   public static fromConstructor(constructor: Constructor<State<any>>) {
     const is = new InterceptorSpec<any, any>();
-    is.definition = new Joinpoint<any, any>(constructor.name, "?");
-    // jp.targetType is specified by the invocation
+    is.definition = new Joinpoint<any, any>();
+    is.definition.className = constructor.name;
     is.definition.category = constructor.name;
+    // jp.targetType is specified by the invocation
     // is.targetConstructor = constructor; // TODO needed?
     return is;
   }
@@ -36,10 +37,12 @@ export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements Pr
   public invoke(jp: Joinpoint<any, any>, context: InterceptorService): boolean {
     context = context; // context used to schedule dependent actions
 
-    // special resolve case for intercepted objects, use category for the target
+    debugger;
+    // special resolve case for intercepted objects, use override category as the target
     const wrapped = Object.create(jp);
-    const ctor = getConstructor(wrapped.category as string) as any;
-    wrapped.target = ctor.vright(wrapped.objectId as string); // TODO silly convention
+    wrapped.resolve();
+    // const ctor = getConstructor(wrapped.category as string) as any;
+    // wrapped.target = ctor.vright(wrapped.objectId as string); // TODO silly convention
     const inst = this.resolve() as any;
     // TODO break this out and call in switch (for beforecall handling)
     if (this.targetBuilder !== undefined) {

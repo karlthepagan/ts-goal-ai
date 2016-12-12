@@ -42,6 +42,13 @@ export interface EventSelector {
    */
   spawn(): WhenEvent<SpawnState, OnLifecycle<SpawnState, void>>;
   /**
+   * creep will die: after spawn fires when TTL is set to expire
+   *
+   * src spawn - birthplace
+   * dst creep
+   */
+  death(): WhenEvent<CreepState, OnLifecycle<CreepState, void>>;
+  /**
    * creep moved in last tick
    *
    * Joinpoints.args represents the parameters of OnMove? ok for now
@@ -50,17 +57,25 @@ export interface EventSelector {
    */
   move(): WhenEvent<CreepState, OnMove<void>>;
   /**
-   * creep will die: after spawn fires when TTL is set to expire
+   * enemy spotted!
    *
-   * src spawn - birthplace
-   * dst creep
+   * src RoomState
+   * dst EnemyCreepState
    */
-  death(): WhenEvent<CreepState, OnLifecycle<CreepState, void>>;
+  aggro(): WhenEvent<EnemyCreepState, OnInfo<RoomState>>;
+  /**
+   * energy will be full
+   *
+   * src creep|struct|source other? (who is filling me)
+   * dst creep|struct
+   */
+  full<T extends CreepState|StructureState>(): WhenEvent<T, OnEnergy<T, void>>; // TODO structure state
   /**
    * fatigue was high but is now zero: scheduled after move
    *
    * src terrain moved to (important for *hot* locations/roads (not parking lots))
    * dst creep
+   * TODO this is low priority
    */
   rested(): WhenEvent<CreepState, OnLifecycle<CreepState, void>>;
   /**
@@ -78,26 +93,12 @@ export interface EventSelector {
    */
   decay<T extends StructureState>(): WhenEvent<T, OnLifecycle<T, void>>;
   /**
-   * energy will be full
-   *
-   * src creep|struct|source other? (who is filling me)
-   * dst creep|struct
-   */
-  full<T extends CreepState|StructureState>(): WhenEvent<T, OnEnergy<T, void>>; // TODO structure state
-  /**
    * energy will be empty
    *
    * src creep|struct (who am I working?) - source of the drain
    * dst creep|struct
    */
   empty<T extends CreepState|StructureState>(): WhenEvent<T, OnEnergy<T, void>>;
-  /**
-   * enemy spotted!
-   *
-   * src RoomState
-   * dst EnemyCreepState
-   */
-  aggro(): WhenEvent<EnemyCreepState, OnInfo<RoomState>>;
   /**
    * ouch!
    *
