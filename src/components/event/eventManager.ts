@@ -5,13 +5,13 @@ import {registerBehavior, scheduleExec} from "./behaviorContext";
 import {AnyEvent} from "./impl/eventSpec";
 import {eventSelectorGet} from "./api/eventSpecBuilder";
 import {whenClosureGet} from "./api/interceptorSpecBuilders";
-import {actionGet} from "./api/builders";
+import {actionGet, EMITTING_CALLS} from "./api/builders";
 import ScheduleSpec from "./impl/scheduledSpec";
 import InterceptorSpec from "./impl/interceptorSpec";
 import State from "../state/abstractState";
 
 export default class EventManager implements EventRegistry {
-  private _events = new ProxyChainBuilder<AnyEvent>(
+  private _events = new ProxyChainBuilder<AnyEvent>(EMITTING_CALLS,
     (value: AnyEvent, methodName: string) => {
       if (value === undefined) {
         return eventSelectorGet(methodName);
@@ -28,7 +28,7 @@ export default class EventManager implements EventRegistry {
     }
   );
 
-  private _intercepts = new ProxyChainBuilder<AnyEvent>(
+  private _intercepts = new ProxyChainBuilder<AnyEvent>(EMITTING_CALLS,
     (initial: AnyEvent, constructor: Constructor<State<any>>) => { // intercept
       initial = initial;
       const is = InterceptorSpec.fromConstructor(constructor);
@@ -42,7 +42,7 @@ export default class EventManager implements EventRegistry {
     }
   );
 
-  private _scheduler = new ProxyChainBuilder<ScheduleSpec<any, any>>(
+  private _scheduler = new ProxyChainBuilder<ScheduleSpec<any, any>>(EMITTING_CALLS,
     (initial: ScheduleSpec<any, any>, relativeTime: number, instance: Named) => {
       initial = initial;
       const is = ScheduleSpec.fromTimeAndInstance(relativeTime, instance);

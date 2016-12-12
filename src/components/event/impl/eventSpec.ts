@@ -1,5 +1,5 @@
 import Joinpoint from "../api/joinpoint";
-import {OnIntercept} from "../api/index";
+import {OnIntercept, OnBuildTarget} from "../api/index";
 import InterceptorService from "./interceptorService";
 import Named from "../../named";
 import {getType} from "../../functions";
@@ -15,7 +15,7 @@ class EventSpec<I, T> {
 
   public static fromEventName(name: string) {
     const is = new EventSpec<any, any>();
-    is.definition = Joinpoint.newEvent(name, "?");
+    is.definition = Joinpoint.newEvent(name);
     is.callState = EventSpec.AFTER_CALL;
     // is.targetConstructor = constructor; // TODO event typing
     return is;
@@ -29,6 +29,7 @@ class EventSpec<I, T> {
   public instanceType: string; // TODO this is basically the "destination" of the event/call/intercept
   public instanceId: string;
   public actionMethod: string;
+  public targetBuilder?: OnBuildTarget<any, any>;
 
   public clone<R extends EventSpec<I, T>>(into?: R): R {
     // TODO THIS IS SO COOL, instead of literal clone, just use a prototype!!!!
@@ -47,6 +48,9 @@ class EventSpec<I, T> {
     into.instanceType = this.instanceType;
     into.instanceId = this.instanceId;
     into.actionMethod = this.actionMethod;
+    if (this.targetBuilder !== undefined) {
+      into.targetBuilder = this.targetBuilder;
+    }
     return into;
   }
 
@@ -72,7 +76,12 @@ class EventSpec<I, T> {
   public invoke(jp: Joinpoint<any, any>, context: InterceptorService): boolean {
     context = context; // context used to schedule dependent actions
     const inst = this.resolve() as any;
-    inst[this.actionMethod](jp, ...this.actionArgs);
+    if (this.targetBuilder !== undefined) {
+      debugger; // TODO observe target builder
+      inst[this.actionMethod](this.targetBuilder(jp, ...this.actionArgs), ...this.actionArgs);
+    } else {
+      inst[this.actionMethod](jp, ...this.actionArgs);
+    }
 
     return false; // never interrupt execution for normal events TODO preventDefault?
   }

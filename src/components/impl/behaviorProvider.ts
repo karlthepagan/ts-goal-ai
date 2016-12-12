@@ -7,34 +7,49 @@ import InterceptorSpec from "../event/impl/interceptorSpec";
 import * as F from "../functions";
 import StructureState from "../state/structureState";
 import EnemyCreepState from "../state/enemyCreepState";
+import {interceptorService} from "../event/behaviorContext"; // TODO leaky abstraction
+
+const $ = {} as any;
 
 export function defineEvents(em: EventRegistry) {
-  debugger; // TODO REMOVE - new event definitions
-  em.intercept(SpawnState).after(i => i.createCreep).wait(1).fireEvent("spawn", jp => {
+  em.intercept(SpawnState).after(i => i.createCreep).wait(1).apply((jp: Joinpoint<SpawnState, string>) => {
+    debugger;
     const creepName = jp.returnValue as string;
-    const apiCreep = Game.creeps[creepName];
+    const apiCreep = Game.creeps[creepName]; // complex because creep doesn't exist until now
     if (apiCreep === undefined) {
       debugger; // TODO spawn failed
       throw new Error("spawn failed");
     }
     const creep = CreepState.right(apiCreep);
-    return Joinpoint.withSource(jp, creep, creep.getId());
+    const eventJp = Joinpoint.withSource(jp, creep, creep.getId());
+    eventJp.resolve();
+    interceptorService.triggerBehaviors(eventJp, "spawn"); // .fireEvent("spawn") equivalent
   });
+
   em.when().spawn().ofAll().apply((jp: Joinpoint<CreepState, string>) => {
     log.debug("dying", jp.objectId);
     // TODO death calculation, 1499 ticks from birth?
   });
+
   em.intercept(CreepState).after(i => i.move).wait(1, (jp: Joinpoint<CreepState, void>) => {
-    log.debug("moving", jp.objectId);
-    return jp; // TODO NOW derps, transform to match OnMove spec
+    const ejp = Joinpoint.withSource(jp);
+    ejp.args = [jp.target.pos(), jp.args[0]]; // OnMove spec: fromPos: RoomPosition, forwardDir: number
+    return ejp;
   }).fireEvent("move");
   const moveTo = em.intercept(CreepState).after(i => i.moveTo);
   const moveByPath = em.intercept(CreepState).after(i => i.moveByPath);
   [moveTo, moveByPath].map(i =>
     i.wait(1, (jp: Joinpoint<CreepState, void>) => {
-      log.debug("movingTo", jp.objectId);
-      return jp; // TODO NOW derps, transform to match OnMove spec
-    }).fireEvent("move")
+      debugger;
+      const ejp = Joinpoint.withSource(jp);
+      ejp.args = [jp.target.pos()]; // OnMove spec: fromPos: RoomPosition, forwardDir: number
+      return ejp;
+    }).apply((jp: Joinpoint<CreepState, number>) => {
+      debugger;
+      jp.target.resolve();
+      jp.args[1] = F.posToDirection(jp.args[0])(jp.target.pos()); // TODO if 0?
+      interceptorService.triggerBehaviors(jp, "move");
+    })
   );
 }
 
@@ -68,29 +83,7 @@ export default function registerBehaviorProvider(em: EventRegistry) {
     whenBorn.call().touching(vjp, creep.pos(), TOP); // TODO automatic joinpoint from dispatch?
   });
 
-  const move = em.intercept(CreepState).after(i => i.move); // .or() later
-  move.apply((jp: Joinpoint<CreepState, void>) => {
-    const trying = jp.target.memory("try");
-    trying.dir = jp.args[0];
-    trying.pos = jp.target.pos();
-  });
-  const moveTo = em.intercept(CreepState).after(i => i.moveTo);
-  const moveByPath = em.intercept(CreepState).after(i => i.moveByPath);
-  [moveTo, moveByPath].map(i => i.apply((jp: Joinpoint<CreepState, void>) => {
-    const trying = jp.target.memory("try");
-    delete trying.dir;
-    trying.pos = jp.target.pos();
-  }));
-  [move, moveTo, moveByPath].map(i => {
-    i.wait(1).apply((jp: Joinpoint<CreepState, void>) => {
-      const trying = jp.target.memory("try");
-      if (trying.dir === undefined) {
-        // figuring out dir from positions
-        trying.dir = F.posToDirection(trying.pos)(jp.target.pos()); // TODO if 0?
-      }
-      jp.target.touching(jp, trying.pos, trying.dir);
-    });
-  });
+  em.when().move().ofAll().call().touching($, $, $);
 
   em.when().attacked().ofAll().apply((jp: Joinpoint<CreepState|StructureState, string>) => {
     // TODO clear assignment and retreat to spawn

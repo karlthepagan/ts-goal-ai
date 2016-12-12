@@ -1,25 +1,38 @@
-import {getType} from "../../functions";
-export type AnyJP = Joinpoint<any, any>;
 import * as F from "../../functions";
+import getConstructor from "../../types";
 
 export default class Joinpoint<I, T> {
   public static forInstance<T>(instance: T, id: string) {
-    return new Joinpoint<T, any>(getType(instance), "?", id);
+    return new Joinpoint<T, any>(F.getType(instance), "?", id);
   }
 
-  public static newEvent(name: string, id?: string) {
-    // TODO refactor from "__events__", name to targetType, "__event__$name"
-    return new Joinpoint<any, any>("__events__", name, id);
+  public static newEvent(name: string, template?: Joinpoint<any, any>) {
+    if (template === undefined) {
+      return new Joinpoint<any, any>("__events__", name);
+    } else {
+      // TODO? refactor from "__events__", name to targetType, "__event__$name"
+      const jp = Object.create(template);
+      jp.category = "__events__";
+      jp.method = name;
+      return jp;
+    }
   }
 
-  public static withSource<X>(src: Joinpoint<any, any>, dstInstance: X, dstId: string) {
-    const jp = new Joinpoint<X, any>(getType(dstInstance), "?", dstId);
+  public static withSource<X>(src: Joinpoint<any, any>, dstInstance?: X, dstId?: string) {
+    if (dstInstance === undefined) {
+      const jp = src.clone();
+      jp.unresolve();
+      jp.source = jp.clone();
+      return jp;
+    }
+    const jp = new Joinpoint<X, any>(F.getType(dstInstance), "?", dstId);
     // TODO set source on jp?
     jp.args = src.args.concat();
     jp.target = dstInstance;
     jp.returnValue = src.returnValue;
     jp.thrownException = src.thrownException;
     jp.source = src.clone();
+    jp.source.unresolve();
     return jp;
   }
 
@@ -62,6 +75,9 @@ export default class Joinpoint<I, T> {
     }
     if (this.thrownException !== undefined) {
       into.thrownException = this.thrownException;
+    }
+    if (this.source !== undefined) {
+      into.source = this.source;
     }
     return into;
   }
@@ -122,7 +138,14 @@ export default class Joinpoint<I, T> {
     return this as any;
   }
 
-  // TODO resolve takes className -> set target, method -> set proceedApply - except for intercept proceed
+  public resolve() {
+    const ctor = getConstructor(this.className) as any;
+    this.target = ctor.vright(this.objectId as string); // TODO silly convention
+    // TODO method -> set proceedApply
+    if (this.source !== undefined) {
+      this.source.resolve();
+    }
+  }
 
   /**
    * throw out anything that won't survive memory

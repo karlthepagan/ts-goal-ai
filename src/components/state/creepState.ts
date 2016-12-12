@@ -292,8 +292,8 @@ export default class CreepState extends State<Creep> {
   }
 
   public touching(jp: Joinpoint<CreepState, void>, fromPos: RoomPosition, forwardDir: number) {
+    debugger;
     jp = jp;
-    fromPos = fromPos;
     forwardDir = forwardDir;
 
     const selfpos = this.pos();

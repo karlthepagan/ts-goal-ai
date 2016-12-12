@@ -28,9 +28,12 @@ export interface WhenEvent<INST, CALLBACK> {
   occursAt(relativeTime: number, instance: INST): Action<CALLBACK, INST, EventSelector>;
 }
 
-// watch for an event, then respond
+/**
+ * watch for an event, then respond
+ *
+ * instances bound by selectors are for the destination, instances bound elsewhere are the actors in a joinpoint
+ */
 export interface EventSelector {
-  // TODO instances bound by selectors are for the destination, instances bound elsewhere are ???
   /**
    * creep to be spawned: fires 1 tick after Spawn.createCreep succeeds
    *
@@ -129,18 +132,26 @@ type ActionChain<CALLBACK, TYPE> = Action<CALLBACK, TYPE, TYPE>;
 type ActionToWhen<CALLBACK, TYPE> = Action<CALLBACK, TYPE, When<TYPE>>;
 
 /**
- * @param TYPE? - target for watch, schedule or intercept or triggers
+ * @param TYPE - target for watch, schedule or intercept or triggers
  * @param SELECT - required filters, start of the chain
  * @param CALLBACK - method reference, gets cached/intercepted
  */
 export interface Action<CALLBACK, TYPE, SELECT> { // TODO TYPE for jp.source?
   callAnd       (instance: TYPE, callback: CALLBACK, ...args: any[]): Action<CALLBACK, TYPE, SELECT>;
   call          (): TYPE; // direct call, captured by proxy
-  apply         (func: Function): void; // direct function invoke, TODO index of anonymous functions!!!
+  callHandler   (): TYPE; // direct call, will not capture args, emits early?
+  apply         (func: Function): void; // direct function invoke, uses an index of anonymous functions!!!
   /**
    * transform one capture into another event: utilizes InterceptorService.triggerBehaviors
+   *
+   * @param targetBuilder for IMMEDIATE trigger only transform the call parameters
    */
   fireEvent     (eventName: string, targetBuilder?: OnBuildTarget<TYPE, any>): Action<CALLBACK, TYPE, SELECT>;
+  /**
+   * invoke this action several ticks in the future
+   *
+   * @param targetBuilder function used to transform the data stored in memory
+   */
   wait          (relativeTime: number, targetBuilder?: OnBuildTarget<TYPE, any>): Action<CALLBACK, TYPE, SELECT>;
   // TODO filter on source or destination
   // filterOn      (thisArg: Named, callback: CALLBACK, ...args: any[]): SELECT; // illegal for When.after or EventSelector
@@ -186,4 +197,3 @@ export interface EventRegistry { // instances declared in this context are the d
   // dispatch        (instance: Named): Action<Function, void, void>;
 }
 export default EventRegistry;
-

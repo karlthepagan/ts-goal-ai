@@ -4,6 +4,14 @@ import {OnIntercept, OnBuildTarget} from "./index";
 import ScheduleSpec from "../impl/scheduledSpec";
 import AnonCache from "../impl/anonCache";
 
+export const EMITTING_CALLS = {
+  callAnd: 2,
+  call: 4,
+  callHandler: 4, // TODO 3?
+  apply: 2,
+  fireEvent: 2,
+};
+
 export function actionGet(select?: Function) {
   return (is: AnyEvent, actionName: string) => {
     switch (actionName) {
@@ -20,6 +28,10 @@ export function actionGet(select?: Function) {
 
       case "call":
         // call returns a proxy of the instance which captures method name and args
+        return [is, skip(instanceGet)];
+
+      case "callHandler":
+        // callHandler returns a proxy of the instance which captures method name but skips args
         return [is, skip(instanceGet)];
 
       default:
@@ -45,11 +57,7 @@ export function waitApply(next: Function) {
     }
 
     ss.relativeTime = relativeTime;
-
-    if (targetBuilder !== undefined) {
-      debugger;
-      ss.definition = targetBuilder(ss.definition);
-    }
+    ss.targetBuilder = targetBuilder; // TODO AnonCache?
 
     return [ss, next]; // ss needs to get send to the schedule handler
   };

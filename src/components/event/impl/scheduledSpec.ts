@@ -38,7 +38,12 @@ export default class ScheduleSpec<I, T> extends EventSpec<I, T> {
 
   // context gives us a handle on scheduler, which we use to register the event
   public invoke(jp: Joinpoint<any, any>, context: InterceptorService): boolean {
-    context.scheduleExec(this, jp);
+    if (this.targetBuilder !== undefined) {
+      debugger; // TODO observe target builder
+      context.scheduleExec(this, this.targetBuilder(jp, ...this.actionArgs));
+    } else {
+      context.scheduleExec(this, jp);
+    }
     return false; // never stop execution for scheduled events
   }
 

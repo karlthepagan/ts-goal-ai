@@ -67,6 +67,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
   }
 
   public get(target: State<any>, p: PropertyKey, receiver: any): any {
+    debugger;
     receiver = receiver;
     if (target.resolve()) {
       const subject = target.subject();
@@ -102,13 +103,13 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
   }
 
   public triggerBehaviors(jp: Joinpoint<any, any>, eventName: string, targetBuilder?: OnBuildTarget<any, any>) {
-    const dst = targetBuilder === undefined ? jp.target : targetBuilder(jp);
+    if (targetBuilder === null) {
+      throw new Error("fireEvent cannot specify targetBuilder after a wait condition"); // TODO AnonCache targetBuilders
+    }
 
-    const event = Joinpoint.newEvent(eventName, jp.objectId);
+    const eventTemplate = targetBuilder === undefined ? jp : targetBuilder(jp);
 
-    event.target = dst; // this is the event source, inject it into event!
-    event.returnValue = jp.returnValue;
-    event.args = jp.args;
+    const event = Joinpoint.newEvent(eventName, eventTemplate);
 
     this.dispatch(event);
   }
@@ -183,8 +184,11 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
               const task = tasks[i];
               Object.setPrototypeOf(task, EventSpec.prototype);
               Object.setPrototypeOf(task.definition, Joinpoint.prototype);
+              if (task.definition.source !== undefined) {
+                Object.setPrototypeOf(task.definition.source, Joinpoint.prototype);
+              }
               const jp = task.definition.clone();
-              jp.target = State.vright(jp.className, jp.objectId as string);
+              jp.resolve();
               // EventSpec invoke is immediate execution
               // ScheduleSpec invoke will re-schedule when invoked
               if (!task.isInvokable()) {

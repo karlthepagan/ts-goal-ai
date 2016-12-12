@@ -36,12 +36,18 @@ export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements Pr
   public invoke(jp: Joinpoint<any, any>, context: InterceptorService): boolean {
     context = context; // context used to schedule dependent actions
 
-    // special case for intercepted objects, use category for the target
+    // special resolve case for intercepted objects, use category for the target
     const wrapped = Object.create(jp);
-    wrapped.target = State.vright(wrapped.category as string, wrapped.objectId as string);
+    const ctor = getConstructor(wrapped.category as string) as any;
+    wrapped.target = ctor.vright(wrapped.objectId as string); // TODO silly convention
     const inst = this.resolve() as any;
     // TODO break this out and call in switch (for beforecall handling)
-    inst[this.actionMethod](wrapped, ...this.actionArgs);
+    if (this.targetBuilder !== undefined) {
+      debugger; // TODO observe target builder
+      inst[this.actionMethod](this.targetBuilder(wrapped, ...this.actionArgs), ...this.actionArgs);
+    } else {
+      inst[this.actionMethod](wrapped, ...this.actionArgs);
+    }
 
     switch (this.callState) { // TODO abstraction
       case EventSpec.BEFORE_CALL:

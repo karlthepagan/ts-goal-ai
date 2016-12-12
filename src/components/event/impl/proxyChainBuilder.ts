@@ -1,15 +1,6 @@
-import * as F from "../../functions";
-import {AnyEvent} from "./eventSpec";
-
-const _terminal: any = {
-  callAnd: 2,
-  call: 4,
-  apply: 2,
-  fireEvent: 2,
-};
-
-type StackHandler<O extends AnyEvent> = (value: O, ...push: any[]) => [O, Function];
-type TerminalCallback<O extends AnyEvent> = (spec: O) => void;
+type StackHandler<O> = (value: O, ...push: any[]) => [O, Function];
+type TerminalCallback<O> = (spec: O) => void;
+type Map<T> = { [key: string]: T };
 
 interface Accumulator {
   stack: any;
@@ -27,23 +18,29 @@ function newTarget(last?: Accumulator, push?: any[], terminal?: number): Accumul
     if (push === undefined) {
       push = [];
     }
-    terminal = F.elvis(last.terminal, terminal);
     accumulator.position = last.position + 1; // TODO call stack concat names for debugger?
     let [stack, step] = last.step(last.stack, ...push);
     accumulator.stack = stack;
     accumulator.step = step;
+    // last & param == undef -> undef, otherwise last.terminal takes priority
+    terminal = last.terminal === undefined ? terminal : last.terminal;
     accumulator.terminal = terminal === undefined ? undefined : (terminal - 1);
   }
   return accumulator;
 }
 
-export default class ProxyChainBuilder<O extends AnyEvent> implements ProxyHandler<Accumulator> {
+export default class ProxyChainBuilder<O> implements ProxyHandler<Accumulator> {
   private _stackHandler: StackHandler<O>;
   private _callback: TerminalCallback<O>;
+  /**
+   * defines number of steps to emit the callback after a given method is invoked
+   */
+  private _terminal: Map<number>;
 
-  constructor(stackHandler: StackHandler<O>, callback: TerminalCallback<O>) {
+  constructor(terminal: Map<number>, stackHandler: StackHandler<O>, callback: TerminalCallback<O>) {
     this._stackHandler = stackHandler;
     this._callback = callback;
+    this._terminal = terminal;
   }
 
   public target(): Accumulator {
@@ -61,16 +58,15 @@ export default class ProxyChainBuilder<O extends AnyEvent> implements ProxyHandl
     }
   }
 
-  public get(target: Accumulator, eventMethod: string, receiver: any): any {
-    receiver = receiver;
-    return new Proxy(newTarget(target, [eventMethod], _terminal[eventMethod]), this);
+  public get(target: Accumulator, eventMethod: string): any {
+    return new Proxy(newTarget(target, [eventMethod], this._terminal[eventMethod]), this);
   }
 
   public apply(target: Accumulator, thisArg: any, argArray?: any): any {
-    thisArg = thisArg;
+    thisArg = thisArg; // TODO webpack smell
     target = newTarget(target, argArray);
     if (target.terminal === 0) {
-      this._callback(target.stack); // target.step(target.stack, ...argArray)[0]); // unwrap
+      this._callback(target.stack);
     }
     return target.step === undefined ? undefined : new Proxy(target, this);
   }
