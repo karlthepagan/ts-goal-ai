@@ -2,28 +2,55 @@ import {EventRegistry} from "../event/api/index";
 import SpawnState from "../state/spawnState";
 import Joinpoint from "../event/api/joinpoint";
 import CreepState from "../state/creepState";
-import RoomState from "../state/roomState";
 import {log} from "../support/log";
 import InterceptorSpec from "../event/impl/interceptorSpec";
 import * as F from "../functions";
 import StructureState from "../state/structureState";
+import EnemyCreepState from "../state/enemyCreepState";
+
+export function defineEvents(em: EventRegistry) {
+  em.intercept(SpawnState).after(i => i.createCreep).wait(1).fireEvent("spawn", jp => {
+    const creepName = jp.returnValue as string;
+    const apiCreep = Game.creeps[creepName];
+    if (apiCreep === undefined) {
+      debugger; // TODO spawn failed
+      return;
+    }
+    const creep = CreepState.right(apiCreep);
+    return Joinpoint.withSource(jp, creep, creep.getId());
+  });
+  em.when().spawn().ofAll().apply((jp: Joinpoint<CreepState, string>) => {
+    // TODO death calculation
+  });
+  em.intercept(CreepState).after(i => i.move).wait(1, (jp: Joinpoint<CreepState, void>) => {
+    return jp; // TODO NOW derps, transform to match OnMove spec
+  }).fireEvent("move");
+  const moveTo = em.intercept(CreepState).after(i => i.moveTo);
+  const moveByPath = em.intercept(CreepState).after(i => i.moveByPath);
+  [moveTo, moveByPath].map(i =>
+    i.wait(1, (jp: Joinpoint<CreepState, void>) => {
+      return jp; // TODO NOW derps, transform to match OnMove spec
+    }).fireEvent("move")
+  );
+}
 
 export default function registerBehaviorProvider(em: EventRegistry) {
-  em.intercept(SpawnState).after(i => i.createCreep).wait(1).fireEvent("spawn");
+  defineEvents(em);
 
-  em.when().aggro().ofAll().apply((jp: Joinpoint<RoomState, void>) => {
+  em.when().aggro().ofAll().apply((jp: Joinpoint<EnemyCreepState, void>) => {
     jp = jp;
     log.debug("AGGRO! TODO find turrets and FIRE! later do enemy priority scoring & elections");
   });
 
-  em.when().spawn().ofAll().apply((jp: Joinpoint<SpawnState, string>) => {
-    // const creep = jp.target as CreepState; // TODO implement event domain target resolution
-    const creepName = jp.returnValue as string;
-    const apiCreep = Game.creeps[creepName];
-    const creep = CreepState.left(apiCreep);
-
-    jp.target.resolve();
-    const whenBorn = em.schedule(jp.target.subject().spawning.remainingTime, creep);
+  em.when().spawn().ofAll().apply((jp: Joinpoint<CreepState, string>) => {
+    if (jp.source === undefined) {
+      debugger; // TODO no source set
+      return;
+    }
+    const creep = jp.target;
+    const spawn = jp.source.target as SpawnState;
+    spawn.resolve();
+    const whenBorn = em.schedule(spawn.subject().spawning.remainingTime, creep);
     // TODO consider assigning jp into the schedule chain? SRC => DST stuff!!!!
     const mem = jp.args[2];
     if (mem !== undefined) {

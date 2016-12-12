@@ -15,7 +15,7 @@ class EventSpec<I, T> {
 
   public static fromEventName(name: string) {
     const is = new EventSpec<any, any>();
-    is.definition = new Joinpoint<any, any>("__events__", name, "?");
+    is.definition = Joinpoint.newEvent(name, "?");
     is.callState = EventSpec.AFTER_CALL;
     // is.targetConstructor = constructor; // TODO event typing
     return is;

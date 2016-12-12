@@ -3,7 +3,6 @@ import Joinpoint from "../api/joinpoint";
 import InterceptorService from "./interceptorService";
 import getConstructor from "../../types";
 import State from "../../state/abstractState";
-import {getType} from "../../functions";
 
 export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements ProxyHandler<Function> {
   public static fromConstructor(constructor: Constructor<State<any>>) {
@@ -22,10 +21,8 @@ export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements Pr
   }
 
   public static joinpointFor(target: State<any>, method: string) {
-    const objectId = target.getId();
-    const subject = target.subject();
-    const jp = new Joinpoint<any, any>(getType(subject), method, objectId);
-    jp.target = subject;
+    const jp = Joinpoint.forInstance(target, target.getId());
+    jp.target = target.subject();
     jp.category = target.constructor.name; // constructor.name must match fromConstructor
     return jp;
   }

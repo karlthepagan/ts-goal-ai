@@ -9,6 +9,7 @@ import ScheduleSpec from "./scheduledSpec";
 import Named from "../../named";
 import {interceptorService} from "../behaviorContext";
 import InterceptorSpec from "./interceptorSpec";
+import {OnBuildTarget} from "../api/index";
 
 type ClassSpec<T extends EventSpec<any, any>> = { [methodName: string]: T[] };
 export type SpecMap<T extends EventSpec<any, any>> = { [className: string]: ClassSpec<T> };
@@ -100,10 +101,12 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     }
   }
 
-  public triggerBehaviors(jp: Joinpoint<any, any>, eventName: string) {
-    // TODO reconcile jp info from event definition? maybe EventSepc would help
-    const event = new Joinpoint<any, any>("__events__", eventName, jp.objectId);
-    event.target = jp.target; // this is the event source, inject it into event!
+  public triggerBehaviors(jp: Joinpoint<any, any>, eventName: string, targetBuilder?: OnBuildTarget<any, any>) {
+    const dst = targetBuilder === undefined ? jp.target : targetBuilder(jp);
+
+    const event = Joinpoint.newEvent(eventName, jp.objectId);
+
+    event.target = dst; // this is the event source, inject it into event!
     event.returnValue = jp.returnValue;
     event.args = jp.args;
 

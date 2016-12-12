@@ -49,9 +49,6 @@ export default class EventManager implements EventRegistry {
       return [is, actionGet(undefined)];
     },
     (spec) => {
-      // TODO clone? or NOT to clone?, continue to pass it down the chain and let it be built????
-      // TODO delete spec.targetConstructor; // will be cleaned up in next action
-      // const relativeTime = spec.relativeTime;
       spec = spec.clone() as any;
       spec.unresolve();
       spec.actionArgs.splice(0, 1); // TODO cleanup

@@ -12,10 +12,6 @@ export function actionGet(select?: Function) {
         is.setAction(interceptorService, i => i.triggerBehaviors);
         return [is, assignArgsThen(actionGet(select))];
 
-      case "andThen":
-        // TODO implement and
-        return [is, select];
-
       case "apply":
         return [is, actionApplyApply]; // apply returns void (TODO should return promise?)
 

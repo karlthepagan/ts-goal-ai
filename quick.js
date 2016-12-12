@@ -61,9 +61,17 @@ Game.rooms.W74S57.find(FIND_MY_STRUCTURES, {filter: s=>s.structureType === STRUC
 Game.spawns.Spawn1.createCreep(_.times(17, _.constant(WORK)).concat(CARRY, MOVE));
 
 Room.serializePath([
+  {"x":16,"y":34,"dx":0,"dy":1,"direction":5},
   {"x":15,"y":35,"dx":-1,"dy":1,"direction":6},
   {"x":14,"y":34,"dx":-1,"dy":-1,"direction":8},
   {"x":13,"y":33,"dx":-1,"dy":-1,"direction":8},
   {"x":13,"y":32,"dx":0,"dy":-1,"direction":1},
   {"x":14,"y":32,"dx":1,"dy":0,"direction":3}
+]);
+
+Room.serializePath([
+  {"x":14,"y":32,"dx":-1,"dy":-1,"direction":8},
+  {"x":13,"y":32,"dx":-1,"dy":0,"direction":7},
+  {"x":13,"y":33,"dx":0,"dy":1,"direction":5},
+  {"x":14,"y":34,"dx":1,"dy":1,"direction":4}
 ]);

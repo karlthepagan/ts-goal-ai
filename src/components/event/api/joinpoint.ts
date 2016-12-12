@@ -1,7 +1,28 @@
+import {getType} from "../../functions";
 export type AnyJP = Joinpoint<any, any>;
 import * as F from "../../functions";
 
 export default class Joinpoint<I, T> {
+  public static forInstance<T>(instance: T, id: string) {
+    return new Joinpoint<T, any>(getType(instance), "?", id);
+  }
+
+  public static newEvent(name: string, id: string) {
+    // TODO refactor from "__events__", name to targetType, "__event__$name"
+    return new Joinpoint<any, any>("__events__", name, id);
+  }
+
+  public static withSource<X>(src: Joinpoint<any, T>, dstInstance: X, dstId: string) {
+    const jp = new Joinpoint<X, any>(getType(dstInstance), "?", dstId);
+    // TODO set source on jp?
+    jp.args = src.args.concat();
+    jp.target = dstInstance;
+    jp.returnValue = src.returnValue;
+    jp.thrownException = src.thrownException;
+    jp.source = src.clone();
+    return jp;
+  }
+
   public className: string;
   public objectId?: string;
   public target: I;
@@ -12,7 +33,7 @@ export default class Joinpoint<I, T> {
   public proceedApply?: Function;
   public returnValue?: T;
   public thrownException?: string|Error;
-  // public source?: any;
+  public source?: Joinpoint<any, any>;
 
   constructor(className: string, method: string, objectId?: string) {
     this.className = className;
