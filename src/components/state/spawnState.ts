@@ -1,7 +1,7 @@
 import State from "./abstractState";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 
-export default class SpawnState extends State<Spawn> {
+export default class SpawnState extends State<Spawn> { // TODO extends StructureState
   public static apiType() {
     return Spawn;
   }

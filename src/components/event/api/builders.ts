@@ -1,6 +1,6 @@
 import {AnyEvent} from "../impl/eventSpec";
 import {interceptorService} from "../behaviorContext";
-import {OnIntercept} from "./index";
+import {OnIntercept, OnBuildTarget} from "./index";
 import ScheduleSpec from "../impl/scheduledSpec";
 import AnonCache from "../impl/anonCache";
 
@@ -34,8 +34,7 @@ export function actionGet(select?: Function) {
  * scheduling that to occur later
  */
 export function waitApply(next: Function) {
-  return (is: AnyEvent, relativeTime: number) => {
-    // TODO compose two joinpoints together??? - one to be applied immediately, and one to be executed after a delay
+  return (is: AnyEvent, relativeTime: number, targetBuilder?: OnBuildTarget<any, any>) => {
     const ss = is.clone(new ScheduleSpec<any, any>());
     if (isNaN(relativeTime)) {
       debugger; // illegal relativeTime
@@ -46,6 +45,11 @@ export function waitApply(next: Function) {
     }
 
     ss.relativeTime = relativeTime;
+
+    if (targetBuilder !== undefined) {
+      debugger;
+      ss.definition = targetBuilder(ss.definition);
+    }
 
     return [ss, next]; // ss needs to get send to the schedule handler
   };

@@ -58,7 +58,8 @@ _(Game.rooms.W74S57.lookForAtArea(LOOK_STRUCTURES,
 Game.rooms.W74S57.find(FIND_MY_STRUCTURES, {filter: s=>s.structureType === STRUCTURE_TOWER}).map(
   c=>Game.rooms.W74S57.lookForAtArea(LOOK_STRUCTURES, c.pos.y - towerRepairRange, c.pos.x - towerRepairRange, c.pos.y + towerRepairRange, c.pos.x + towerRepairRange, true).map(JSON.stringify))
 
-Game.spawns.Spawn1.createCreep(_.times(17, _.constant(WORK)).concat(CARRY, MOVE));
+// STOP at 1700 energyCapacity or ScreepsOS will quickly starve 2 sources
+Game.spawns.Spawn1.createCreep(_.times(15, _.constant(WORK)).concat(CARRY, CARRY, MOVE, MOVE));
 
 Room.serializePath([
   {"x":16,"y":34,"dx":0,"dy":1,"direction":5},

@@ -14,14 +14,15 @@ export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements Pr
     return is;
   }
 
-  public static forProxyGet<S>(target: State<S>, method: string) {
+  public static forProxyGet<S extends State<any>>(target: S, method: string) {
     const is = new InterceptorSpec<S, any>();
     is.definition = InterceptorSpec.joinpointFor(target, method);
     return is;
   }
 
-  public static joinpointFor(target: State<any>, method: string) {
+  public static joinpointFor<X extends State<any>>(target: X, method: string) {
     const jp = Joinpoint.forInstance(target, target.getId());
+    jp.method = method;
     jp.target = target.subject();
     jp.category = target.constructor.name; // constructor.name must match fromConstructor
     return jp;

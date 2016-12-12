@@ -9,26 +9,30 @@ import StructureState from "../state/structureState";
 import EnemyCreepState from "../state/enemyCreepState";
 
 export function defineEvents(em: EventRegistry) {
+  debugger; // TODO REMOVE - new event definitions
   em.intercept(SpawnState).after(i => i.createCreep).wait(1).fireEvent("spawn", jp => {
     const creepName = jp.returnValue as string;
     const apiCreep = Game.creeps[creepName];
     if (apiCreep === undefined) {
       debugger; // TODO spawn failed
-      return;
+      throw new Error("spawn failed");
     }
     const creep = CreepState.right(apiCreep);
     return Joinpoint.withSource(jp, creep, creep.getId());
   });
   em.when().spawn().ofAll().apply((jp: Joinpoint<CreepState, string>) => {
-    // TODO death calculation
+    log.debug("dying", jp.objectId);
+    // TODO death calculation, 1499 ticks from birth?
   });
   em.intercept(CreepState).after(i => i.move).wait(1, (jp: Joinpoint<CreepState, void>) => {
+    log.debug("moving", jp.objectId);
     return jp; // TODO NOW derps, transform to match OnMove spec
   }).fireEvent("move");
   const moveTo = em.intercept(CreepState).after(i => i.moveTo);
   const moveByPath = em.intercept(CreepState).after(i => i.moveByPath);
   [moveTo, moveByPath].map(i =>
     i.wait(1, (jp: Joinpoint<CreepState, void>) => {
+      log.debug("movingTo", jp.objectId);
       return jp; // TODO NOW derps, transform to match OnMove spec
     }).fireEvent("move")
   );

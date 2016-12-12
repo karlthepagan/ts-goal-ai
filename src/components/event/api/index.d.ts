@@ -14,12 +14,12 @@ type OnMove<R> = (jp: Joinpoint<CreepState, void>, fromPos: RoomPosition, forwar
  * lifecycle is a good example of difference between call and apply. use Joinpoint.source to describe the source of the
  * event and Joinpoint.target for the destination.
  */
-type OnLifecycle<DST extends CreepState|StructureState, R> = (jp: Joinpoint<DST, string>, ...args: any[]) => R;
+type OnLifecycle<DST extends CreepState|StructureState|SpawnState, R> = (jp: Joinpoint<DST, string>, ...args: any[]) => R;
 type OnEnergy<DST extends CreepState|StructureState, R> = (jp: Joinpoint<DST, string>, ...args: any[]) => R;
 type OnScheduled = (jp: Joinpoint<any, void>, ...args: any[]) => void;
 export type OnIntercept<DST, R> = (jp: Joinpoint<DST, R>, ...args: any[]) => void;
 type OnInfo<DST> = (jp: Joinpoint<DST, any>, ...args: any[]) => void;
-type OnBuildTarget<SRC, DST> = (jp: Joinpoint<DST, any>, ...args: any[]) => Joinpoint<DST, any>;
+export type OnBuildTarget<SRC, DST> = (jp: Joinpoint<SRC, any>, ...args: any[]) => Joinpoint<DST, any>;
 
 export interface WhenEvent<INST, CALLBACK> {
   of<T extends INST>(instance: T): Action<CALLBACK, T, EventSelector>;
@@ -140,8 +140,8 @@ export interface Action<CALLBACK, TYPE, SELECT> { // TODO TYPE for jp.source?
   /**
    * transform one capture into another event: utilizes InterceptorService.triggerBehaviors
    */
-  fireEvent     (eventName: string, scheduleBuilder?: OnBuildTarget<TYPE, any>): Action<CALLBACK, TYPE, SELECT>;
-  wait          (relativeTime: number, scheduleBuilder?: OnBuildTarget<TYPE, any>): Action<CALLBACK, TYPE, SELECT>;
+  fireEvent     (eventName: string, targetBuilder?: OnBuildTarget<TYPE, any>): Action<CALLBACK, TYPE, SELECT>;
+  wait          (relativeTime: number, targetBuilder?: OnBuildTarget<TYPE, any>): Action<CALLBACK, TYPE, SELECT>;
   // TODO filter on source or destination
   // filterOn      (thisArg: Named, callback: CALLBACK, ...args: any[]): SELECT; // illegal for When.after or EventSelector
   // or            (): SELECT; // TODO difficult,
@@ -187,18 +187,3 @@ export interface EventRegistry { // instances declared in this context are the d
 }
 export default EventRegistry;
 
-// export function f(em: EventRegistry) {
-//   // em.schedule(1).onSpawn().then().
-//   const creep = CreepState.vright("");
-//   // em.intercept(CreepState).before.attack().then
-//   em.when().death().occursAt(1499, creep);
-//   em.when().death().of(creep).call();
-// }
-//
-/*
- * chaining api options
- * - different actors
- * - time delay
- * - or
- * - ?
- */

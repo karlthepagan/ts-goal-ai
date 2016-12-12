@@ -7,12 +7,12 @@ export default class Joinpoint<I, T> {
     return new Joinpoint<T, any>(getType(instance), "?", id);
   }
 
-  public static newEvent(name: string, id: string) {
+  public static newEvent(name: string, id?: string) {
     // TODO refactor from "__events__", name to targetType, "__event__$name"
     return new Joinpoint<any, any>("__events__", name, id);
   }
 
-  public static withSource<X>(src: Joinpoint<any, T>, dstInstance: X, dstId: string) {
+  public static withSource<X>(src: Joinpoint<any, any>, dstInstance: X, dstId: string) {
     const jp = new Joinpoint<X, any>(getType(dstInstance), "?", dstId);
     // TODO set source on jp?
     jp.args = src.args.concat();
