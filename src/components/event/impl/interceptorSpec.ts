@@ -37,7 +37,7 @@ export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements Pr
   public invoke(jp: Joinpoint<any, any>, context: InterceptorService): boolean {
     context = context; // context used to schedule dependent actions
 
-    debugger;
+    debugger; // TODO REMOVE incerceptor invoke
     // special resolve case for intercepted objects, use override category as the target
     const wrapped = Object.create(jp);
     wrapped.resolve();

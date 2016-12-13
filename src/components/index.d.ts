@@ -38,6 +38,11 @@ interface Commands {
    * start a breakpoint in grind
    */
   break: boolean;
+
+  /**
+   * debug rescoring
+   */
+  debugScore: boolean;
 }
 
 interface Options {

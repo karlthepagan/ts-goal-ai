@@ -27,6 +27,10 @@ export function defineEvents(em: EventRegistry) {
 
   // TODO try to move most apply calls into targetBuilder calls
   em.when().spawn().ofAll().apply((jp: Joinpoint<CreepState, string>) => {
+    if (jp.source === undefined) {
+      debugger; // no event source
+      throw new Error("no event source");
+    }
     const creep = jp.target;
     const spawn = jp.source.target as SpawnState;
     spawn.resolve();
@@ -54,8 +58,6 @@ export function defineEvents(em: EventRegistry) {
       // interceptorService.scheduleExec() // TODO rested event
     })
   );
-
-
 }
 
 export default function registerBehaviorProvider(em: EventRegistry) {
@@ -67,7 +69,11 @@ export default function registerBehaviorProvider(em: EventRegistry) {
   });
 
   em.when().spawn().ofAll().apply((jp: Joinpoint<CreepState, string>, body: string[], mem?: any) => {
-    debugger;
+    body = body;
+    if (jp.source === undefined) {
+      debugger; // no event source
+      throw new Error("no event source");
+    }
     const creep = jp.target;
     const spawn = jp.source.target as SpawnState;
     spawn.resolve();

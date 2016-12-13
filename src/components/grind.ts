@@ -38,9 +38,9 @@ export function grind(state: GlobalState) {
   if (opts.respawn || opts.suicide) {
     // stop aggressive scanning unless cpu bucket is over 85% full
     let scan = Game.cpu.bucket > 8500;
-    doScans(state, true, scan, scan); // always roomscan to pickup new enemies
+    doScans(state, true, scan, scan, commands); // always roomscan to pickup new enemies
   } else {
-    doScans(state, th.isRoomscanTime(), th.isRescoreTime(), th.isRemoteRoomScanTime());
+    doScans(state, th.isRoomscanTime(), th.isRescoreTime(), th.isRemoteRoomScanTime(), commands);
   }
 
   const creeps = _.values<Creep|null>(Game.creeps).filter(i => !(i === null || i.ticksToLive === undefined));
@@ -232,7 +232,7 @@ export function doQuickTransfers(state: State<any>, ignore: any): void {
       if (!isReal(ignore[c.getId()])) {
         return;
       }
-      debugger;
+      debugger; // TODO REMOVE quick transfers from storage
       c.resolve();
       api(creep).withdraw(c.subject(), RESOURCE_ENERGY);
       doQuickTransfers(c, ignore);
@@ -416,7 +416,7 @@ export function doHarvest(state: GlobalState,
   ).compact().value();
 }
 
-function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remoteRoomScan: boolean) {
+function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remoteRoomScan: boolean, commands: Commands) {
   if (roomScan) {
     // scan real rooms
     state.eachRoom(room => {
@@ -427,6 +427,9 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
   }
 
   if (rescore) {
+    if (commands.debugScore) {
+      debugger; // command.debugScore
+    }
     log.info("rescoring game state");
     scoreManager.rescore(state, state.memory(SCORE_KEY), undefined, Game.time);
   }
@@ -609,7 +612,7 @@ type ScoreFunc<T> = (value: T) => Scored<T>;
 type Scored<T> = { value: T, score: number };
 
 // state/tenergy
-const scoreTEnergy = byScore<SourceState>("tenergy");
+const scoreTEnergy = byScore<SourceState>("score");
 
 // creep/venergy + rangeScore
 function distanceEnergyFitness(pos: RoomPosition): ScoreFunc<CreepState> {

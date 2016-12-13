@@ -118,7 +118,9 @@ const impl = {
     }) as ScoreHandler<GlobalState, GlobalState>,
     energy: ((state: GlobalState, score: ScoreManager<GlobalState>, time: number) => {
       // log.debug("scoring global energy");
-      return _(state.eachSource(source => {
+      return _(state.eachSource(source => { // TODO automatic total score?
+        score.rescore(source, source.memory(SCORE_KEY), undefined, time); // TODO workaround for time set spam
+
         let rval = 0;
         // TODO source access bonus
         // energy velocity for each source
@@ -127,6 +129,8 @@ const impl = {
         rval = rval + score.getOrRescore(source, source.memory(SCORE_KEY), "tenergy", time);
         // military risk is folded into the SourceState's raw score
         // also the score delta between global.energy and sum of sources? TODO consider
+        rval = rval + score.getOrRescore(source, source.memory(SCORE_KEY), "risk", time);
+
         return rval;
       })).sum();
     }) as ScoreHandler<GlobalState, GlobalState>,
@@ -222,6 +226,11 @@ const impl = {
       // venergy - number of potential workers
       return state.nodeDirs().length;
       // TODO venergy is limited to source regen rate
+    }) as ScoreHandler<SourceState, GlobalState>,
+    risk: ((state: SourceState) => {
+      const pos = state.pos();
+      return F.elvis(_.chain(Game.flags).values().filter((f: Flag) => _.isEqual(f.pos, pos))
+        .map((f: Flag) => f.color === COLOR_RED ? -1000 : 0).first().valueOf(), 0);
     }) as ScoreHandler<SourceState, GlobalState>,
   } as StateScoreImpl<SourceState>,
 
