@@ -3,9 +3,9 @@ import {log} from "../support/log";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 import SourceState from "./sourceState";
 import MineralState from "./mineralState";
-import SpawnState from "./spawnState";
 import RoomIterator from "../util/roomIterator";
 import * as F from "../functions";
+import StructureState from "./structureState";
 
 /**
  * TODO BSP this mofo? https://www.npmjs.com/package/bsp-tree
@@ -92,7 +92,7 @@ export default class RoomState extends State<Room> {
         this.memory().minerals = _.object(minerals);
 
         // spawns
-        this.subject().find(FIND_MY_SPAWNS).forEach(SpawnState.left);
+        this.subject().find(FIND_MY_SPAWNS).forEach(StructureState.left);
       }
 
       return true;

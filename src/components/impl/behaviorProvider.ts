@@ -91,7 +91,7 @@ export default function registerBehaviorProvider(em: EventRegistry) {
 
   em.when().move().ofAll().call().touching($, $, $);
 
-  em.when().attacked().ofAll().apply((jp: Joinpoint<CreepState|StructureState, string>) => {
+  em.when().attacked().ofAll().apply((jp: Joinpoint<CreepState|StructureState<any>, string>) => {
     // TODO clear assignment and retreat to spawn
     if (jp.target instanceof StructureState) {
       // LATER what do?

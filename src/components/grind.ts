@@ -11,9 +11,9 @@ import {DISTANCE_WEIGHT} from "./impl/stateScoreProvider";
 import MemoIterator = _.MemoIterator;
 import LookForIterator from "./util/lookForIterator";
 import {FindCallback} from "./util/lookForIterator";
-import SpawnState from "./state/spawnState";
 import api from "./event/behaviorContext";
 import {isReal} from "./functions";
+import StructureState from "./state/structureState";
 
 const cachedIdleActions: { [id: string]: FindCallback<any> } = {};
 
@@ -260,14 +260,14 @@ export function doQuickTransfers(state: State<any>, ignore: any): void {
 
 export function doTransfers(state: GlobalState,
                             creeps: (Creep|null)[],
-                            tasked: { [creepIdToSourceId: string]: string }): (SpawnState|null)[] {
+                            tasked: { [creepIdToSourceId: string]: string }): (StructureState<any>|null)[] {
   if (compactSize(creeps) === 0) {
     return [];
   }
   tasked = tasked;
 
-  return state.spawns().map(spawnState => {
-    const spawn = spawnState.subject();
+  return state.spawns().map(structureState => {
+    const spawn = structureState.subject();
     if (spawn.energy < spawn.energyCapacity) {
       // energy hungry, feed me!
       LookForIterator.search<OwnedStructure>(spawn.pos, 3, spawn, [{
@@ -290,7 +290,7 @@ export function doTransfers(state: GlobalState,
         },
       }]);
     }
-    return spawnState;
+    return structureState;
   }).value();
 }
 
@@ -448,8 +448,8 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
 export function doSpawn(state: GlobalState, commands: Options) {
   commands = commands;
 
-  return state.spawns().map(spawnState => {
-    spawnCreeps(state, spawnState);
+  return state.spawns().map(structureState => {
+    spawnCreeps(state, structureState);
   }).value();
 }
 
@@ -458,10 +458,10 @@ const carryPartCost = BODYPART_COST.move;
 const workerBody = [CARRY, WORK, MOVE, MOVE];
 const workerBodyCost = _(workerBody).sum(i => BODYPART_COST[i]);
 
-function spawnCreeps(state: GlobalState, spawnState: SpawnState) {
+function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>) {
   state = state;
 
-  const spawn = spawnState.subject();
+  const spawn = structureState.subject();
 
   const creepCount = state.creeps().value().length;
   switch (creepCount) {
@@ -469,23 +469,23 @@ function spawnCreeps(state: GlobalState, spawnState: SpawnState) {
       if (spawn.room.energyAvailable < 200) {
         return;
       }
-      api(spawnState).createCreep([CARRY, WORK, MOVE]);
+      api(structureState).createCreep([CARRY, WORK, MOVE]);
       break;
 
     case 1:
     case 2:
       if (spawn.room.energyAvailable < 300) {
-        doQuickTransfers(spawnState, {});
+        doQuickTransfers(structureState, {});
         return;
       }
-      api(spawnState).createCreep([CARRY, WORK, WORK, MOVE]);
+      api(structureState).createCreep([CARRY, WORK, WORK, MOVE]);
       break;
 
     default:
       // TODO workers: 5 * WORK, 1 * CARRY, 5 * MOVE
       // TODO transporters: 1 * WORK, 2n * CARRY, n+1 MOVE
       if (spawn.room.energyAvailable < spawn.room.energyCapacityAvailable) {
-        doQuickTransfers(spawnState, {});
+        doQuickTransfers(structureState, {});
         return;
       }
       const majorSize = Math.floor(spawn.room.energyCapacityAvailable / workerBodyCost);
@@ -511,7 +511,7 @@ function spawnCreeps(state: GlobalState, spawnState: SpawnState) {
         }
       }
 
-      api(spawnState).createCreep(body);
+      api(structureState).createCreep(body);
   }
   // log.info("I want to spawn creeps!", spawn);
 }

@@ -14,8 +14,8 @@ type OnMove<R> = (jp: Joinpoint<CreepState, void>, fromPos: RoomPosition, forwar
  * lifecycle is a good example of difference between call and apply. use Joinpoint.source to describe the source of the
  * event and Joinpoint.target for the destination.
  */
-type OnLifecycle<DST extends CreepState|StructureState|SpawnState, R> = (jp: Joinpoint<DST, string>, ...args: any[]) => R;
-type OnEnergy<DST extends CreepState|StructureState, R> = (jp: Joinpoint<DST, string>, ...args: any[]) => R;
+type OnLifecycle<DST extends CreepState|StructureState<any>|SpawnState, R> = (jp: Joinpoint<DST, string>, ...args: any[]) => R;
+type OnEnergy<DST extends CreepState|StructureState<any>, R> = (jp: Joinpoint<DST, string>, ...args: any[]) => R;
 type OnScheduled = (jp: Joinpoint<any, void>, ...args: any[]) => void;
 export type OnIntercept<DST, R> = (jp: Joinpoint<DST, R>, ...args: any[]) => void;
 type OnInfo<DST> = (jp: Joinpoint<DST, any>, ...args: any[]) => void;
@@ -69,7 +69,7 @@ export interface EventSelector {
    * src creep|struct|source other? (who is filling me)
    * dst creep|struct
    */
-  full<T extends CreepState|StructureState>(): WhenEvent<T, OnEnergy<T, void>>; // TODO structure state
+  full<T extends CreepState|StructureState<any>>(): WhenEvent<T, OnEnergy<T, void>>; // TODO structure state
   /**
    * fatigue was high but is now zero: scheduled after move
    *
@@ -91,21 +91,21 @@ export interface EventSelector {
    * src creep?
    * dst structure
    */
-  decay<T extends StructureState>(): WhenEvent<T, OnLifecycle<T, void>>;
+  decay<T extends StructureState<any>>(): WhenEvent<T, OnLifecycle<T, void>>;
   /**
    * energy will be empty
    *
    * src creep|struct (who am I working?) - source of the drain
    * dst creep|struct
    */
-  empty<T extends CreepState|StructureState>(): WhenEvent<T, OnEnergy<T, void>>;
+  empty<T extends CreepState|StructureState<any>>(): WhenEvent<T, OnEnergy<T, void>>;
   /**
    * ouch!
    *
    * src EnemyCreepState
    * dst creep|struct
    */
-  attacked(): WhenEvent<EnemyCreepState, OnInfo<CreepState|StructureState>>;
+  attacked(): WhenEvent<EnemyCreepState, OnInfo<CreepState|StructureState<any>>>;
 }
 
 interface ProgressInfo {

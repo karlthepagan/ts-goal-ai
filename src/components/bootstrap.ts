@@ -11,13 +11,15 @@ import EnemyCreepState from "./state/enemyCreepState";
 import MineralState from "./state/mineralState";
 import RoomState from "./state/roomState";
 import SourceState from "./state/sourceState";
-import SpawnState from "./state/spawnState";
 import ConstructionState from "./state/constructionState";
 import {registerType, registerTypeAs} from "./types";
 import registerBehaviorProvider from "./impl/behaviorProvider";
 import InterceptorService from "./event/impl/interceptorService";
 import AnonCache from "./event/impl/anonCache";
 import {botMemory} from "../config/config";
+import DropState from "./state/dropState";
+import FlagState from "./state/FlagState";
+import StructureState from "./state/structureState";
 
 export const bootstrap: (() => void)[] = [];
 
@@ -28,16 +30,19 @@ bootstrap.push(() => {
 
 bootstrap.push(() => {
   // log.debug("registering state types");
-  registerType(CreepState);
   registerType(ConstructionState);
+  registerType(CreepState);
+  registerType(DropState);
   registerType(EnemyCreepState);
+  registerType(FlagState);
   registerType(GlobalState);
   registerType(MineralState);
   registerType(RoomState);
   registerType(SourceState);
-  registerType(SpawnState);
+  registerType(StructureState);
+  // registerType(SpawnState);
 
-  registerTypeAs(SpawnState, STRUCTURE_SPAWN);
+  registerTypeAs(StructureState, STRUCTURE_SPAWN); // TODO all structures?
 
   registerType(InterceptorService);
   registerType(AnonCache);

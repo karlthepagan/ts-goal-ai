@@ -2,15 +2,19 @@ import State from "./abstractState";
 import {log} from "../support/log";
 import {botMemory} from "../../config/config";
 import RoomState from "./roomState";
-import SpawnState from "./spawnState";
 import SourceState from "./sourceState";
 import MineralState from "./mineralState";
 import CreepState from "./creepState";
 import * as F from "../functions";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
-import FlagState from "./FlagState";
+import StructureState from "./structureState";
 
 export default class GlobalState extends State<Game> {
+  public static readonly CHANGED_FLAGS = "flags";
+  public static readonly CHANGED_CREEPS = "creeps";
+  public static readonly CHANGED_SITES = "constructionSites";
+  public static readonly CHANGED_STRUCTURES = "structures";
+
   public static apiType() {
     return undefined;
   }
@@ -73,8 +77,8 @@ export default class GlobalState extends State<Game> {
 
   // TODO filter functions
   // TODO sort functions, precompute sorts?
-  public spawns(): LoDashExplicitArrayWrapper<SpawnState> {
-    return _.chain(this.subject().spawns).values().map(SpawnState.right);
+  public spawns(): LoDashExplicitArrayWrapper<StructureState<Spawn>> {
+    return _.chain(this.subject().spawns).values().map(StructureState.right);
   }
 
   public creeps(): LoDashExplicitArrayWrapper<CreepState> {
@@ -129,6 +133,10 @@ export default class GlobalState extends State<Game> {
     return _.map(this._memory.index.minerals, (id: string) => {
       return f(MineralState.vright(id));
     });
+  }
+
+  public isChanged(type: string) {
+    return _.size((Game as any)[type]) !== _.size(this._memory[type]);
   }
 
   // public flags(): FlagState[] {
