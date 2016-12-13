@@ -23,13 +23,16 @@ interface EventMemory {
   /**
    * Map of tick numbers to lists of ScheduleSpecs
    */
-  timeline: { [key: string]: SpecMap<ScheduleSpec<any, any>> };
+  timeline: { [tick: string]: SpecMap<ScheduleSpec<any, any>> };
+
+  // TODO method to look for the ticks remaining to and subject of a pending event
+  // priorityQueue: { [classAndMethodName: string]: ScheduleSpec<any, any>[]};
 }
 
 export default class InterceptorService implements ProxyHandler<State<any>>, Named {
   public static vright(id: string) {
     id = id;
-    return interceptorService; // TODO singleton
+    return interceptorService; // TODO remove singleton, move to CDI
   }
 
   private _interceptors: SpecMap<AnyEvent>[] = [{}, {}, {}];
@@ -40,7 +43,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
   }
 
   public getId(): string {
-    return "global";
+    return "global"; // TODO CDI
   }
   /**
    * the current time if called from inside the execution context
@@ -85,7 +88,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
               jp.returnValue = this.beforeCall(jp);
               return this.dispatch(jp);
             } catch (err) {
-              log.trace(err); // TODO remove trace
+              log.trace(err); // TODO remove trace?
               jp.thrownException = err;
               return this.afterFail(jp);
             }
@@ -119,24 +122,22 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     }
     const interceptors = this.getInterceptors(jp, EventSpec.AFTER_CALL);
     if (interceptors === undefined || interceptors.length === 0) {
-      return jp.returnValue; // TODO apply within?
+      return jp.returnValue;
     }
 
     const unwrapped = Object.create(jp);
     unwrapped.resolve();
     for (let i = 0; i < interceptors.length; i++) {
       const interceptor = interceptors[i];
-      // TODO how to handle interceptor invoke decisions
-      if (interceptor.test(unwrapped) && interceptor.invoke(unwrapped, this)) { // TODO circular reference?
+      if (interceptor.test(unwrapped) && interceptor.invoke(unwrapped, this)) {
         return unwrapped.returnValue;
       }
     }
 
-    return unwrapped.returnValue; // TODO apply within?
+    return unwrapped.returnValue;
   }
 
   /**
-   * @param spec
    * @param jp method invocation triggering this schedule spec
    */
   public scheduleExec<A, B>(spec: ScheduleSpec<A, B>, jp?: Joinpoint<A, B>) {
@@ -235,7 +236,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     if (!jp.isFailed()) {
       debugger; // jp not captured before call
     }
-    jp.unresolve(); // TODO conditional?
+    jp.unresolve(); // TODO remove, should be safe with Object.create in stack
     const interceptors = this.getInterceptors(jp, EventSpec.AFTER_FAIL);
     if (interceptors === undefined || interceptors.length === 0) {
       throw jp.thrownException;
@@ -245,7 +246,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     unwrapped.resolve();
     for (let i = 0; i < interceptors.length; i++) {
       const interceptor = interceptors[i];
-      // TODO how to handle interceptor invoke decisions
+      // TODO how to handle interceptor invoke decisions (preventdefault etc)
       if (interceptor.test(unwrapped) && interceptor.invoke(unwrapped, this)) {
         return unwrapped.returnValue;
       }
@@ -257,8 +258,6 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
   protected getInterceptors(jp: Joinpoint<any, any>, callState: number): EventSpec<any, any>[] {
     return F.expand([ callState, jp.getMatchingClass(), jp.method ], this._interceptors, true) as AnyEvent[];
   }
-
-  // TODO method to look for the ticks remaining to and subject of a pending event
 
   protected eventMemory(): EventMemory {
     const mem = F.expand(["events"], botMemory()) as EventMemory;

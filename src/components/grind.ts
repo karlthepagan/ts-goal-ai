@@ -482,6 +482,8 @@ function spawnCreeps(state: GlobalState, spawnState: SpawnState) {
       break;
 
     default:
+      // TODO workers: 5 * WORK, 1 * CARRY, 5 * MOVE
+      // TODO transporters: 1 * WORK, 2n * CARRY, n+1 MOVE
       if (spawn.room.energyAvailable < spawn.room.energyCapacityAvailable) {
         doQuickTransfers(spawnState, {});
         return;
