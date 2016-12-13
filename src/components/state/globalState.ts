@@ -8,6 +8,7 @@ import MineralState from "./mineralState";
 import CreepState from "./creepState";
 import * as F from "../functions";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
+import FlagState from "./FlagState";
 
 export default class GlobalState extends State<Game> {
   public static apiType() {
@@ -129,6 +130,10 @@ export default class GlobalState extends State<Game> {
       return f(MineralState.vright(id));
     });
   }
+
+  // public flags(): FlagState[] {
+  //   // TODO NOW
+  // }
 
   protected _accessAddress() {
     return [];

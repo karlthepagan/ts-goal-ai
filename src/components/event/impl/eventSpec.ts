@@ -32,7 +32,6 @@ class EventSpec<I, T> {
   public targetBuilder?: OnBuildTarget<any, any>;
 
   public clone<R extends EventSpec<I, T>>(into?: R): R {
-    // TODO THIS IS SO COOL, instead of literal clone, just use a prototype!!!!
     if (into === undefined) {
       into = new EventSpec<I, T>() as R;
     }
