@@ -71,8 +71,8 @@ export default class RoomState extends State<Room> {
     return subject.name;
   }
 
-  protected init(rootMemory: any): boolean {
-    if (super.init(rootMemory)) {
+  protected init(rootMemory: any, callback?: InitCallback<RoomState>): boolean {
+    if (super.init(rootMemory, callback)) {
       if (!this.isRemote()) {
         // sources
         const sources = this.subject().find(FIND_SOURCES)
@@ -88,6 +88,10 @@ export default class RoomState extends State<Room> {
 
         // spawns
         this.subject().find(FIND_MY_SPAWNS).forEach(StructureState.left);
+      }
+
+      if (callback !== undefined) {
+        callback(this);
       }
 
       return true;

@@ -1,6 +1,7 @@
 import State from "./abstractState";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 
+// TODO DEPRECATED
 export default class SpawnState extends State<Spawn> { // TODO extends StructureState
   public static apiType() {
     return Spawn;
@@ -48,13 +49,17 @@ export default class SpawnState extends State<Spawn> { // TODO extends Structure
   //   return subject.id;
   // }
 
-  protected init(rootMemory: any): boolean {
-    if (super.init(rootMemory)) {
+  protected init(rootMemory: any, callback?: InitCallback<SpawnState>): boolean {
+    if (super.init(rootMemory, callback)) {
       // if (!this.isRemote()) {
       //   const subject = this.subject();
       // }
 
       // TODO distance to all sources? value calculations?
+
+      if (callback !== undefined) {
+        callback(this);
+      }
 
       return true;
     }

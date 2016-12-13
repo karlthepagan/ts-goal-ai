@@ -1,18 +1,17 @@
 import {EventRegistry} from "../event/api/index";
-import SpawnState from "../state/spawnState";
 import Joinpoint from "../event/api/joinpoint";
 import CreepState from "../state/creepState";
 import {log} from "../support/log";
 import InterceptorSpec from "../event/impl/interceptorSpec";
 import * as F from "../functions";
 import StructureState from "../state/structureState";
-import EnemyCreepState from "../state/enemyCreepState";
-import {interceptorService} from "../event/behaviorContext"; // TODO leaky abstraction
+import {interceptorService} from "../event/behaviorContext";
+import RoomState from "../state/roomState"; // TODO leaky abstraction
 
 const $ = {} as any;
 
 export function defineEvents(em: EventRegistry) {
-  em.intercept(SpawnState).after(i => i.createCreep).wait(1).apply((jp: Joinpoint<SpawnState, string>) => {
+  em.intercept(StructureState).after((i: Spawn) => i.createCreep).wait(1).advice((jp: Joinpoint<StructureState<Spawn>, string>) => {
     const creepName = jp.returnValue as string;
     const apiCreep = Game.creeps[creepName]; // complex because creep doesn't exist until now
     if (apiCreep === undefined) {
@@ -25,14 +24,14 @@ export function defineEvents(em: EventRegistry) {
     interceptorService.triggerBehaviors(eventJp, "spawn"); // .fireEvent("spawn") equivalent
   });
 
-  // TODO try to move most apply calls into targetBuilder calls
-  em.when().spawn().ofAll().apply((jp: Joinpoint<CreepState, string>) => {
+  // TODO try to move most advice calls into targetBuilder calls
+  em.when().spawn().ofAll().advice((jp: Joinpoint<CreepState, string>) => {
     if (jp.source === undefined) {
       debugger; // no event source
       throw new Error("no event source");
     }
     const creep = jp.target;
-    const spawn = jp.source.target as SpawnState;
+    const spawn = jp.source.target as StructureState<Spawn>;
     spawn.resolve();
     em.schedule(spawn.subject().spawning.remainingTime + 1499, creep).fireEvent("death");
   });
@@ -40,7 +39,7 @@ export function defineEvents(em: EventRegistry) {
   em.intercept(CreepState).after(i => i.move).wait(1, (jp: Joinpoint<CreepState, void>, dir: number) => {
     const ejp = Joinpoint.withSource(jp);
     ejp.args = [jp.target.pos(), dir]; // OnMove spec: fromPos: RoomPosition, forwardDir: number
-    return ejp;
+    return [ejp, ...jp.args];
   }).fireEvent("move");
   const moveTo = em.intercept(CreepState).after(i => i.moveTo);
   const moveByPath = em.intercept(CreepState).after(i => i.moveByPath);
@@ -49,8 +48,8 @@ export function defineEvents(em: EventRegistry) {
       const ejp = Joinpoint.withSource(jp);
       ejp.resolve(); // TODO hack to unwrap the intercepted target, should be repeated when InterceptorSpec dispatches
       ejp.args = [jp.target.pos()]; // OnMove spec: fromPos: RoomPosition, forwardDir: number
-      return ejp;
-    }).apply((jp: Joinpoint<CreepState, number>, fromPos: RoomPosition) => {
+      return [ejp, ...ejp.args];
+    }).advice((jp: Joinpoint<CreepState, number>, fromPos: RoomPosition) => {
       jp.target.resolve();
       jp.args[1] = F.posToDirection(fromPos)(jp.target.pos()); // TODO if 0?
       interceptorService.triggerBehaviors(jp, "move");
@@ -63,19 +62,19 @@ export function defineEvents(em: EventRegistry) {
 export default function registerBehaviorProvider(em: EventRegistry) {
   defineEvents(em);
 
-  em.when().aggro().ofAll().apply((jp: Joinpoint<EnemyCreepState, void>) => {
+  em.when().aggro().ofAll().advice((jp: Joinpoint<RoomState, void>) => {
     jp = jp;
     log.debug("AGGRO! TODO find turrets and FIRE! later do enemy priority scoring & elections");
   });
 
-  em.when().spawn().ofAll().apply((jp: Joinpoint<CreepState, string>, body: string[], mem?: any) => {
+  em.when().spawn().ofAll().advice((jp: Joinpoint<CreepState, string>, body: string[], mem?: any) => {
     body = body;
     if (jp.source === undefined) {
       debugger; // no event source
       throw new Error("no event source");
     }
     const creep = jp.target;
-    const spawn = jp.source.target as SpawnState;
+    const spawn = jp.source.target as StructureState<Spawn>;
     spawn.resolve();
     const whenBorn = em.schedule(spawn.subject().spawning.remainingTime, creep);
     if (mem !== undefined) {
@@ -86,12 +85,12 @@ export default function registerBehaviorProvider(em: EventRegistry) {
     // TODO TOP is WAG (usually the case)
     const vjp = InterceptorSpec.joinpointFor(creep, "move");
     vjp.unresolve();
-    whenBorn.call().touching(vjp, creep.pos(), TOP); // TODO automatic joinpoint from dispatch?
+    whenBorn.callHandler().touching(vjp, creep.pos(), TOP); // TODO automatic joinpoint from dispatch?
   });
 
-  em.when().move().ofAll().call().touching($, $, $);
+  em.when().move().ofAll().callHandler().touching($, $, $);
 
-  em.when().attacked().ofAll().apply((jp: Joinpoint<CreepState|StructureState<any>, string>) => {
+  em.when().attacked().ofAll().advice((jp: Joinpoint<CreepState|StructureState<any>, string>) => {
     // TODO clear assignment and retreat to spawn
     if (jp.target instanceof StructureState) {
       // LATER what do?

@@ -37,12 +37,27 @@ interface Commands {
   /**
    * start a breakpoint in grind
    */
-  break: boolean;
+  debug: boolean;
 
   /**
    * debug rescoring
    */
   debugScore: boolean;
+
+  /**
+   * debug the call intercepting system
+   */
+  debugInterceptor: boolean;
+
+  /**
+   * debug the event scheduling system
+   */
+  debugScheduled: boolean;
+
+  /**
+   * debug the event triggering system (intercepts and named events)
+   */
+  debugEvents: boolean;
 }
 
 interface Options {

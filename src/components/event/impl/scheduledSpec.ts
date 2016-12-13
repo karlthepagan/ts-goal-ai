@@ -3,6 +3,7 @@ import InterceptorService from "./interceptorService";
 import Joinpoint from "../api/joinpoint";
 import {getType} from "../../functions";
 import Named from "../../named";
+import AnonCache from "./anonCache";
 
 /**
  * @param I - captured? joinpoint's instance type
@@ -42,7 +43,8 @@ export default class ScheduleSpec<I, T> extends EventSpec<I, T> {
   // context gives us a handle on scheduler, which we use to register the event
   public invoke(jp: Joinpoint<any, any>, context: InterceptorService): boolean {
     if (this.targetBuilder !== undefined) {
-      context.scheduleExec(this, this.targetBuilder(jp));
+      // TODO discarding targetBuilder args?
+      context.scheduleExec(this, this.targetBuilder(jp)[0] as Joinpoint<any, any>);
     } else {
       context.scheduleExec(this, jp);
     }
@@ -57,6 +59,8 @@ export default class ScheduleSpec<I, T> extends EventSpec<I, T> {
   }
 
   public unresolve() {
+    this.targetBuilderRef = AnonCache.instance.allocate(this.targetBuilder);
+
     super.unresolve();
     // keep relative time, in the case of "wait" the schedule trigger occurs after another event
   }

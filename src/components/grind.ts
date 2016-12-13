@@ -21,9 +21,9 @@ export function grind(state: GlobalState) {
   const commands = state.memory() as Commands;
   const opts = state.memory("config") as Options;
 
-  if (commands.break) {
+  if (commands.debug) {
     debugger; // break command
-    delete commands.break;
+    delete commands.debug;
   }
 
   if (commands.shuffle || commands.last === undefined

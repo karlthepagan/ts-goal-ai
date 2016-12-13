@@ -57,12 +57,16 @@ export default class MineralState extends State<Mineral> {
     return ["index", "minerals"];
   }
 
-  protected init(rootMemory: any): boolean {
-    if (super.init(rootMemory)) {
+  protected init(rootMemory: any, callback?: InitCallback<MineralState>): boolean {
+    if (super.init(rootMemory, callback)) {
       if (!this.isRemote()) {
         const subject = this.subject();
         this._memory.nodes = F.findOpenPositions(subject.room, subject.pos, 1)
           .map(F.posToDirection(subject.pos));
+      }
+
+      if (callback !== undefined) {
+        callback(this);
       }
 
       return true;

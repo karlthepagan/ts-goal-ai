@@ -4,7 +4,6 @@ import GlobalState from "../state/globalState";
 import MineralState from "../state/mineralState";
 import RoomState from "../state/roomState";
 import SourceState from "../state/sourceState";
-import SpawnState from "../state/spawnState";
 import ScoreManager from "../score/scoreManager";
 import ScoreHandler from "../score/scoreHandler";
 import {log} from "../support/log";
@@ -12,6 +11,7 @@ import * as F from "../functions";
 import {SCORE_KEY} from "../score/scoreManager";
 import EnemyCreepState from "../state/enemyCreepState";
 import {TERRAIN_PLAIN, TERRAIN_ROAD, TERRAIN_SWAMP} from "../constants";
+import StructureState from "../state/structureState";
 
 type StateScoreImpl<T> = { [key: string]: ScoreHandler<T, GlobalState> };
 
@@ -31,7 +31,7 @@ export default function registerStateScoreProvider() {
   scoreManager.addHandler(new MineralState("proto").className(), impl.mineralState);
   scoreManager.addHandler(new RoomState("proto").className(), impl.roomState);
   scoreManager.addHandler(new SourceState("proto").className(), impl.sourceState);
-  scoreManager.addHandler(new SpawnState("proto").className(), impl.spawnState);
+  scoreManager.addHandler(new StructureState<any>("proto").className(), impl.structureState);
 }
 
 function scoreMove(state: CreepState, score: ScoreManager<GlobalState>, time: number): number {
@@ -179,6 +179,13 @@ const impl = {
       }
       return 0;
     }) as ScoreHandler<RoomState, GlobalState>,
+    energy: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) => {
+      state = state;
+      score = score;
+      time = time;
+      // TODO the room's energy capacity determines its capabilities (what it can produce)
+      return 0;
+    }) as ScoreHandler<RoomState, GlobalState>,
     venergy: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) =>
       state.sources().map(source =>
         score.getOrRescore(source, source.memory(SCORE_KEY), "venergy", time)
@@ -234,14 +241,14 @@ const impl = {
     }) as ScoreHandler<SourceState, GlobalState>,
   } as StateScoreImpl<SourceState>,
 
-  // SPAWNS SPAWNS SPAWNS SPAWNS SPAWNS SPAWNS SPAWNS SPAWNS SPAWNS SPAWNS SPAWNS SPAWNS SPAWNS SPAWNS SPAWNS SPAWNS
-  spawnState: {
-    control: ((state: SpawnState) => {
-      state = state; // TODO does control of a room influence spawn's capabilities?
+  // STRUCTS STRUCTS STRUCTS STRUCTS STRUCTS STRUCTS STRUCTS STRUCTS STRUCTS STRUCTS STRUCTS STRUCTS STRUCTS STRUCTS
+  structureState: {
+    control: ((state: StructureState<any>) => {
+      state = state; // TODO does control of a room influence building's capabilities?
       return 0;
-    }) as ScoreHandler<SpawnState, GlobalState>,
-    energy: ((state: SpawnState) => {
-      return state.subject().room.energyAvailable;
-    }) as ScoreHandler<SpawnState, GlobalState>,
-  } as StateScoreImpl<SpawnState>,
+    }) as ScoreHandler<StructureState<any>, GlobalState>,
+    energy: ((state: StructureState<any>) => {
+      return state.subject().carry.energy;
+    }) as ScoreHandler<StructureState<any>, GlobalState>,
+  } as StateScoreImpl<StructureState<any>>,
 };

@@ -5,12 +5,16 @@ import ScheduleSpec from "../impl/scheduledSpec";
 import AnonCache from "../impl/anonCache";
 
 export const EMITTING_CALLS = {
-  callAnd: 2,
+  advice: 2,
+  adviceAnd: 2,
   call: 4,
   callHandler: 4, // TODO 3?
-  apply: 2,
   fireEvent: 2,
 };
+
+export function discardJointpoint(...args: any[]) {
+  return args.slice(1);
+}
 
 export function actionGet(select?: Function) {
   return (is: AnyEvent, actionName: string) => {
@@ -20,13 +24,15 @@ export function actionGet(select?: Function) {
         is.setAction(interceptorService, i => i.triggerBehaviors);
         return [is, assignArgsThen(actionGet(select))];
 
-      case "apply":
-        return [is, actionApplyApply]; // apply returns void (TODO should return promise?)
+      case "advice": // TODO adviceAnd
+        return [is, actionAdviceApply]; // advice returns void (TODO should return promise?)
 
       case "wait":
         return [is, waitApply(actionGet(select))];
 
       case "call":
+        is = Object.create(is);
+        is.targetBuilder = discardJointpoint; // suppress jp in args
         // call returns a proxy of the instance which captures method name and args
         return [is, skip(instanceGet)];
 
@@ -63,7 +69,7 @@ export function waitApply(next: Function) {
   };
 }
 
-export function actionApplyApply(is: AnyEvent, action: OnIntercept<any, any>) {
+export function actionAdviceApply(is: AnyEvent, action: OnIntercept<any, any>) {
   // anonymous function cache
   is = Object.create(is); // was .clone();
   is.setAction(AnonCache.instance, AnonCache.instance.wrap(action));

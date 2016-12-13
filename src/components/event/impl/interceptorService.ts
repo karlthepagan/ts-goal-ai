@@ -54,7 +54,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
   /**
    * @param name - descirbes the builder
-   * @param spec - test input was like [[createCreep],[],[ofAll],[],[apply],[function]]
+   * @param spec - test input was like [[createCreep],[],[ofAll],[],[advice],[function]]
    */
   public register(name: string, spec: AnyEvent) {
     name = name;
@@ -70,6 +70,12 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
   }
 
   public get(target: State<any>, p: PropertyKey, receiver: any): any {
+    // TODO this might slow us down
+    const commands = botMemory() as Commands;
+    if (commands.debugInterceptor) {
+      debugger; // Commands.debugKernel
+    }
+
     receiver = receiver;
     if (target.resolve()) {
       const subject = target.subject();
@@ -109,8 +115,11 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
       throw new Error("fireEvent cannot specify targetBuilder after a wait condition"); // TODO AnonCache targetBuilders
     }
 
-    const eventTemplate = targetBuilder === undefined ? jp : targetBuilder(jp);
+    // TODO messy, no array resturn destructuring
+    const eventTemplate = targetBuilder === undefined ? jp : targetBuilder(jp)[0] as Joinpoint<any, any>;
 
+    // TODO discarding targetBuilder information about args (other use-cases will restructure args for callbacks)
+    // see ScheduleSpec.invoke
     const event = Joinpoint.newEvent(eventName, eventTemplate);
 
     this.dispatch(event);
@@ -123,6 +132,11 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     const interceptors = this.getInterceptors(jp, EventSpec.AFTER_CALL);
     if (interceptors === undefined || interceptors.length === 0) {
       return jp.returnValue;
+    }
+
+    const commands = botMemory() as Commands;
+    if (commands.debugEvents) {
+      debugger; // Commands.debugEvents
     }
 
     const unwrapped = Object.create(jp);
@@ -183,12 +197,11 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
           for (const methodName in classSpec) {
             const tasks: AnyEvent[] = classSpec[methodName];
             for (let i = 0; i < tasks.length; i++) {
-              const task = tasks[i];
-              Object.setPrototypeOf(task, EventSpec.prototype);
-              Object.setPrototypeOf(task.definition, Joinpoint.prototype);
-              if (task.definition.source !== undefined) {
-                Object.setPrototypeOf(task.definition.source, Joinpoint.prototype);
+              const commands = botMemory() as Commands;
+              if (commands.debugScheduled) {
+                debugger; // Commands.debugEvents
               }
+              const task = EventSpec.hydrate(tasks[i]);
               const jp = task.definition.clone();
               jp.resolve();
               // EventSpec invoke is immediate execution

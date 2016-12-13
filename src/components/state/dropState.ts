@@ -43,13 +43,17 @@ export default class DropState extends State<Resource> {
     return true;
   }
 
-  protected init(rootMemory: any): boolean {
-    if (super.init(rootMemory)) {
+  protected init(rootMemory: any, callback?: InitCallback<DropState>): boolean {
+    if (super.init(rootMemory, callback)) {
       // if (!this.isRemote()) {
       //   const subject = this.subject();
       // }
 
       // TODO distance to all sources? value calculations?
+
+      if (callback !== undefined) {
+        callback(this);
+      }
 
       return true;
     }

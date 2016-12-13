@@ -47,7 +47,7 @@ export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements Pr
     // TODO break this out and call in switch (for beforecall handling)
     if (this.targetBuilder !== undefined) {
       debugger; // TODO observe target builder
-      inst[this.actionMethod](this.targetBuilder(wrapped, ...this.actionArgs), ...this.actionArgs);
+      inst[this.actionMethod](...this.targetBuilder(jp, ...this.resolveArgs(jp)));
     } else {
       inst[this.actionMethod](wrapped, ...this.actionArgs);
     }

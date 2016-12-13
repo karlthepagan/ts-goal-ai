@@ -89,6 +89,7 @@ export default class GlobalState extends State<Game> {
   }
 
   public rooms(): LoDashExplicitArrayWrapper<RoomState> {
+    // TODO add init callback to .right?
     return _.chain(this.subject().rooms).values().map(RoomState.right);
   }
 
@@ -143,15 +144,19 @@ export default class GlobalState extends State<Game> {
     return undefined;
   }
 
-  protected init(rootMemory: any): boolean {
+  protected init(rootMemory: any, callback?: InitCallback<GlobalState>): boolean {
     if (this._memory.reset) {
       this.delete();
     }
 
-    if (super.init(rootMemory)) {
+    if (super.init(rootMemory, callback)) {
       if (!this.isRemote()) {
         // rooms
         this.rooms().value();
+      }
+
+      if (callback !== undefined) {
+        callback(this);
       }
 
       return true;

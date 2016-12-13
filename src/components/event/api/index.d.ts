@@ -5,7 +5,6 @@ import State from "../../state/abstractState";
 import EnemyCreepState from "../../state/enemyCreepState";
 import RoomState from "../../state/roomState";
 import StructureState from "../../state/structureState";
-import SpawnState from "../../state/spawnState";
 
 type OnMove<R> = (jp: Joinpoint<CreepState, void>, fromPos: RoomPosition, forwardDir: number, ...args: any[]) => R;
 
@@ -14,12 +13,12 @@ type OnMove<R> = (jp: Joinpoint<CreepState, void>, fromPos: RoomPosition, forwar
  * lifecycle is a good example of difference between call and apply. use Joinpoint.source to describe the source of the
  * event and Joinpoint.target for the destination.
  */
-type OnLifecycle<DST extends CreepState|StructureState<any>|SpawnState, R> = (jp: Joinpoint<DST, string>, ...args: any[]) => R;
+type OnLifecycle<DST extends CreepState|StructureState<any>, R> = (jp: Joinpoint<DST, string>, ...args: any[]) => R;
 type OnEnergy<DST extends CreepState|StructureState<any>, R> = (jp: Joinpoint<DST, string>, ...args: any[]) => R;
 type OnScheduled = (jp: Joinpoint<any, void>, ...args: any[]) => void;
 export type OnIntercept<DST, R> = (jp: Joinpoint<DST, R>, ...args: any[]) => void;
 type OnInfo<DST> = (jp: Joinpoint<DST, any>, ...args: any[]) => void;
-export type OnBuildTarget<SRC, DST> = (jp: Joinpoint<SRC, any>, ...args: any[]) => Joinpoint<DST, any>;
+export type OnBuildTarget<SRC, DST> = (jp: Joinpoint<SRC, any>, ...args: any[]) => any[]; // conventionally first return is Joinpoint<DST, any>;
 
 export interface WhenEvent<INST, CALLBACK> {
   of<T extends INST>(instance: T): Action<CALLBACK, T, EventSelector>;
@@ -40,7 +39,7 @@ export interface EventSelector {
    * src spawn
    * dst creep
    */
-  spawn(): WhenEvent<SpawnState, OnLifecycle<SpawnState, void>>;
+  spawn(): WhenEvent<CreepState, OnLifecycle<CreepState, void>>;
   /**
    * creep will die: after spawn fires when TTL is set to expire
    *
@@ -138,10 +137,10 @@ type ActionToWhen<CALLBACK, TYPE> = Action<CALLBACK, TYPE, When<TYPE>>;
  * @param CALLBACK - method reference, gets cached/intercepted
  */
 export interface Action<CALLBACK, TYPE, SELECT> { // TODO TYPE for jp.source?
-  callAnd       (instance: TYPE, callback: CALLBACK, ...args: any[]): Action<CALLBACK, TYPE, SELECT>;
-  call          (): TYPE; // direct call, captured by proxy
-  callHandler   (): TYPE; // direct call, will not capture args, emits early?
-  apply         (func: Function): void; // direct function invoke, uses an index of anonymous functions!!!
+  advice        (func: CALLBACK): void; // direct function invoke, uses callback shape! uses an index of anonymous functions!!!
+  adviceAnd     (instance: TYPE, callback: CALLBACK, ...args: any[]): Action<CALLBACK, TYPE, SELECT>;
+  call          (): TYPE; // direct call, captured by proxy uses own argument
+  callHandler   (): TYPE; // direct call, will not capture args
   /**
    * transform one capture into another event: utilizes InterceptorService.triggerBehaviors
    *

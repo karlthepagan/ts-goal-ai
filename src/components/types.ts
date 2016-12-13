@@ -19,19 +19,51 @@ export function registerTypeAs<T>(type: Constructor<T>, alias: string) {
   types[alias] = type;
 }
 
-// TODO Constructor<any> ?
 export function getApiName(obj: any): string|undefined {
+  if (ConstructionSite.prototype === obj.prototype) {
+    return "ConstructionSite";
+  }
   if (Creep.prototype === obj.prototype) {
     return "Creep";
-  }
-  if (Spawn.prototype === obj.prototype) {
-    return "Spawn";
   }
   if (Room.prototype === obj.prototype) {
     return "Room";
   }
-  if (ConstructionSite.prototype === obj.prototype) {
-    return "ConstructionSite";
+  if (Spawn.prototype === obj.prototype) {
+    return "Spawn";
+  }
+  if (StructureContainer.prototype === obj.prototype) {
+    return "StructureContainer";
+  }
+  if (StructureController.prototype === obj.prototype) {
+    return "StructureController";
+  }
+  if (StructureExtension.prototype === obj.prototype) {
+    return "StructureExtension";
+  }
+  if (StructureLab.prototype === obj.prototype) {
+    return "StructureLab";
+  }
+  if (StructureLink.prototype === obj.prototype) {
+    return "StructureLink";
+  }
+  if (StructureObserver.prototype === obj.prototype) {
+    return "StructureObserver";
+  }
+  if (StructurePowerSpawn.prototype === obj.prototype) {
+    return "StructurePowerSpawn";
+  }
+  if (StructureRampart.prototype === obj.prototype) {
+    return "StructureRampart";
+  }
+  if (StructureStorage.prototype === obj.prototype) {
+    return "StructureStorage";
+  }
+  if (StructureTerminal.prototype === obj.prototype) {
+    return "StructureTerminal";
+  }
+  if (StructureTower.prototype === obj.prototype) {
+    return "StructureTower";
   }
 
   return undefined;

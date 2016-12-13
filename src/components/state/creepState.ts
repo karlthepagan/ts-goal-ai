@@ -429,8 +429,8 @@ export default class CreepState extends State<Creep> {
 
   // TODO extend _resolve and required timeToLive !== undefined?
 
-  protected init(rootMemory: any): boolean {
-    if (super.init(rootMemory)) {
+  protected init(rootMemory: any, callback?: InitCallback<CreepState>): boolean {
+    if (super.init(rootMemory, callback)) {
       if (this.resolve()) {
         const creep = this.subject();
 
@@ -466,6 +466,10 @@ export default class CreepState extends State<Creep> {
           // eventManager.schedule(creep.ticksToLive - 1499, this)
           //   .on("say", this.keepSaying, "🎂", true, 3); // birthday
         }
+      }
+
+      if (callback !== undefined) {
+        callback(this);
       }
 
       return true;

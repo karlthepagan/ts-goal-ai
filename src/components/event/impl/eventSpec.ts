@@ -5,6 +5,7 @@ import Named from "../../named";
 import * as F from "../../functions";
 import getConstructor from "../../types";
 import NAME_CAPTURE from "./nameCapture";
+import AnonCache from "./anonCache";
 
 export type AnyEvent = EventSpec<any, any>;
 
@@ -12,6 +13,21 @@ class EventSpec<I, T> {
   public static BEFORE_CALL = 0; // TODO enum?
   public static AFTER_CALL = 1;
   public static AFTER_FAIL = 2;
+
+  /**
+   * reconcile memory transformations
+   */
+  public static hydrate<A, B>(task: EventSpec<A, B>): EventSpec<A, B> {
+    Object.setPrototypeOf(task, EventSpec.prototype);
+    if (task.targetBuilder === undefined) {
+      task.targetBuilder = AnonCache.instance[task.targetBuilderRef as number];
+    }
+    Object.setPrototypeOf(task.definition, Joinpoint.prototype);
+    if (task.definition.source !== undefined) {
+      Object.setPrototypeOf(task.definition.source, Joinpoint.prototype);
+    }
+    return task;
+  }
 
   public static fromEventName(name: string) {
     const is = new EventSpec<any, any>();
@@ -30,6 +46,12 @@ class EventSpec<I, T> {
   public instanceId: string;
   public actionMethod: string;
   public targetBuilder?: OnBuildTarget<any, any>;
+  /**
+   * because our scheduled events are stored in memory, targetbuilder functions are erased
+   *
+   * instead we cache them using AnonCache
+   */
+  protected targetBuilderRef?: number;
 
   public clone<R extends EventSpec<I, T>>(into?: R): R {
     if (into === undefined) {
@@ -75,9 +97,14 @@ class EventSpec<I, T> {
   public invoke(jp: Joinpoint<any, any>, context: InterceptorService): boolean {
     context = context; // context used to schedule dependent actions
     const inst = this.resolve(jp) as any;
+    // if (this.targetBuilder === undefined) {
+    //   this.targetBuilder = AnonCache.instance[this.targetBuilderRef as number];
+    //   if (this.targetBuilder !== undefined) {
+    //     debugger; // TODO WUT? reload clears this function?
+    //   }
+    // }
     if (this.targetBuilder !== undefined) {
-      debugger; // TODO observe target builder
-      inst[this.actionMethod](this.targetBuilder(jp, ...this.actionArgs), ...this.resolveArgs(jp));
+      inst[this.actionMethod](...this.targetBuilder(jp, ...this.resolveArgs(jp)));
     } else {
       inst[this.actionMethod](jp, ...this.resolveArgs(jp));
     }
@@ -106,6 +133,10 @@ class EventSpec<I, T> {
 
   protected resolveArgs(jp: Joinpoint<any, any>): any[] {
     if (this.actionArgs === undefined) {
+      if (jp.args === undefined) {
+        debugger;
+        throw new Error("jp.args is undefined");
+      }
       return jp.args;
     }
     return this.actionArgs;

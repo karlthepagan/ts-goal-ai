@@ -413,6 +413,7 @@ export function getType(instance: any) {
   }
   let name = instance.constructor.name as string;
   if (name === undefined || name.length === 0) {
+    // tested: Game.getObjectById('94114b7a3bce2c0ad458862d').constructor.prototype === Spawn.prototype
     return getApiName(instance.constructor);
   }
   return name;

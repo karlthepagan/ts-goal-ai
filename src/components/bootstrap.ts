@@ -20,12 +20,14 @@ import {botMemory} from "../config/config";
 import DropState from "./state/dropState";
 import FlagState from "./state/flagState";
 import StructureState from "./state/structureState";
+import {discardJointpoint} from "./event/api/builders";
 
 export const bootstrap: (() => void)[] = [];
 
 bootstrap.push(() => {
   log.info("bootstrap starting");
   GlobalState.protectMemory("config");
+  AnonCache.instance.allocate(discardJointpoint); // TODO needed?
 });
 
 bootstrap.push(() => {

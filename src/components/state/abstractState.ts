@@ -8,6 +8,7 @@ import CreepState from "./creepState";
 import getConstructor from "../types";
 import {scoreManager} from "../score/scoreSingleton";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
+import AnonCache from "../event/impl/anonCache";
 
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
@@ -106,7 +107,7 @@ abstract class State<T> implements Named {
 
   public abstract className(): string;
 
-  public wrap(subject: T, memory: any): State<T> {
+  public wrap(subject: T, memory: any, callback?: InitCallback<State<T>>): State<T> {
     if (this._locked) {
       const s = subject as any;
       throw new Error(s ? (s.id + " " + s.name) : "unknown");
@@ -121,12 +122,12 @@ abstract class State<T> implements Named {
 
     this._memory = _access(this, memory);
 
-    this.init(memory);
+    this.init(memory, callback);
 
     return this;
   }
 
-  public wrapRemote(id: string, memory: any): State<T> {
+  public wrapRemote(id: string, memory: any, callback?: InitCallback<State<T>>): State<T> {
     if (this._locked) {
       throw new Error(id);
     }
@@ -138,7 +139,7 @@ abstract class State<T> implements Named {
 
     this._memory = _access(this, memory);
 
-    this.init(memory);
+    this.init(memory, callback);
 
     return this;
   }
@@ -206,9 +207,14 @@ abstract class State<T> implements Named {
     this._memory = _access(this, botMemory(), mem);
   }
 
-  public rescan() {
+  public rescan(callback?: InitCallback<State<T>>) {
+    if (callback !== undefined) {
+      debugger; // TODO is callback a Joinpoint?
+      const grr = AnonCache.instance;
+      log.debug(grr.length);
+    }
     delete this._memory.seen;
-    this.init(botMemory());
+    this.init(botMemory(), callback);
   }
 
   public onPart(other: CreepState, direction: number) {
@@ -249,12 +255,11 @@ abstract class State<T> implements Named {
     return this._memory === undefined ? 0 : this._memory.seen;
   }
 
-  protected init(rootMemory: any, callback: InitCallback<T>): boolean {
+  protected init(rootMemory: any, callback?: InitCallback<State<T>>): boolean {
+    callback = callback; // utilized by implementers
     if (this._memory === undefined) {
       return false;
     }
-
-    // log.debug("at", this, ":", this._memory);
 
     if (this._memory.seen === undefined) {
       const guid = Config.MEMORY_GUID ? (1 + Math.random()) : 1;
@@ -265,8 +270,6 @@ abstract class State<T> implements Named {
       this.updatePosition(this._subject);
 
       _register(this, rootMemory);
-
-      // TODO callback promises registered for new memory objects
 
       return true;
     }

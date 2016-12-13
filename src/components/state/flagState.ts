@@ -39,10 +39,14 @@ export default class FlagState extends State<Flag> {
     return ["index", "flags"];
   }
 
-  protected init(rootMemory: any): boolean {
-    if (super.init(rootMemory)) {
+  protected init(rootMemory: any, callback?: InitCallback<FlagState>): boolean {
+    if (super.init(rootMemory, callback)) {
       // TODO distance to all sources? value calculations?
       this.subject().color;
+
+      if (callback !== undefined) {
+        callback(this);
+      }
 
       return true;
     }
