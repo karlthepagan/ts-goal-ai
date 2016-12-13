@@ -419,11 +419,11 @@ export function doHarvest(state: GlobalState,
 function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remoteRoomScan: boolean, commands: Commands) {
   if (roomScan) {
     // scan real rooms
-    state.eachRoom(room => {
+    state.rooms().map(room => {
       // room.subject().find(FIND_HOSTILE_CREEPS)
       log.debug("TODO scan for new buildings and enemies", room);
       // TODO identify new buildings, new enemies
-    });
+    }).value();
   }
 
   if (rescore) {
@@ -436,11 +436,11 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
 
   if (remoteRoomScan) {
     let count = 0;
-    state.eachRemoteRoom(room => {
+    state.remoteRooms().map(room => {
       if (!room.resolve()) {
         count++;
       }
-    });
+    }).value();
     log.debug("rooms without vision:", count);
   }
 }

@@ -6,6 +6,7 @@ import MineralState from "./mineralState";
 import RoomIterator from "../util/roomIterator";
 import * as F from "../functions";
 import StructureState from "./structureState";
+import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 
 /**
  * TODO BSP this mofo? https://www.npmjs.com/package/bsp-tree
@@ -50,18 +51,12 @@ export default class RoomState extends State<Room> {
     return new RoomIterator(this.pos());
   }
 
-  public eachSource<T>(f: (room: SourceState) => T): T[] {
-    return _.chain(this._memory.sources).values()
-      .map(SourceState.vright)
-      .map(f)
-      .value();
+  public sources(): LoDashExplicitArrayWrapper<SourceState> {
+    return _.chain(this._memory.sources).values().map(SourceState.vright);
   }
 
-  public eachMineral<T>(f: (room: MineralState) => T): T[] {
-    return _.chain(this._memory.minerals).values()
-      .map(MineralState.vright)
-      .map(f)
-      .value();
+  public minerals(): LoDashExplicitArrayWrapper<MineralState> {
+    return _.chain(this._memory.minerals).values().map(MineralState.vright);
   }
 
   protected _accessAddress() {

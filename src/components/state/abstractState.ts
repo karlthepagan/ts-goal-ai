@@ -249,7 +249,7 @@ abstract class State<T> implements Named {
     return this._memory === undefined ? 0 : this._memory.seen;
   }
 
-  protected init(rootMemory: any): boolean {
+  protected init(rootMemory: any, callback: InitCallback<T>): boolean {
     if (this._memory === undefined) {
       return false;
     }

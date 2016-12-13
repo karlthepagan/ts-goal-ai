@@ -8,6 +8,8 @@ import CreepState from "./creepState";
 import * as F from "../functions";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import StructureState from "./structureState";
+import FlagState from "./flagState";
+import ConstructionState from "./constructionState";
 
 export default class GlobalState extends State<Game> {
   public static readonly CHANGED_FLAGS = "flags";
@@ -82,15 +84,8 @@ export default class GlobalState extends State<Game> {
   }
 
   public creeps(): LoDashExplicitArrayWrapper<CreepState> {
-    // return this.sources<SourceState>(F.identity<SourceState>());
+    // TODO F.lockAnd ?
     return _.chain(this.subject().creeps).values().map(CreepState.right);
-  }
-
-  public eachCreep<T>(f: (creep: CreepState) => T): T[] {
-    // creeps are always literal
-    return _.map(this.subject().creeps, c => {
-      return F.lockAnd( CreepState.right(c), f );
-    });
   }
 
   public rooms(): LoDashExplicitArrayWrapper<RoomState> {
@@ -101,27 +96,9 @@ export default class GlobalState extends State<Game> {
     return _.chain(this._memory.index.rooms).map(RoomState.vright);
   }
 
-  public eachRoom<T>(f: (room: RoomState) => T): T[] {
-    return _.map(this.subject().rooms, (room: Room) => {
-      return F.lockAnd( RoomState.right(room), f);
-    });
-  }
-
-  public eachRemoteRoom<T>(f: (room: RoomState) => T): T[] {
-    return _.map(this._memory.index.rooms, (id: string) => {
-      return F.lockAnd( RoomState.vright(id), f);
-    });
-  }
-
   public sources(): LoDashExplicitArrayWrapper<SourceState> {
     // return this.sources<SourceState>(F.identity<SourceState>());
     return _.chain(this._memory.index.sources).map(SourceState.vright);
-  }
-
-  public eachSource<T>(f: (room: SourceState) => T): T[] {
-    return _.map(this._memory.index.sources, (id: string) => {
-      return F.lockAnd( SourceState.vright(id), f);
-    });
   }
 
   public minerals(): MineralState[] {
@@ -129,19 +106,28 @@ export default class GlobalState extends State<Game> {
     return _.values(this._memory.index.minerals).map(MineralState.vright);
   }
 
-  public eachMineral<T>(f: (room: MineralState) => T): T[] {
-    return _.map(this._memory.index.minerals, (id: string) => {
-      return f(MineralState.vright(id));
-    });
+  public getChanges(): string[] {
+    return [GlobalState.CHANGED_CREEPS,
+      GlobalState.CHANGED_FLAGS,
+      GlobalState.CHANGED_SITES,
+      GlobalState.CHANGED_STRUCTURES].filter(this.isChanged);
   }
 
   public isChanged(type: string) {
     return _.size((Game as any)[type]) !== _.size(this._memory[type]);
   }
 
-  // public flags(): FlagState[] {
-  //   // TODO NOW
-  // }
+  public flags(): LoDashExplicitArrayWrapper<FlagState> {
+    return _.chain(this.subject().flags).values().map(FlagState.right);
+  }
+
+  public sites(): LoDashExplicitArrayWrapper<ConstructionState> {
+    return _.chain(this.subject().constructionSites).values().map(ConstructionState.right);
+  }
+
+  public structures(): LoDashExplicitArrayWrapper<StructureState<any>> {
+    return _.chain(this.subject().structures).values().map(StructureState.right);
+  }
 
   protected _accessAddress() {
     return [];
@@ -165,7 +151,7 @@ export default class GlobalState extends State<Game> {
     if (super.init(rootMemory)) {
       if (!this.isRemote()) {
         // rooms
-        _.values(this.subject().rooms).forEach(RoomState.left);
+        this.rooms().value();
       }
 
       return true;

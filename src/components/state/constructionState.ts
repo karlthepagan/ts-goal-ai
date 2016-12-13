@@ -43,10 +43,12 @@ export default class ConstructionState extends State<ConstructionSite> {
     return ["index", "sites"];
   }
 
-  protected init(rootMemory: any): boolean {
+  protected init(rootMemory: any, callback: InitCallback<ConstructionState>): boolean {
     // TODO memory mask, proxy?
 
-    if (super.init(rootMemory)) {
+    if (super.init(rootMemory, callback)) {
+
+      callback(this);
 
       return true;
     }

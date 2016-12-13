@@ -18,7 +18,7 @@ import InterceptorService from "./event/impl/interceptorService";
 import AnonCache from "./event/impl/anonCache";
 import {botMemory} from "../config/config";
 import DropState from "./state/dropState";
-import FlagState from "./state/FlagState";
+import FlagState from "./state/flagState";
 import StructureState from "./state/structureState";
 
 export const bootstrap: (() => void)[] = [];

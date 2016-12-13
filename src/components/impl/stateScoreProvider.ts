@@ -116,9 +116,9 @@ const impl = {
           s => score.getOrRescore(s, s.memory(SCORE_KEY), "control", time));
       });
     }) as ScoreHandler<GlobalState, GlobalState>,
-    energy: ((state: GlobalState, score: ScoreManager<GlobalState>, time: number) => {
+    energy: ((state: GlobalState, score: ScoreManager<GlobalState>, time: number) =>
       // log.debug("scoring global energy");
-      return _(state.eachSource(source => { // TODO automatic total score?
+      state.sources().map(source => { // TODO automatic total score?
         score.rescore(source, source.memory(SCORE_KEY), undefined, time); // TODO workaround for time set spam
 
         let rval = 0;
@@ -132,8 +132,8 @@ const impl = {
         rval = rval + score.getOrRescore(source, source.memory(SCORE_KEY), "risk", time);
 
         return rval;
-      })).sum();
-    }) as ScoreHandler<GlobalState, GlobalState>,
+      }).sum().value()
+    ) as ScoreHandler<GlobalState, GlobalState>,
     military: ((state: GlobalState, score: ScoreManager<GlobalState>, time: number) => {
       state = state;
       score = score;
@@ -179,16 +179,16 @@ const impl = {
       }
       return 0;
     }) as ScoreHandler<RoomState, GlobalState>,
-    venergy: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) => {
-      return _(state.eachSource(source => {
-        return score.getOrRescore(source, source.memory(SCORE_KEY), "venergy", time);
-      })).sum();
-    }) as ScoreHandler<RoomState, GlobalState>,
-    vminerals: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) => {
-      return _(state.eachMineral(minerals => {
-        return score.getOrRescore(minerals, minerals.memory(SCORE_KEY), "venergy", time);
-      })).sum();
-    }) as ScoreHandler<RoomState, GlobalState>,
+    venergy: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) =>
+      state.sources().map(source =>
+        score.getOrRescore(source, source.memory(SCORE_KEY), "venergy", time)
+      ).sum().value()
+    ) as ScoreHandler<RoomState, GlobalState>,
+    vminerals: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) =>
+      state.minerals().map(minerals =>
+        score.getOrRescore(minerals, minerals.memory(SCORE_KEY), "venergy", time)
+      ).sum().value()
+    ) as ScoreHandler<RoomState, GlobalState>,
   } as StateScoreImpl<RoomState>,
 
   // SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES
