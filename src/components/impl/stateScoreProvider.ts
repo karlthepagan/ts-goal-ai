@@ -231,7 +231,25 @@ const impl = {
       return DISTANCE_WEIGHT / distanceScore; // TODO distance weight
     }) as ScoreHandler<SourceState, GlobalState>,
     venergy: ((state: SourceState) => {
-      // venergy - number of potential workers
+      // venergy - potential energy income
+      if (state.resolve(globalLifecycle)) {
+        const s = state.subject();
+        return s.energy / s.ticksToRegeneration;
+      } else {
+        return undefined;
+      }
+    }) as ScoreHandler<SourceState, GlobalState>,
+    maxvenergy: ((state: SourceState) => {
+      // maxvenergy - maximum energy income
+      if (state.resolve(globalLifecycle)) {
+        const s = state.subject();
+        return s.energyCapacity / 300;
+      } else {
+        return undefined;
+      }
+    }) as ScoreHandler<SourceState, GlobalState>,
+    sites: ((state: SourceState) => {
+      // sites - number of available worker sites
       return state.nodeDirs().length;
       // TODO venergy is limited to source regen rate
     }) as ScoreHandler<SourceState, GlobalState>,
