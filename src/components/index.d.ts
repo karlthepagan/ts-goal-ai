@@ -58,6 +58,11 @@ interface Commands {
    * debug the event triggering system (intercepts and named events)
    */
   debugEvents: boolean;
+
+  /**
+   * debug creep & structure touch events
+   */
+  debugTouch: boolean;
 }
 
 interface Options {

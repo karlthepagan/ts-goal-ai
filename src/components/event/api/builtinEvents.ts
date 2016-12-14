@@ -29,7 +29,8 @@ export function defineEvents(em: EventRegistry) {
     interceptorService.triggerBehaviors(eventJp, "spawn"); // .fireEvent("spawn") equivalent
   });
 
-  // TODO try to move most advice calls into targetBuilder calls
+  // TODO SOON detect if the target isSpawning, if so... reschedule this event for NEXT TICK
+  // spawning is delayed when your spawn is surrounded!
   em.when().spawn().ofAll().advice(function(jp: Joinpoint<CreepState, string>, body: string[]) {
     if (jp.source === undefined) {
       debugger; // no event source

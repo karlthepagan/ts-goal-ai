@@ -20,6 +20,7 @@ import {botMemory} from "../config/config";
 import DropState from "./state/dropState";
 import FlagState from "./state/flagState";
 import StructureState from "./state/structureState";
+import {defineEvents} from "./event/api/builtinEvents";
 
 export const bootstrap: (() => void)[] = [];
 
@@ -61,6 +62,8 @@ bootstrap.push(() => {
   if (commands.debugBuilders) {
     debugger; // Commands.debugBuilders = true
   }
+
+  defineEvents(eventManager);
 
   registerBehaviorProvider(eventManager);
 });

@@ -296,6 +296,10 @@ export default class CreepState extends State<Creep> {
     jp = jp;
     forwardDir = forwardDir;
 
+    if ((botMemory() as Commands).debugTouch) {
+      debugger; // Commands.debugTouch
+    }
+
     const selfpos = this.pos();
     if (fromPos.x === selfpos.x && fromPos.y === selfpos.y) {
       debugger; // touching, same position, move failed?

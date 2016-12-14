@@ -53,8 +53,7 @@ export function detectChanges(state: GlobalState, score: ScoreManager<GlobalStat
   for (let i = changes.length - 1; i >= 0; i--) {
     switch (changes[i]) {
       case GlobalState.CHANGED_FLAGS:
-        log.error("NEW FLAGS!");
-        state.flags().value();
+        state.flags().value(); // TODO lifecycle?
         // TODO temp?
         state.sources().map(function(s) {
           debugger; // rescoring all states
