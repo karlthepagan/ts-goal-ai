@@ -104,9 +104,9 @@ class EventSpec<I, T> {
     //   }
     // }
     if (this.targetBuilder !== undefined) {
-      inst[this.actionMethod](...this.targetBuilder(jp, ...this.resolveArgs(jp)));
+      inst[this.actionMethod](...this.targetBuilder(jp, ...this.resolveArgs(jp))); // TODO NOW spread bad es6 perf
     } else {
-      inst[this.actionMethod](jp, ...this.resolveArgs(jp));
+      inst[this.actionMethod](jp, ...this.resolveArgs(jp)); // TODO NOW spread bad es6 perf
     }
 
     return false; // never interrupt execution for normal events TODO preventDefault?

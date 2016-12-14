@@ -8,7 +8,7 @@ export const TIME_KEY = "time";
 
 function defaultScore(state: any, score: ScoreManager<any>, time: number) {
   const memory = state.memory(SCORE_KEY);
-  return _.sum(score.getMetricKeys(state), key => {
+  return _.sum(score.getMetricKeys(state), function(key) {
     return score.getOrRescore(state, memory, key, time);
   });
 }
@@ -61,7 +61,7 @@ export default class ScoreManager<C> {
   }
 
   public getOrRescore(object: Named, memory: any, metric?: string, time?: number) {
-    const value = this.getScore(memory, metric, time);
+    const value = this.getScore(memory, metric, time); // TODO time should always be undefined?
     if (value === undefined || value === null) {
       return this.rescore(object, memory, metric, time);
     }
@@ -162,7 +162,7 @@ export default class ScoreManager<C> {
   }
 
   public byScore<T extends Named>(metric?: string, time?: number|undefined): (object: T) => number {
-    return (mem: any) => {
+    return (mem: any) => { // captures THIS
       const score = this.getScore(mem, metric, time);
       // log.info("got", metric, "score", score);
       return F.elvis(score, -1);

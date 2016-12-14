@@ -86,7 +86,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
         // function proxy intercept the call
         return new Proxy(value, {
-          apply: (callTarget: Function, thisArg: any, argArray: any[]): any => {
+          apply: (callTarget: Function, thisArg: any, argArray: any[]): any => { // capturing THIS
             thisArg = thisArg;
             jp.args = argArray;
             jp.proceedApply = callTarget;

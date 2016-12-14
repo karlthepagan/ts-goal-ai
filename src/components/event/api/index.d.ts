@@ -6,19 +6,19 @@ import EnemyCreepState from "../../state/enemyCreepState";
 import RoomState from "../../state/roomState";
 import StructureState from "../../state/structureState";
 
-type OnMove<R> = (jp: Joinpoint<CreepState, void>, fromPos: RoomPosition, forwardDir: number, ...args: any[]) => R;
+type OnMove<R> = (jp: Joinpoint<CreepState, void>, fromPos: RoomPosition, forwardDir: number, ... args: any[]) => R;
 
 /**
  * spawn, death, decay, rested
  * lifecycle is a good example of difference between call and apply. use Joinpoint.source to describe the source of the
  * event and Joinpoint.target for the destination.
  */
-type OnLifecycle<DST extends CreepState|StructureState<any>, R> = (jp: Joinpoint<DST, string>, ...args: any[]) => R;
-type OnEnergy<DST extends CreepState|StructureState<any>, R> = (jp: Joinpoint<DST, string>, ...args: any[]) => R;
-type OnScheduled = (jp: Joinpoint<any, void>, ...args: any[]) => void;
-export type OnIntercept<DST, R> = (jp: Joinpoint<DST, R>, ...args: any[]) => void;
-type OnInfo<DST> = (jp: Joinpoint<DST, any>, ...args: any[]) => void;
-export type OnBuildTarget<SRC, DST> = (jp: Joinpoint<SRC, any>, ...args: any[]) => any[]; // conventionally first return is Joinpoint<DST, any>;
+type OnLifecycle<DST extends CreepState|StructureState<any>, R> = (jp: Joinpoint<DST, string>, ... args: any[]) => R;
+type OnEnergy<DST extends CreepState|StructureState<any>, R> = (jp: Joinpoint<DST, string>, ... args: any[]) => R;
+type OnScheduled = (jp: Joinpoint<any, void>, ... args: any[]) => void;
+export type OnIntercept<DST, R> = (jp: Joinpoint<DST, R>, ... args: any[]) => void;
+type OnInfo<DST> = (jp: Joinpoint<DST, any>, ... args: any[]) => void;
+export type OnBuildTarget<SRC, DST> = (jp: Joinpoint<SRC, any>, ... args: any[]) => any[]; // conventionally first return is Joinpoint<DST, any>;
 
 export interface WhenEvent<INST, CALLBACK> {
   of<T extends INST>(instance: T): Action<CALLBACK, T, EventSelector>;
@@ -138,7 +138,7 @@ type ActionToWhen<CALLBACK, TYPE> = Action<CALLBACK, TYPE, When<TYPE>>;
  */
 export interface Action<CALLBACK, TYPE, SELECT> { // TODO TYPE for jp.source?
   advice        (func: CALLBACK): void; // direct function invoke, uses callback shape! uses an index of anonymous functions!!!
-  adviceAnd     (instance: TYPE, callback: CALLBACK, ...args: any[]): Action<CALLBACK, TYPE, SELECT>;
+  adviceAnd     (instance: TYPE, callback: CALLBACK, ... args: any[]): Action<CALLBACK, TYPE, SELECT>;
   call          (): TYPE; // direct call, captured by proxy uses own argument
   callHandler   (): TYPE; // direct call, will not capture args
   /**
@@ -154,7 +154,7 @@ export interface Action<CALLBACK, TYPE, SELECT> { // TODO TYPE for jp.source?
    */
   wait          (relativeTime: number, targetBuilder?: OnBuildTarget<TYPE, any>): Action<CALLBACK, TYPE, SELECT>;
   // TODO filter on source or destination
-  // filterOn      (thisArg: Named, callback: CALLBACK, ...args: any[]): SELECT; // illegal for When.after or EventSelector
+  // filterOn      (thisArg: Named, callback: CALLBACK, ... args: any[]): SELECT; // illegal for When.after or EventSelector
   // or            (): SELECT; // TODO difficult,
   // TODO don't implement and, just save the builder object and invoke multiple times?
   // andThen       (): SELECT; // illegal for When.before

@@ -105,25 +105,25 @@ export class Log extends LogLevels {
     return this;
   }
 
-  public error(...args: any[]) {
+  public error( ... args: any[]) {
     if (this.level >= Log.ERROR) {
       console.log.apply(this, this.buildArguments(Log.ERROR).concat([].slice.call(args)));
     }
   }
 
-  public warning(...args: any[]) {
+  public warning( ... args: any[]) {
     if (this.level >= Log.WARNING) {
       console.log.apply(this, this.buildArguments(Log.WARNING).concat([].slice.call(args)));
     }
   }
 
-  public info(...args: any[]) {
+  public info( ... args: any[]) {
     if (this.level >= Log.INFO) {
       console.log.apply(this, this.buildArguments(Log.INFO).concat([].slice.call(args)));
     }
   }
 
-  public debug(...args: any[]) {
+  public debug( ... args: any[]) {
     if (this.level >= Log.DEBUG) {
       console.log.apply(this, this.buildArguments(Log.DEBUG).concat([].slice.call(args)));
     }

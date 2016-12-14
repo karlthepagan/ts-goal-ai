@@ -51,7 +51,7 @@ function RAMPART(s: any): boolean {
   return s.my;
 }
 
-export function elvis<T>(...x: (T|undefined)[]): T {
+export function elvis<T>( ... x: (T|undefined)[]): T {
   for (let i = 0; i < x.length; i++) {
     if (x[i] !== undefined && x[i] != null) {
       return x[i] as T;
@@ -140,7 +140,7 @@ export function reverse(direction: number) {
 }
 
 export function posToDirection(origin: XY): (dst: XY) => number {
-  return dst => {
+  return function(dst) {
     const dirRow = elvis(posToDirMap[1 + dst.y - origin.y], [] as number[]);
     return dirRow[1 + dst.x - origin.x];
   };
@@ -307,7 +307,7 @@ export function byRangeScore(pos: RoomPosition) {
 
 // TODO reconcile these 3 flavors
 export function byPosRangeTo(src: RoomPosition) {
-  return (dst: RoomPosition) => {
+  return function(dst: RoomPosition) {
     const range = src.getRangeTo(dst);
     if (range === null || isNaN(range)) {
       throw new Error(range + "");
@@ -317,7 +317,7 @@ export function byPosRangeTo(src: RoomPosition) {
 }
 
 export function byRangeTo(pos: RoomPosition) {
-  return (s: { pos: RoomPosition} ) => {
+  return function(s: { pos: RoomPosition} ) {
     const range = pos.getRangeTo(s.pos);
     if (range === null || isNaN(range)) {
       log.error("no pos on", s);
@@ -328,7 +328,7 @@ export function byRangeTo(pos: RoomPosition) {
 }
 
 export function byStateRangeTo(pos: RoomPosition) {
-  return (s: { pos: () => RoomPosition} ) => {
+  return function(s: { pos: () => RoomPosition} ) {
     const range = pos.getRangeTo(s.pos());
     if (range === null || isNaN(range)) {
       log.error("no pos() on", s);
@@ -342,7 +342,7 @@ export function tee(
     main: (a?: any, b?: any, c?: any, d?: any) => any,
     teef: (ret: any, a?: any, b?: any, c?: any, d?: any) => void) {
 
-  return (a?: any, b?: any, c?: any, d?: any) => {
+  return function(a?: any, b?: any, c?: any, d?: any) {
     const ret = main(a, b, c, d);
     teef(ret, a, b, c, d);
     return ret;

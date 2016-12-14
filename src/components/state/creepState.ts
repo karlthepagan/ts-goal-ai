@@ -94,7 +94,7 @@ function iterateNeighbors(neighborIds: string[],
     if (instance === undefined) {
       throw new Error("cannot resolve " + id + " from " + JSON.stringify(type(dir)));
     }
-    instance[callbackName](...args(dir));
+    instance[callbackName](...args(dir)); // TODO NOW spread bad es6 perf
   }
 }
 
@@ -308,7 +308,7 @@ export default class CreepState extends State<Creep> {
 
     const posToDir = F.posToDirection(selfpos);
     LookForIterator.search(selfpos, 1, this, [{
-      key: LOOK_CREEPS, value: (creep: Creep, range: number) => {
+      key: LOOK_CREEPS, value: function(creep: Creep, range: number) {
         if (range < 1) {
           return true;
         }
@@ -318,7 +318,7 @@ export default class CreepState extends State<Creep> {
         return true;
       },
     }, {
-      key: LOOK_STRUCTURES, value: (struct: OwnedStructure, range: number) => {
+      key: LOOK_STRUCTURES, value: function(struct: OwnedStructure, range: number) {
         range = range;
         const i = posToDir(struct.pos);
         switch (struct.structureType) {
@@ -337,7 +337,7 @@ export default class CreepState extends State<Creep> {
         return true;
       },
     }, {
-      key: LOOK_ENERGY, value: resource => {
+      key: LOOK_ENERGY, value: function(resource) {
         log.debug("touching energy: ", resource);
         return true;
       },

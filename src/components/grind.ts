@@ -70,7 +70,7 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
   opts = opts;
   tasked = tasked;
 
-  _.chain(creeps).compact().map((creep: Creep) => {
+  _.chain(creeps).compact().map(function(creep: Creep) {
     const action = cachedIdleActions[creep.id];
     if (action !== undefined) {
       let result = false;
@@ -97,11 +97,11 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
   // }).value();
 
   // gather energy
-  _.chain(creeps).compact().filter(energyFull(0.8)).sortBy(energy).map((creep: Creep) => {
+  _.chain(creeps).compact().filter(energyFull(0.8)).sortBy(energy).map(function(creep: Creep) {
 
     LookForIterator.search<Creep>(creep.pos, 3, creep, [{
       key: LOOK_CREEPS,
-      value: (other: Creep, range: number, self: Creep) => {
+      value: function(other: Creep, range: number, self: Creep) {
         if (range < 0) {
           return true;
         }
@@ -119,7 +119,7 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
       },
     }, {
       key: LOOK_ENERGY,
-      value: (resource: Resource, range: number, self: Creep) => {
+      value: function(resource: Resource, range: number, self: Creep) {
         range = range;
         if (self.pickup(resource) === 0) {
           self.say("🔆", false);
@@ -127,7 +127,7 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
         }
         return true;
       },
-    }], (found: any, callback: FindCallback<Creep>) => {
+    }], function(found: any, callback: FindCallback<Creep>) {
 
       callback.target = found.id as string;
       cachedIdleActions[creep.id] = callback as FindCallback<any>;
@@ -139,11 +139,11 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
   }).value();
 
   // spend energy
-  _.chain(creeps).compact().filter(energyEmpty(10)).sortBy(energy).reverse().map((creep: Creep) => {
+  _.chain(creeps).compact().filter(energyEmpty(10)).sortBy(energy).reverse().map(function(creep: Creep) {
 
     LookForIterator.search<Creep>(creep.pos, 3, creep, [{
       key: LOOK_CONSTRUCTION_SITES,
-      value: (site: ConstructionSite) => {
+      value: function(site: ConstructionSite) {
         if (!site.my) {
           return true; // TODO fight?
         }
@@ -157,7 +157,7 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
       },
     }, {
       key: LOOK_STRUCTURES,
-      value: (structure: OwnedStructure) => {
+      value: function(structure: OwnedStructure) {
         if (structure.hits < structure.hitsMax) {
           creep.repair(structure);
           creep.say("🔨", false);
@@ -165,7 +165,7 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
         }
         return true;
       },
-    }], (found: any, callback: FindCallback<Creep>) => {
+    }], function(found: any, callback: FindCallback<Creep>) {
 
       callback.target = found;
       cachedIdleActions[creep.id] = callback as FindCallback<any>;
@@ -176,7 +176,7 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
     return creep;
   }).value();
 
-  _.chain(creeps).compact().map((creep: Creep) => {
+  _.chain(creeps).compact().map(function(creep: Creep) {
     // dunno
     creep.say("?", false);
   }).value();
@@ -185,13 +185,13 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
 /**
  * transform State -> memory -> extract score -> decorate score using State
  */
-function byScore<T extends State<any>>(metric: string, decorator?: MemoIterator<any, number> ): ScoreFunc<T> {
+function byScore<T extends State<any>>(metric?: string, decorator?: MemoIterator<any, number> ): ScoreFunc<T> {
 
-  const scorer = scoreManager.byScore(metric);
+  const scorer = metric === undefined ? scoreManager.byScore(SCORE_KEY) : scoreManager.byScore(metric);
 
   // DRY is a nontrivial cost
   if (decorator === undefined) {
-    return (value: T) => {
+    return function(value: T) {
       // log.info("byScore input", s);
       const mem = value.memory(SCORE_KEY);
       const score = scorer(mem);
@@ -206,7 +206,7 @@ function byScore<T extends State<any>>(metric: string, decorator?: MemoIterator<
    scoreManager.byScore(score)
    ) as (s: T) => number;
    */
-  return (value: T) => {
+  return function(value: T) {
     // log.info("byScore input", s);
     const mem = value.memory(SCORE_KEY);
     let score = scorer(mem);
@@ -226,7 +226,7 @@ export function doQuickTransfers(state: State<any>, ignore: any): void {
   if (state.isEnergyMover()) {
     // creeps can withdraw
     const creep = state as CreepState;
-    creep.touchedStorage().map(c => {
+    creep.touchedStorage().map(function(c) {
       if (!isReal(ignore[c.getId()])) {
         return;
       }
@@ -239,7 +239,7 @@ export function doQuickTransfers(state: State<any>, ignore: any): void {
         log.error("structure destroyed", c.getId());
       }
     }).value();
-    state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).map(c => {
+    state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).map(function(c) {
       if (c.resolve(globalLifecycle)) {
         api(c).transfer(state.subject(), RESOURCE_ENERGY);
         // TODO don't ignore unless full?
@@ -252,7 +252,7 @@ export function doQuickTransfers(state: State<any>, ignore: any): void {
     }).value();
   } else {
     // structures have to find creep neighbors
-    state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).map(c => {
+    state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).map(function(c) {
       if (c.resolve(globalLifecycle)) {
         api(c).transfer(state.subject(), RESOURCE_ENERGY);
         // TODO don't ignore unless full?
@@ -276,13 +276,13 @@ export function doTransfers(state: GlobalState,
   }
   tasked = tasked;
 
-  return state.spawns().map(structureState => {
+  return state.spawns().map(function(structureState) {
     const spawn = structureState.subject();
     if (spawn.energy < spawn.energyCapacity) {
       // energy hungry, feed me!
       LookForIterator.search<OwnedStructure>(spawn.pos, 3, spawn, [{
         key: LOOK_CREEPS,
-        value: (other: Creep, range: number, self: OwnedStructure) => {
+        value: function(other: Creep, range: number, self: OwnedStructure) {
           if (range < 0) {
             return true;
           }
@@ -313,8 +313,8 @@ export function doHarvest(state: GlobalState,
   }
 
   // garbage collect any workers assigned to negative score sources!
-  state.sources().map(scoreTEnergy).filter(it => it.score <= 0).map(({value}) => {
-    const source: SourceState = value;
+  state.sources().map(byTotalScore).filter(it => it.score <= 0).map(function(scoredSource) {
+    const source: SourceState = scoredSource.value;
     const workers = source.memory("workers", true);
     for (let site = workers.length - 1; site >= 0; site--) {
       const worker = workers[site];
@@ -326,13 +326,12 @@ export function doHarvest(state: GlobalState,
     }
   }).value();
 
-  return state.sources().map(scoreTEnergy).filter(it => it.score > 0).sortBy("score").reverse()
+  return state.sources().map(byTotalScore).filter(it => it.score > 0).sortBy("score").reverse()
     // TODO - CRITICAL - memoize statement thus far until closer source or destination is discovered
     // this is called an election!
-    .map(({value, score}) => {
-
-      score = score;
-      const source: SourceState = value;
+    .map(function(scoredSource) {
+      const source: SourceState = scoredSource.value;
+      scoredSource.score = getScore(source, "maxvenergy");
       let failed: any = {};
 
       const dirToPosition = F.dirToPositionCall(source.pos());
@@ -344,11 +343,13 @@ export function doHarvest(state: GlobalState,
         if (worker) {
           const pos = dirToPosition(site);
 
+          // TODO differentiate between successful mining and allocation swap (long term optimization)
           // grab worker and mine!
           const creep = CreepState.vright(worker);
           if (tryHarvest(creep, source, pos, site, tasked, failed)) {
             // log.debug("mined", site, "next site for", source);
             creeps[creeps.indexOf(creep.subject())] = null;
+            scoredSource.score = scoredSource.score - getScore(creep, "venergy"); // deduct creep's mining capability from the energy score
           } else {
             // TODO clean up assignment codes
             delete workers[site];
@@ -356,9 +357,14 @@ export function doHarvest(state: GlobalState,
         }
       }
 
+      if (scoredSource.score <= 0) {
+        // TODO temporary mining goal
+        return null;
+      }
+
       // log.debug(F.str(creeps, compactSize), "left"); // number before candidate processing
 
-      let candidates = _.chain(creeps).compact().filter((creep: Creep) => {
+      let candidates = _.chain(creeps).compact().filter(function(creep: Creep) {
         const taskId = tasked[creep.id];
         if (taskId !== undefined && taskId !== source.getId()) {
           log.warning("already tasked", creep);
@@ -369,7 +375,7 @@ export function doHarvest(state: GlobalState,
           return false;
         }
         return true;
-      }).map(CreepState.build).filter((cs: CreepState) => {
+      }).map(CreepState.build).filter(function(cs: CreepState) {
         const working = cs.memory().working;
         if (working !== undefined && working !== source.getId()) {
           // log.debug("already working", creep.name);
@@ -381,7 +387,7 @@ export function doHarvest(state: GlobalState,
 
       if (candidates === undefined || candidates.length === 0) {
         // no creeps to harvest this source!
-        return source;
+        return scoredSource;
       }
 
       log.debug(candidates.length, "left");
@@ -416,7 +422,7 @@ export function doHarvest(state: GlobalState,
 
           if (creep === null || creep === undefined) {
             log.error("no worker found");
-            return source;
+            return scoredSource;
           }
 
           creep.lock();
@@ -430,21 +436,26 @@ export function doHarvest(state: GlobalState,
 
           if (harvested) {
             creeps[creeps.indexOf(creep.subject())] = null;
-            return null;
+            scoredSource.score = scoredSource.score - getScore(creep, "venergy");
+
+            if (scoredSource.score <= 0) {
+              // TODO temporary mining goal
+              return null;
+            }
           }
         } while (!harvested);
       }
 
       return null;
     }
-  ).compact().value();
+  ).compact().value() as Scored<SourceState>[];
   // TODO compact<SourceState> should remove null|undefined in the parameterized type
 }
 
 function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remoteRoomScan: boolean, commands: Commands) {
   if (roomScan) {
     // scan real rooms
-    state.rooms().map(room => {
+    state.rooms().map(function(room) {
       // room.subject().find(FIND_HOSTILE_CREEPS)
       log.debug("TODO scan for new buildings and enemies", room);
       // TODO identify new buildings, new enemies
@@ -461,7 +472,7 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
 
   if (remoteRoomScan) {
     let count = 0;
-    state.remoteRooms().map(room => {
+    state.remoteRooms().map(function(room) {
       if (!room.resolve(globalLifecycle)) {
         count++;
       }
@@ -477,7 +488,7 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
 export function doSpawn(state: GlobalState, idleSources: Scored<SourceState>[], commands: Options) {
   commands = commands;
 
-  return state.spawns().map(structureState => {
+  return state.spawns().map(function(structureState) {
     spawnCreeps(state, structureState, idleSources);
   }).value();
 }
@@ -517,12 +528,19 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>, 
         doQuickTransfers(structureState, {});
         return;
       }
+
+      if (idleSources.length > 0) {
+        // spawn miners
+      } else {
+        // spawn haulers
+      }
+
       const majorSize = Math.floor(spawn.room.energyCapacityAvailable / workerBodyCost);
       let remaining = spawn.room.energyCapacityAvailable % workerBodyCost;
       let cost = majorSize * workerBodyCost;
       const body: string[] = [];
       for (let i = 0; i < majorSize; i++) {
-        body.push(...workerBody);
+        Array.prototype.push.apply(body, workerBody); // body.push(...workerBody);
       }
       while (remaining >= carryPartCost) {
         remaining = remaining - carryPartCost;
@@ -642,12 +660,11 @@ function energyEmpty(abs: number) {
 type ScoreFunc<T> = (value: T) => Scored<T>;
 type Scored<T> = { value: T, score: number };
 
-// state/tenergy
-const scoreTEnergy = byScore<SourceState>("score");
+const byTotalScore = byScore<SourceState>();
 
 // creep/venergy + rangeScore
 function distanceEnergyFitness(pos: RoomPosition): ScoreFunc<CreepState> {
-  return byScore<CreepState>("venergy", (score, s) => {
+  return byScore<CreepState>("venergy", function(score, s) {
     // do not give venergy: 0 creeps any distance score
     if (score === 0) {
       return 0;
@@ -663,9 +680,20 @@ function distanceEnergyFitness(pos: RoomPosition): ScoreFunc<CreepState> {
 //   };
 // }
 
-const isTrue: MemoIterator<any, number> = (prev, curr) => {
-  return curr ? (prev + 1) : prev;
-};
+const isTrueAccumulator: MemoIterator<any, number> = (prev, curr) => curr ? (prev + 1) : prev;
 
 // TODO - you don't need _.chain, lodash says that flow/flowRight avoids intermediates / "shortcut fusion" even with FP
-const compactSize = _.curryRight(_.foldl, 3)(0)(isTrue) as (x: any[]) => number;
+const compactSize = _.curryRight(_.foldl, 3)(0)(isTrueAccumulator) as (x: any[]) => number;
+
+function getScore(state: State<any>, metric: string): number {
+  const mem = state.memory(SCORE_KEY);
+  let calculated = scoreManager.getScore(mem, metric, undefined);
+  if (calculated === undefined) {
+    calculated = scoreManager.rescore(state, mem, metric, Game.time);
+    if (calculated === undefined) {
+      debugger; // can't score
+      throw new Error("can't score " + metric);
+    }
+  }
+  return calculated;
+}

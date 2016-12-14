@@ -44,7 +44,7 @@ function scoreMove(state: CreepState, score: ScoreManager<GlobalState>, time: nu
 }
 
 function scoreWork(multiplier: number): (state: CreepState) => number {
-  return (state: CreepState) => {
+  return function(state: CreepState) {
     const creep = state.subject();
     if (creep === undefined) {
       return 0;

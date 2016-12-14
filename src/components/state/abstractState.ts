@@ -50,7 +50,7 @@ function _register(state: any, rootMemory: any): boolean {
 }
 
 function _access(state: any, rootMemory: any, writeValue?: any): any {
-  // log.debug(state, "addressing", ...state._accessAddress());
+  // log.debug(state, "addressing", ... state._accessAddress()); // TODO NOW spread bad es6 perf
 
   let memory = F.expand(state._accessAddress(), rootMemory);
 
@@ -76,7 +76,7 @@ function _access(state: any, rootMemory: any, writeValue?: any): any {
  *
  * these handed flyweights allows for nested comparisons if programming rules are enforced
  *
- * so... what are those rules anyways? follow C++ calling convention, left / right?
+ * so.. what are those rules anyways? follow C++ calling convention, left / right?
  *  left - descend into new functions
  *  right - return from functions
  */

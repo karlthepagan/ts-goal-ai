@@ -12,16 +12,20 @@ export const EMITTING_CALLS = {
   fireEvent: 2,
 };
 
-export function discardJointpoint(...args: any[]) {
+export function registerFunctionLibrary(cache: AnonCache) {
+  cache.allocate(discardJointpoint);
+}
+
+function discardJointpoint( ... args: any[]) {
   return args.slice(1);
 }
 
 export function actionGet(select?: Function) {
-  return (is: AnyEvent, actionName: string) => {
+  return function(is: AnyEvent, actionName: string) {
     switch (actionName) {
       case "fireEvent":
         is = Object.create(is); // was .clone();
-        is.setAction(interceptorService, i => i.triggerBehaviors);
+        is.setAction(interceptorService, function(i) { return i.triggerBehaviors; });
         return [is, assignArgsThen(actionGet(select))];
 
       case "advice": // TODO adviceAnd
@@ -52,7 +56,7 @@ export function actionGet(select?: Function) {
  * scheduling that to occur later
  */
 export function waitApply(next: Function) {
-  return (is: AnyEvent, relativeTime: number, targetBuilder?: OnBuildTarget<any, any>) => {
+  return function(is: AnyEvent, relativeTime: number, targetBuilder?: OnBuildTarget<any, any>) {
     const ss = is.clone(new ScheduleSpec<any, any>());
     if (isNaN(relativeTime)) {
       debugger; // illegal relativeTime
@@ -84,7 +88,7 @@ export function instanceGet(is: AnyEvent, methodName: string) {
 }
 
 export function assignArgsThen(next?: Function) {
-  return (is: AnyEvent, ...args: any[]) => {
+  return function(is: AnyEvent, ... args: any[]) {
     is = Object.create(is); // was .clone();
     is.actionArgs = args; // TODO remove jp?
     return [is, next];

@@ -47,7 +47,7 @@ export const throttle = () => {
     throttleCache = undefined;
     delete botMemory().commit;
   }
-  return throttleCache = F.elvisLazy(throttleCache, () => {
+  return throttleCache = F.elvisLazy(throttleCache, function() {
     return new Throttle(F.expand([ "config" ], botMemory()));
   });
 };

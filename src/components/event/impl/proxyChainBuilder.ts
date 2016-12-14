@@ -1,4 +1,4 @@
-type StackHandler<O> = (value: O, ...push: any[]) => [O, Function];
+type StackHandler<O> = (value: O, ... push: any[]) => [O, Function];
 type TerminalCallback<O> = (spec: O) => void;
 type Map<T> = { [key: string]: T };
 
@@ -19,7 +19,7 @@ function newTarget(last?: Accumulator, push?: any[], terminal?: number): Accumul
       push = [];
     }
     accumulator.position = last.position + 1; // TODO call stack concat names for debugger?
-    let [stack, step] = last.step(last.stack, ...push);
+    let [stack, step] = last.step(last.stack, ...push);  // TODO NOW spread bad es6 perf
     accumulator.stack = stack;
     accumulator.step = step;
     // last & param == undef -> undef, otherwise last.terminal takes priority
@@ -49,7 +49,7 @@ export default class ProxyChainBuilder<O> implements ProxyHandler<Accumulator> {
     return acc;
   }
 
-  public newProxyChain(...args: any[]) {
+  public newProxyChain( ... args: any[]) {
     const target = this.target();
     if (args === undefined || args.length === 0) {
       return new Proxy(target, this);

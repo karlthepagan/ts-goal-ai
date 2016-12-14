@@ -56,7 +56,7 @@ export function detectChanges(state: GlobalState, score: ScoreManager<GlobalStat
         log.error("NEW FLAGS!");
         state.flags().value();
         // TODO temp?
-        state.sources().map(s => {
+        state.sources().map(function(s) {
           debugger; // rescoring all states
           return score.getOrRescore(s, s.memory(SCORE_KEY), undefined, Game.time);
         }).value();
@@ -67,7 +67,7 @@ export function detectChanges(state: GlobalState, score: ScoreManager<GlobalStat
         break;
       case GlobalState.CHANGED_CREEPS:
         // creeps died?!
-        state.bodies().map(s => {
+        state.bodies().map(function(s) {
           if (!s.resolve(globalLifecycle)) {
             // creep died!
             debugger;
@@ -77,7 +77,7 @@ export function detectChanges(state: GlobalState, score: ScoreManager<GlobalStat
         break;
       case GlobalState.CHANGED_STRUCTURES:
         // structure died?!
-        state.ruins().map(s => {
+        state.ruins().map(function(s) {
           if (!s.resolve(globalLifecycle)) {
             // structure died!
             debugger;

@@ -15,22 +15,12 @@ export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements Pr
     return is;
   }
 
-  public static forProxyGet<S extends State<any>>(target: S, method: string) {
-    const is = new InterceptorSpec<S, any>();
-    is.definition = InterceptorSpec.joinpointFor(target, method);
-    return is;
-  }
-
   public static joinpointFor<X extends State<any>>(target: X, method: string) {
     const jp = Joinpoint.forInstance(target, target.getId());
     jp.method = method;
     jp.target = target.subject();
     jp.category = target.constructor.name; // constructor.name must match fromConstructor
     return jp;
-  }
-
-  constructor() {
-    super();
   }
 
   // context gives us a handle on scheduler, which we use to register the event
@@ -47,9 +37,9 @@ export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements Pr
     // TODO break this out and call in switch (for beforecall handling)
     if (this.targetBuilder !== undefined) {
       debugger; // TODO observe target builder
-      inst[this.actionMethod](...this.targetBuilder(jp, ...this.resolveArgs(jp)));
+      inst[this.actionMethod](...this.targetBuilder(jp, ...this.resolveArgs(jp))); // TODO NOW spread bad es6 perf
     } else {
-      inst[this.actionMethod](wrapped, ...this.actionArgs);
+      inst[this.actionMethod](wrapped, ...this.actionArgs); // TODO NOW spread bad es6 perf
     }
 
     switch (this.callState) { // TODO abstraction
