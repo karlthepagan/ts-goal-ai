@@ -12,6 +12,7 @@ import {SCORE_KEY} from "../score/scoreManager";
 import EnemyCreepState from "../state/enemyCreepState";
 import {TERRAIN_PLAIN, TERRAIN_ROAD, TERRAIN_SWAMP} from "../constants";
 import StructureState from "../state/structureState";
+import {globalLifecycle} from "../event/behaviorContext";
 
 type StateScoreImpl<T> = { [key: string]: ScoreHandler<T, GlobalState> };
 
@@ -173,7 +174,7 @@ const impl = {
   // ROOMS ROOMS ROOMS ROOMS ROOMS ROOMS ROOMS ROOMS ROOMS ROOMS ROOMS ROOMS ROOMS ROOMS ROOMS ROOMS ROOMS ROOMS ROOMS
   roomState: {
     control: ((state: RoomState) => {
-      if (state.resolve()) {
+      if (state.resolve(globalLifecycle)) {
         const c = state.subject().controller;
         return c && c.my ? c.level : 0;
       }
@@ -211,7 +212,7 @@ const impl = {
       // TODO 2 - score distance on paths & from exits to all storage in that room
 
       // 3 - score distance to closest energy user in same room
-      if (ownRoom.resolve()) {
+      if (ownRoom.resolve(globalLifecycle)) {
         const realRoom = ownRoom.subject();
 
         const roomSiteScore = _(

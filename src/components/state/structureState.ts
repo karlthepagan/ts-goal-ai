@@ -43,7 +43,7 @@ export default class StructureState<T extends OwnedStructure> extends State<T> {
     return true;
   }
 
-  protected init(rootMemory: any, callback?: InitCallback<State<T>>): boolean {
+  protected init(rootMemory: any, callback?: LifecycleCallback<State<T>>): boolean {
     if (super.init(rootMemory, callback)) {
       // if (!this.isRemote()) {
       //   const subject = this.subject();
@@ -52,7 +52,7 @@ export default class StructureState<T extends OwnedStructure> extends State<T> {
       // TODO distance to all sources? value calculations?
 
       if (callback !== undefined) {
-        callback(this);
+        callback(this, State.LIFECYCLE_NEW);
       }
 
       return true;

@@ -71,7 +71,7 @@ export default class RoomState extends State<Room> {
     return subject.name;
   }
 
-  protected init(rootMemory: any, callback?: InitCallback<RoomState>): boolean {
+  protected init(rootMemory: any, callback?: LifecycleCallback<RoomState>): boolean {
     if (super.init(rootMemory, callback)) {
       if (!this.isRemote()) {
         // sources
@@ -91,7 +91,7 @@ export default class RoomState extends State<Room> {
       }
 
       if (callback !== undefined) {
-        callback(this);
+        callback(this, State.LIFECYCLE_NEW);
       }
 
       return true;

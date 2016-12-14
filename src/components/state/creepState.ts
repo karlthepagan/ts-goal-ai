@@ -6,6 +6,7 @@ import {TERRAIN_ROAD, TERRAIN_PLAIN, TERRAIN_SWAMP} from "../constants";
 import LookForIterator from "../util/lookForIterator";
 import Joinpoint from "../event/api/joinpoint";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
+import {globalLifecycle} from "../event/behaviorContext";
 // const BiMap = require("bimap"); // TODO BiMap
 
 const MOVE_KEYS = {
@@ -239,7 +240,7 @@ export default class CreepState extends State<Creep> {
   }
 
   public body(forFight?: boolean): string {
-    if (this.resolve() && this.isWounded()) {
+    if (this.resolve(globalLifecycle) && this.isWounded()) {
       return CreepState.calculateBody(this.subject().body, forFight === true);
     }
     return this.maxBody(forFight);
@@ -276,7 +277,7 @@ export default class CreepState extends State<Creep> {
       terrain = 2;
     }
 
-    if (this.resolve() || this.isWounded()) {
+    if (this.resolve(globalLifecycle) || this.isWounded()) {
       if (carry === undefined) {
         carry = this.getCarrying();
       }
@@ -298,7 +299,7 @@ export default class CreepState extends State<Creep> {
     const selfpos = this.pos();
     if (fromPos.x === selfpos.x && fromPos.y === selfpos.y) {
       debugger; // touching, same position, move failed?
-      return;
+      throw new Error("birthday violation! TOO SOON! TRY AGAIN!");
     }
 
     const newCreeps: string[] = [];
@@ -381,13 +382,13 @@ export default class CreepState extends State<Creep> {
     // TODO restore
     // eventManager.schedule(1, this)
     //   .on("say", this.keepSaying, say, toPublic, count);
-    if (this.resolve()) {
+    if (this.resolve(globalLifecycle)) {
       this.subject().say(say, toPublic);
     }
   }
 
   public beforeDeath() {
-    if (this.resolve()) {
+    if (this.resolve(globalLifecycle)) {
       const s = this.subject();
       if (s.carry.energy) {
         s.drop(RESOURCE_ENERGY);
@@ -402,7 +403,7 @@ export default class CreepState extends State<Creep> {
   }
 
   public isReady() {
-    return this.resolve() && this.subject().ticksToLive !== undefined;
+    return this.resolve(globalLifecycle) && this.subject().ticksToLive !== undefined;
   }
 
   public isEnergyMover() {
@@ -429,7 +430,7 @@ export default class CreepState extends State<Creep> {
 
   // TODO extend _resolve and required timeToLive !== undefined?
 
-  protected init(rootMemory: any, callback?: InitCallback<CreepState>): boolean {
+  protected init(rootMemory: any, callback?: LifecycleCallback<CreepState>): boolean {
     if (super.init(rootMemory, callback)) {
       if (this.resolve()) {
         const creep = this.subject();
@@ -469,7 +470,7 @@ export default class CreepState extends State<Creep> {
       }
 
       if (callback !== undefined) {
-        callback(this);
+        callback(this, State.LIFECYCLE_NEW);
       }
 
       return true;

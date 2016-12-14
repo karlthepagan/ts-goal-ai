@@ -49,7 +49,7 @@ export default class SpawnState extends State<Spawn> { // TODO extends Structure
   //   return subject.id;
   // }
 
-  protected init(rootMemory: any, callback?: InitCallback<SpawnState>): boolean {
+  protected init(rootMemory: any, callback?: LifecycleCallback<SpawnState>): boolean {
     if (super.init(rootMemory, callback)) {
       // if (!this.isRemote()) {
       //   const subject = this.subject();
@@ -58,7 +58,7 @@ export default class SpawnState extends State<Spawn> { // TODO extends Structure
       // TODO distance to all sources? value calculations?
 
       if (callback !== undefined) {
-        callback(this);
+        callback(this, State.LIFECYCLE_NEW);
       }
 
       return true;

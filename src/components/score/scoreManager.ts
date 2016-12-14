@@ -60,7 +60,7 @@ export default class ScoreManager<C> {
     return this._context;
   }
 
-  public getOrRescore(object: Named, memory: any, metric: string|undefined, time: number|undefined) {
+  public getOrRescore(object: Named, memory: any, metric?: string, time?: number) {
     const value = this.getScore(memory, metric, time);
     if (value === undefined || value === null) {
       return this.rescore(object, memory, metric, time);

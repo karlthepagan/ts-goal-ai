@@ -57,7 +57,7 @@ export default class MineralState extends State<Mineral> {
     return ["index", "minerals"];
   }
 
-  protected init(rootMemory: any, callback?: InitCallback<MineralState>): boolean {
+  protected init(rootMemory: any, callback?: LifecycleCallback<MineralState>): boolean {
     if (super.init(rootMemory, callback)) {
       if (!this.isRemote()) {
         const subject = this.subject();
@@ -66,7 +66,7 @@ export default class MineralState extends State<Mineral> {
       }
 
       if (callback !== undefined) {
-        callback(this);
+        callback(this, State.LIFECYCLE_NEW);
       }
 
       return true;

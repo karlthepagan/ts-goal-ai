@@ -88,6 +88,13 @@ export default class GlobalState extends State<Game> {
     return _.chain(this.subject().creeps).values().map(CreepState.right);
   }
 
+  /**
+   * reaper procedure - iterates thru creeps we think are alive
+   */
+  public bodies(): LoDashExplicitArrayWrapper<CreepState> {
+    return _.chain(this._memory.index.creeps).values().map(CreepState.vright);
+  }
+
   public rooms(): LoDashExplicitArrayWrapper<RoomState> {
     // TODO add init callback to .right?
     return _.chain(this.subject().rooms).values().map(RoomState.right);
@@ -111,7 +118,7 @@ export default class GlobalState extends State<Game> {
     return [GlobalState.CHANGED_CREEPS,
       GlobalState.CHANGED_FLAGS,
       GlobalState.CHANGED_SITES,
-      GlobalState.CHANGED_STRUCTURES].filter(this.isChanged);
+      GlobalState.CHANGED_STRUCTURES].filter(n => this.isChanged(n));
   }
 
   public isChanged(type: string) {
@@ -130,6 +137,13 @@ export default class GlobalState extends State<Game> {
     return _.chain(this.subject().structures).values().map(StructureState.right);
   }
 
+  /**
+   * reaper procedure - iterates thru structures which we think are alive
+   */
+  public ruins(): LoDashExplicitArrayWrapper<StructureState<any>> {
+    return _.chain(this._memory.index.structures).values().map(StructureState.vright);
+  }
+
   protected _accessAddress() {
     return [];
   }
@@ -144,7 +158,7 @@ export default class GlobalState extends State<Game> {
     return undefined;
   }
 
-  protected init(rootMemory: any, callback?: InitCallback<GlobalState>): boolean {
+  protected init(rootMemory: any, callback?: LifecycleCallback<GlobalState>): boolean {
     if (this._memory.reset) {
       this.delete();
     }
@@ -156,7 +170,7 @@ export default class GlobalState extends State<Game> {
       }
 
       if (callback !== undefined) {
-        callback(this);
+        callback(this, State.LIFECYCLE_NEW);
       }
 
       return true;

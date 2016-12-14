@@ -14,6 +14,7 @@ import {FindCallback} from "./util/lookForIterator";
 import api from "./event/behaviorContext";
 import {isReal} from "./functions";
 import StructureState from "./state/structureState";
+import {globalLifecycle} from "./event/behaviorContext";
 
 const cachedIdleActions: { [id: string]: FindCallback<any> } = {};
 
@@ -34,6 +35,48 @@ export function grind(state: GlobalState) {
 
   const th = throttle();
   scoreManager.setContext(state);
+
+  // TODO call this after dispatchTick? or as a scheduled tick (but low pirority)
+  const changes = state.getChanges();
+  for (let i = changes.length - 1; i >= 0; i--) {
+    switch (changes[i]) {
+      case GlobalState.CHANGED_FLAGS:
+        log.error("NEW FLAGS!");
+        state.flags().value();
+        // TODO temp?
+        state.sources().map(s => {
+          debugger; // rescoring all states
+          return scoreManager.getOrRescore(s, s.memory(SCORE_KEY), undefined, Game.time);
+        }).value();
+        break;
+      case GlobalState.CHANGED_SITES:
+        debugger;
+        state.sites().value();
+        break;
+      case GlobalState.CHANGED_CREEPS:
+        // creeps died?!
+        state.bodies().map(s => {
+          if (!s.resolve(globalLifecycle)) {
+            // creep died!
+            debugger;
+            log.error("DIED!");
+          }
+        });
+        break;
+      case GlobalState.CHANGED_STRUCTURES:
+        // structure died?!
+        state.ruins().map(s => {
+          if (!s.resolve(globalLifecycle)) {
+            // structure died!
+            debugger;
+            log.error("DESTROYED!");
+          }
+        });
+        break;
+      default:
+        break;
+    }
+  }
 
   if (opts.respawn || opts.suicide) {
     // stop aggressive scanning unless cpu bucket is over 85% full
@@ -228,31 +271,43 @@ export function doQuickTransfers(state: State<any>, ignore: any): void {
   if (state.isEnergyMover()) {
     // creeps can withdraw
     const creep = state as CreepState;
-    creep.touchedStorage().value().forEach(c => {
+    creep.touchedStorage().map(c => {
       if (!isReal(ignore[c.getId()])) {
         return;
       }
       debugger; // TODO REMOVE quick transfers from storage
-      c.resolve();
-      api(creep).withdraw(c.subject(), RESOURCE_ENERGY);
-      doQuickTransfers(c, ignore);
-    });
-    state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).value().forEach(c => {
-      c.resolve();
-      api(c).transfer(state.subject(), RESOURCE_ENERGY);
-      // TODO don't ignore unless full?
-      ignore[c.getId()] = true;
-      doQuickTransfers(c, ignore);
-    });
+      if (c.resolve(globalLifecycle)) {
+        api(creep).withdraw(c.subject(), RESOURCE_ENERGY);
+        doQuickTransfers(c, ignore);
+      } else {
+        debugger;
+        log.error("structure destroyed", c.getId());
+      }
+    }).value();
+    state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).map(c => {
+      if (c.resolve(globalLifecycle)) {
+        api(c).transfer(state.subject(), RESOURCE_ENERGY);
+        // TODO don't ignore unless full?
+        ignore[c.getId()] = true;
+        doQuickTransfers(c, ignore);
+      } else {
+        debugger;
+        log.error("creep died", c.getId());
+      }
+    }).value();
   } else {
     // structures have to find creep neighbors
-    state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).value().forEach(c => {
-      c.resolve();
-      api(c).transfer(state.subject(), RESOURCE_ENERGY);
-      // TODO don't ignore unless full?
-      ignore[c.getId()] = true;
-      doQuickTransfers(c, ignore);
-    });
+    state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).map(c => {
+      if (c.resolve(globalLifecycle)) {
+        api(c).transfer(state.subject(), RESOURCE_ENERGY);
+        // TODO don't ignore unless full?
+        ignore[c.getId()] = true;
+        doQuickTransfers(c, ignore);
+      } else {
+        debugger;
+        log.error("creep died", c.getId());
+      }
+    }).value();
   }
 }
 
@@ -301,6 +356,21 @@ export function doHarvest(state: GlobalState,
   if (compactSize(creeps) === 0) {
     return [];
   }
+
+  // garbage collect any workers assigned to negative score sources!
+  state.sources().map(scoreTEnergy).filter(it => it.score <= 0).map(({value}) => {
+    const source: SourceState = value;
+    const workers = source.memory("workers", true);
+    for (let site = workers.length - 1; site >= 0; site--) {
+      const worker = workers[site];
+      if (worker) {
+        debugger;
+        freeSite(source, site);
+        delete workers[site];
+      }
+    }
+  }).value();
+
   // TODO compact<SourceState> should remove null|undefined in the parameterized type
   return state.sources().map(scoreTEnergy).filter(it => it.score > 0).sortBy("score").reverse()
     // TODO - CRITICAL - memoize statement thus far until closer source or destination is discovered
@@ -437,7 +507,7 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
   if (remoteRoomScan) {
     let count = 0;
     state.remoteRooms().map(room => {
-      if (!room.resolve()) {
+      if (!room.resolve(globalLifecycle)) {
         count++;
       }
     }).value();
@@ -520,13 +590,13 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
                     pos: RoomPosition, site: number,
                     tasked: { [creepIdToSourceId: string]: string }, failed: any): boolean {
 
-  if (creepState.resolve()) {
+  if (creepState.resolve(globalLifecycle)) {
     const range = creepState.pos().getRangeTo(pos);
     // log.info("harvesting", creepState, creepState.pos(), "to", sourceState, pos, "range", range);
     const creep = creepState.subject();
     switch (range) {
       case 0:
-        if (!sourceState.resolve()) {
+        if (!sourceState.resolve(globalLifecycle)) {
           log.error("failed to resolve", sourceState);
           return false;
         }

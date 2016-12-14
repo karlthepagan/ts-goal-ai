@@ -81,6 +81,10 @@ function _access(state: any, rootMemory: any, writeValue?: any): any {
  *  right - return from functions
  */
 abstract class State<T> implements Named {
+  public static readonly LIFECYCLE_NEW = 0;
+  public static readonly LIFECYCLE_FREE = 1;
+  public static readonly LIFECYCLE_HIDDEN = 2;
+
   public static setEventRegistry(events: EventRegistry) {
     State.events = events;
   }
@@ -107,7 +111,7 @@ abstract class State<T> implements Named {
 
   public abstract className(): string;
 
-  public wrap(subject: T, memory: any, callback?: InitCallback<State<T>>): State<T> {
+  public wrap(subject: T, memory: any, callback?: LifecycleCallback<State<T>>): State<T> {
     if (this._locked) {
       const s = subject as any;
       throw new Error(s ? (s.id + " " + s.name) : "unknown");
@@ -122,12 +126,13 @@ abstract class State<T> implements Named {
 
     this._memory = _access(this, memory);
 
+    // TODO NOW immediately init???
     this.init(memory, callback);
 
     return this;
   }
 
-  public wrapRemote(id: string, memory: any, callback?: InitCallback<State<T>>): State<T> {
+  public wrapRemote(id: string, memory: any, callback?: LifecycleCallback<State<T>>): State<T> {
     if (this._locked) {
       throw new Error(id);
     }
@@ -139,6 +144,7 @@ abstract class State<T> implements Named {
 
     this._memory = _access(this, memory);
 
+    // TODO NOW defer init???????
     this.init(memory, callback);
 
     return this;
@@ -193,10 +199,28 @@ abstract class State<T> implements Named {
     delete this._memory.room;
   }
 
-  public resolve(): boolean {
+  public resolve(lifeCallback?: LifecycleCallback<State<T>>): boolean {
     const subject = this._subject = this._resolve(this._id);
 
-    return subject !== undefined && subject !== null;
+    if (subject !== undefined && subject !== null) {
+      return true;
+    }
+
+    if (this._visionSource()) {
+      if (lifeCallback !== undefined) {
+        lifeCallback(this, State.LIFECYCLE_FREE);
+      } else {
+        debugger; // tell someone!
+      }
+    } else {
+      if (lifeCallback !== undefined) {
+        lifeCallback(this, State.LIFECYCLE_HIDDEN);
+      } else {
+        debugger; // tell someone!
+      }
+    }
+
+    return false;
   }
 
   public toString() {
@@ -207,7 +231,7 @@ abstract class State<T> implements Named {
     this._memory = _access(this, botMemory(), mem);
   }
 
-  public rescan(callback?: InitCallback<State<T>>) {
+  public rescan(callback?: LifecycleCallback<State<T>>) {
     if (callback !== undefined) {
       debugger; // TODO is callback a Joinpoint?
       const grr = AnonCache.instance;
@@ -255,7 +279,7 @@ abstract class State<T> implements Named {
     return this._memory === undefined ? 0 : this._memory.seen;
   }
 
-  protected init(rootMemory: any, callback?: InitCallback<State<T>>): boolean {
+  protected init(rootMemory: any, callback?: LifecycleCallback<State<T>>): boolean {
     callback = callback; // utilized by implementers
     if (this._memory === undefined) {
       return false;

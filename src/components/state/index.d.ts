@@ -1,1 +1,1 @@
-type InitCallback<T> = (newState: T) => void;
+type LifecycleCallback<T> = (state: T, lifecycle: number) => void;

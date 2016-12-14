@@ -57,7 +57,7 @@ export default class SourceState extends State<Source> {
     return ["index", "sources"];
   }
 
-  protected init(rootMemory: any, callback?: InitCallback<SourceState>): boolean {
+  protected init(rootMemory: any, callback?: LifecycleCallback<SourceState>): boolean {
     if (super.init(rootMemory, callback)) {
       if (!this.isRemote()) {
         const subject = this.subject();
@@ -66,7 +66,7 @@ export default class SourceState extends State<Source> {
       }
 
       if (callback !== undefined) {
-        callback(this);
+        callback(this, State.LIFECYCLE_NEW);
       }
 
       return true;

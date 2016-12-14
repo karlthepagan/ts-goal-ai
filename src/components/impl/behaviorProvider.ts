@@ -5,10 +5,16 @@ import {log} from "../support/log";
 import InterceptorSpec from "../event/impl/interceptorSpec";
 import * as F from "../functions";
 import StructureState from "../state/structureState";
-import {interceptorService} from "../event/behaviorContext";
+import {interceptorService, globalLifecycle} from "../event/behaviorContext";
 import RoomState from "../state/roomState"; // TODO leaky abstraction
 
 const $ = {} as any;
+
+function birthday(spawn: StructureState<Spawn>, body: string[], concievedTicks?: number) {
+  return spawn.resolve(globalLifecycle)
+    ? spawn.subject().spawning.remainingTime
+    : 3 * body.length - F.elvis(concievedTicks, 1);
+}
 
 export function defineEvents(em: EventRegistry) {
   em.intercept(StructureState).after((i: Spawn) => i.createCreep).wait(1).advice((jp: Joinpoint<StructureState<Spawn>, string>) => {
@@ -25,15 +31,14 @@ export function defineEvents(em: EventRegistry) {
   });
 
   // TODO try to move most advice calls into targetBuilder calls
-  em.when().spawn().ofAll().advice((jp: Joinpoint<CreepState, string>) => {
+  em.when().spawn().ofAll().advice((jp: Joinpoint<CreepState, string>, body: string[]) => {
     if (jp.source === undefined) {
       debugger; // no event source
       throw new Error("no event source");
     }
     const creep = jp.target;
     const spawn = jp.source.target as StructureState<Spawn>;
-    spawn.resolve();
-    em.schedule(spawn.subject().spawning.remainingTime + 1499, creep).fireEvent("death");
+    em.schedule(birthday(spawn, body) + 1499, creep).fireEvent("death");
   });
 
   em.intercept(CreepState).after(i => i.move).wait(1, (jp: Joinpoint<CreepState, void>, dir: number) => {
@@ -50,11 +55,12 @@ export function defineEvents(em: EventRegistry) {
       ejp.args = [jp.target.pos()]; // OnMove spec: fromPos: RoomPosition, forwardDir: number
       return [ejp, ...ejp.args];
     }).advice((jp: Joinpoint<CreepState, number>, fromPos: RoomPosition) => {
-      jp.target.resolve();
-      jp.args[1] = F.posToDirection(fromPos)(jp.target.pos()); // TODO if 0?
-      interceptorService.triggerBehaviors(jp, "move");
+      if (jp.target.resolve(globalLifecycle)) {
+        jp.args[1] = F.posToDirection(fromPos)(jp.target.pos()); // TODO if 0?
+        interceptorService.triggerBehaviors(jp, "move");
 
-      // interceptorService.scheduleExec() // TODO rested event
+        // interceptorService.scheduleExec() // TODO rested event
+      }
     })
   );
 }
@@ -75,8 +81,8 @@ export default function registerBehaviorProvider(em: EventRegistry) {
     }
     const creep = jp.target;
     const spawn = jp.source.target as StructureState<Spawn>;
-    spawn.resolve();
-    const whenBorn = em.schedule(spawn.subject().spawning.remainingTime, creep);
+    const whenBorn = em.schedule(birthday(spawn, body), creep);
+
     if (mem !== undefined) {
       whenBorn.call().setMemory(mem); // args from createCreep call, TODO type constrain?
     }
@@ -88,7 +94,7 @@ export default function registerBehaviorProvider(em: EventRegistry) {
     whenBorn.callHandler().touching(vjp, creep.pos(), TOP); // TODO automatic joinpoint from dispatch?
   });
 
-  em.when().move().ofAll().callHandler().touching($, $, $);
+  em.when().move().ofAll().call().touching($, $, $);
 
   em.when().attacked().ofAll().advice((jp: Joinpoint<CreepState|StructureState<any>, string>) => {
     // TODO clear assignment and retreat to spawn

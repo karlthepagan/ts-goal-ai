@@ -43,7 +43,7 @@ export default class ConstructionState extends State<ConstructionSite> {
     return ["index", "sites"];
   }
 
-  protected init(rootMemory: any, callback?: InitCallback<ConstructionState>): boolean {
+  protected init(rootMemory: any, callback?: LifecycleCallback<ConstructionState>): boolean {
     // TODO memory mask, proxy?
 
     if (super.init(rootMemory, callback)) {
@@ -51,7 +51,7 @@ export default class ConstructionState extends State<ConstructionSite> {
       // TODO if callback, post immediately
 
       if (callback !== undefined) {
-        callback(this);
+        callback(this, State.LIFECYCLE_NEW);
       }
 
       return true;

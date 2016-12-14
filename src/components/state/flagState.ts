@@ -31,6 +31,10 @@ export default class FlagState extends State<Flag> {
     return "FlagState";
   }
 
+  protected _getId(subject: Flag): string|undefined {
+    return subject.name;
+  }
+
   protected _accessAddress() {
     return ["flags"];
   }
@@ -39,13 +43,13 @@ export default class FlagState extends State<Flag> {
     return ["index", "flags"];
   }
 
-  protected init(rootMemory: any, callback?: InitCallback<FlagState>): boolean {
+  protected init(rootMemory: any, callback?: LifecycleCallback<FlagState>): boolean {
     if (super.init(rootMemory, callback)) {
       // TODO distance to all sources? value calculations?
       this.subject().color;
 
       if (callback !== undefined) {
-        callback(this);
+        callback(this, State.LIFECYCLE_NEW);
       }
 
       return true;

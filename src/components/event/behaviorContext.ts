@@ -4,8 +4,31 @@ import * as F from "../functions";
 import {botMemory} from "../../config/config";
 import {AnyEvent} from "./impl/eventSpec";
 import ScheduleSpec from "./impl/scheduledSpec";
+import {log} from "../support/log";
 
 export const interceptorService = new InterceptorService();
+
+export function globalLifecycle(state: State<any>, lifecycle: number) {
+  switch (lifecycle) {
+    case State.LIFECYCLE_NEW:
+      debugger;
+      log.error("something born", state);
+      break;
+
+    case State.LIFECYCLE_FREE:
+      debugger;
+      log.error("something died", state);
+      break;
+
+    case State.LIFECYCLE_HIDDEN:
+      debugger;
+      log.info("something is hidden", state);
+      break;
+
+    default:
+      throw new Error("unknown lifecycle=" + lifecycle);
+  }
+}
 
 export function dispatchTick(time: number) {
   interceptorService.dispatchTick(time);
