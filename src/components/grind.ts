@@ -48,19 +48,18 @@ export function grind(state: GlobalState) {
   const tasked: { [creepIdToSourceId: string]: string } = {};
 
   if (!commands.pause) {
-    if (creeps.length > 0) {
-      if (commands.hardxfer) {
-        doTransfers(state, creeps, tasked);
-      }
 
-      doHarvest(state, creeps, tasked);
-
-      if (commands.hardidle) {
-        doIdle(state, opts, creeps, tasked);
-      }
+    if (creeps.length > 0 && commands.hardxfer) {
+      doTransfers(state, creeps, tasked);
     }
 
-    doSpawn(state, opts);
+    const idleSources = doHarvest(state, creeps, tasked);
+
+    if (creeps.length > 0 && commands.hardidle) {
+      doIdle(state, opts, creeps, tasked);
+    }
+
+    doSpawn(state, idleSources, opts);
   }
 
   commands.last = Game.time;
@@ -307,7 +306,7 @@ export function doTransfers(state: GlobalState,
 
 export function doHarvest(state: GlobalState,
                           creeps: (Creep|null)[],
-                          tasked: { [creepIdToSourceId: string]: string }): (SourceState|null)[] {
+                          tasked: { [creepIdToSourceId: string]: string }): Scored<SourceState>[] {
 
   if (compactSize(creeps) === 0) {
     return [];
@@ -327,7 +326,6 @@ export function doHarvest(state: GlobalState,
     }
   }).value();
 
-  // TODO compact<SourceState> should remove null|undefined in the parameterized type
   return state.sources().map(scoreTEnergy).filter(it => it.score > 0).sortBy("score").reverse()
     // TODO - CRITICAL - memoize statement thus far until closer source or destination is discovered
     // this is called an election!
@@ -440,6 +438,7 @@ export function doHarvest(state: GlobalState,
       return null;
     }
   ).compact().value();
+  // TODO compact<SourceState> should remove null|undefined in the parameterized type
 }
 
 function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remoteRoomScan: boolean, commands: Commands) {
@@ -471,11 +470,15 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
   }
 }
 
-export function doSpawn(state: GlobalState, commands: Options) {
+/**
+ *
+ * @param idleSources un-exhausted sources paired with their current venergy deficit
+ */
+export function doSpawn(state: GlobalState, idleSources: Scored<SourceState>[], commands: Options) {
   commands = commands;
 
   return state.spawns().map(structureState => {
-    spawnCreeps(state, structureState);
+    spawnCreeps(state, structureState, idleSources);
   }).value();
 }
 
@@ -484,7 +487,7 @@ const carryPartCost = BODYPART_COST.move;
 const workerBody = [CARRY, WORK, MOVE, MOVE];
 const workerBodyCost = _(workerBody).sum(i => BODYPART_COST[i]);
 
-function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>) {
+function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>, idleSources: Scored<SourceState>[]) {
   state = state;
 
   const spawn = structureState.subject();
