@@ -1,3 +1,3 @@
 import ScoreManager from "./scoreManager";
 
-export const scoreManager = new ScoreManager();
+export const scoreManager = new ScoreManager<any>();

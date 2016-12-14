@@ -5,6 +5,9 @@ import {botMemory} from "../../config/config";
 import {AnyEvent} from "./impl/eventSpec";
 import ScheduleSpec from "./impl/scheduledSpec";
 import {log} from "../support/log";
+import GlobalState from "../state/globalState";
+import ScoreManager from "../score/scoreManager";
+import {SCORE_KEY} from "../score/scoreManager";
 
 export const interceptorService = new InterceptorService();
 
@@ -41,6 +44,51 @@ export function registerBehavior(name: string, spec: AnyEvent) {
 export function scheduleExec(name: string, spec: ScheduleSpec<any, any>) {
   name = name; // TODO log or pass thru?
   interceptorService.scheduleExec(spec);
+}
+
+export function detectChanges(state: GlobalState, score: ScoreManager<GlobalState>) {
+  // TODO call this after dispatchTick? or as a scheduled tick (but low pirority)
+
+  const changes = state.getChanges();
+  for (let i = changes.length - 1; i >= 0; i--) {
+    switch (changes[i]) {
+      case GlobalState.CHANGED_FLAGS:
+        log.error("NEW FLAGS!");
+        state.flags().value();
+        // TODO temp?
+        state.sources().map(s => {
+          debugger; // rescoring all states
+          return score.getOrRescore(s, s.memory(SCORE_KEY), undefined, Game.time);
+        }).value();
+        break;
+      case GlobalState.CHANGED_SITES:
+        debugger;
+        state.sites().value();
+        break;
+      case GlobalState.CHANGED_CREEPS:
+        // creeps died?!
+        state.bodies().map(s => {
+          if (!s.resolve(globalLifecycle)) {
+            // creep died!
+            debugger;
+            log.error("DIED!");
+          }
+        });
+        break;
+      case GlobalState.CHANGED_STRUCTURES:
+        // structure died?!
+        state.ruins().map(s => {
+          if (!s.resolve(globalLifecycle)) {
+            // structure died!
+            debugger;
+            log.error("DESTROYED!");
+          }
+        });
+        break;
+      default:
+        break;
+    }
+  }
 }
 
 export default function api<T>(subject: State<T>): T {
