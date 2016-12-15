@@ -68,6 +68,12 @@ export function grind(state: GlobalState) {
       return false;
     }).value();
 
+    doHaulEnergy(state, creeps, tasked);
+
+    doBuildStuff(state, creeps, tasked);
+
+    doRepairStuff(state, creeps, tasked);
+
     if (creeps.length > 0 && commands.hardidle) {
       doIdle(state, opts, creeps, tasked);
     }
@@ -255,6 +261,7 @@ export function doQuickTransfers(state: State<any>, ignore: any): void {
     state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).map(function(c) {
       if (c.resolve(globalLifecycle)) {
         api(c).transfer(state.subject(), RESOURCE_ENERGY);
+        scoreManager.rescore(c, c.memory(SCORE_KEY), "tenergy", Game.time, 0);
         // TODO don't ignore unless full?
         ignore[c.getId()] = true;
         doQuickTransfers(c, ignore);
@@ -268,6 +275,7 @@ export function doQuickTransfers(state: State<any>, ignore: any): void {
     state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).map(function(c) {
       if (c.resolve(globalLifecycle)) {
         api(c).transfer(state.subject(), RESOURCE_ENERGY);
+        scoreManager.rescore(c, c.memory(SCORE_KEY), "tenergy", Game.time, 0);
         // TODO don't ignore unless full?
         ignore[c.getId()] = true;
         doQuickTransfers(c, ignore);
@@ -317,9 +325,54 @@ export function doTransfers(state: GlobalState,
   }).value();
 }
 
-export function doHarvest(state: GlobalState,
-                          creeps: (Creep|null)[],
-                          tasked: { [creepIdToSourceId: string]: string }): Scored<SourceState>[] {
+function doRepairStuff(state: GlobalState,
+                       creeps: (Creep|null)[],
+                       tasked: { [creepIdToSourceId: string]: string }): Scored<SourceState>[] {
+  state = state;
+  tasked = tasked;
+
+  if (compactSize(creeps) === 0) {
+    return [];
+  }
+
+  // TODO find buildings at less than 100% hits
+
+  return [];
+}
+
+function doBuildStuff(state: GlobalState,
+                      creeps: (Creep|null)[],
+                      tasked: { [creepIdToSourceId: string]: string }): Scored<SourceState>[] {
+  state = state;
+  tasked = tasked;
+
+  if (compactSize(creeps) === 0) {
+    return [];
+  }
+
+  // TODO find construction sties and calculate energy needed to build them
+
+  return [];
+}
+
+function doHaulEnergy(state: GlobalState,
+                      creeps: (Creep|null)[],
+                      tasked: { [creepIdToSourceId: string]: string }): Scored<SourceState>[] {
+  state = state;
+  tasked = tasked;
+
+  if (compactSize(creeps) === 0) {
+    return [];
+  }
+
+  // TODO find sources with miners who have non-zero tenergy, move to them and haul energy back to spawn
+
+  return [];
+}
+
+function doHarvest(state: GlobalState,
+                   creeps: (Creep|null)[],
+                   tasked: { [creepIdToSourceId: string]: string }): Scored<SourceState>[] {
 
   if (compactSize(creeps) === 0) {
     return [];
