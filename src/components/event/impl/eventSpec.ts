@@ -18,7 +18,7 @@ class EventSpec<I, T> {
    * reconcile memory transformations
    */
   public static hydrate<A, B>(task: EventSpec<A, B>): EventSpec<A, B> {
-    Object.setPrototypeOf(task, EventSpec.prototype);
+    Object.setPrototypeOf(task, EventSpec.prototype); // TODO benchmark task.__proto__ = EventSpec.prototype;
     if (task.targetBuilder === undefined) {
       task.targetBuilder = AnonCache.instance[task.targetBuilderRef as number];
     }

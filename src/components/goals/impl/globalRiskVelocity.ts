@@ -12,7 +12,6 @@ export default class GlobalEnergyVelocity implements Goal<GlobalState> {
     if (resource instanceof RoomState) {
       const room = resource as RoomState;
       // room.sources().map()
-      // room goals for energy - harvest, transport & scavenge
       log.error("TODO boot up room goals", room);
 
       return [];

@@ -18,6 +18,13 @@ import {globalLifecycle} from "./event/behaviorContext";
 
 const cachedIdleActions: { [id: string]: FindCallback<any> } = {};
 
+const REL = {
+  CREEPS_MINING: "workers",
+  SOURCE_MINED: "working",
+  CREEPS_HAULING: "haulers",
+  SOURCE_HAULED: "working",
+};
+
 export function grind(state: GlobalState) {
   const commands = state.memory() as Commands;
   const opts = state.memory("config") as Options;
@@ -59,7 +66,7 @@ export function grind(state: GlobalState) {
     idleSources = _.chain(idleSources).filter(function(s) {
       // sources which have all sites full aren't actually idle
       const sites = s.value.nodeDirs();
-      const workers = s.value.memory("workers", true);
+      const workers = s.value.memory(REL.CREEPS_MINING, true);
       for (let i = sites.length - 1; i >= 0; i--) {
         if (!workers[sites[i]]) { // null or undef
           return true;
@@ -128,7 +135,7 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
         }
         let result = 0;
         const otherState = CreepState.left(other);
-        if (otherState.memory().working !== undefined) {
+        if (otherState.memory()[REL.SOURCE_MINED] !== undefined) {
           result = api(otherState).transfer(self, RESOURCE_ENERGY);
         } else if (energy(other) > 5) {
           result = api(otherState).transfer(self, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
@@ -311,7 +318,7 @@ export function doTransfers(state: GlobalState,
           }
           let result = 0;
           const otherState = CreepState.left(other);
-          if (otherState.memory().working !== undefined) {
+          if (otherState.memory()[REL.SOURCE_MINED] !== undefined) {
             result = api(otherState).transfer(self, RESOURCE_ENERGY);
           } else if (energy(other) > 5) {
             result = api(otherState).transfer(self, RESOURCE_ENERGY, Math.ceil(energy(other) * 0.2));
@@ -367,22 +374,64 @@ function doHaulEnergy(state: GlobalState,
     return [];
   }
 
-  // TODO find sources with miners who have non-zero tenergy, move to them and haul energy back to spawn
-  state.sources().reject(hasBucketBrigade).map(byWorkerVenergy).sortBy("score");
+  // TODO COOL STUFF - nagel's algorithm for hauler assignment! (or just calculate delta venergy)
 
-  return [];
+  // find sources with miners who have low tenergy score, move to them and haul energy back to spawn
+  return state.sources().reject(hasBucketBrigade).map(workerVenergyFitness).sortBy("score").map(function(scoredSource): Scored<SourceState>|null {
+
+    const source = scoredSource.value;
+    const workers = source.memory(REL.CREEPS_HAULING); // map worker -> destination struct
+    for (const worker in workers) {
+      const dst = workers[worker]; // string id for StructureState
+      if (worker) {
+        const creep = CreepState.vright(worker);
+        // tryHaul
+        // if (tryHarvest(creep, source, pos, site, tasked)) {
+          // log.debug("mined", site, "next site for", source);
+        if (tryHaul(creep, source, StructureState.vright(dst), tasked)) {
+          creeps[creeps.indexOf(creep.subject())] = null;
+        } else {
+          // TODO clean up assignment codes
+          delete workers[site];
+        }
+      }
+    }
+
+    // TODO later roads!
+    const assigned = _.chain(creeps).compact().map(haulerTenergyFitness).filter(s => s.score > 0)
+        .any(function(scoredCreep: Scored<CreepState>): boolean {
+      const creep = scoredCreep.value;
+      creep.memory()[REL.SOURCE_HAULED] // TODO NOW allocate hauler and tryHaul
+
+      return false;
+    });
+
+    return assigned ? null : scoredSource;
+  }).compact().value() as Scored<SourceState>[];
 }
 
 function hasBucketBrigade(source: SourceState): boolean {
-  const workers = source.memory("workers", true);
-  workers = workers; // TODO finish this filter
-  return false;
+  const workers = source.memory(REL.CREEPS_MINING, true);
+  return ! _.chain(workers).map(CreepState.vright).any(function(creep: CreepState) {
+    return !(getRawScore(creep, "tenergy") > 999);
+  }).value();
 }
 
-function byWorkerVenergy(source: SourceState): Scored<SourceState> {
+function workerVenergyFitness(source: SourceState): Scored<SourceState> {
+  const workers = source.memory(REL.CREEPS_MINING, true);
+  const score = _.chain(workers).map(CreepState.vright).sum(function(creep: CreepState) {
+    return getScore(creep, "venergy");
+  }).value(); // TODO assuming workers are 100% effective, this will change in fluxing sources
+
   const value = source;
-  const score = 0;
   return {value, score};
+}
+
+function haulerTenergyFitness(creep: CreepState): Scored<CreepState> {
+  return {
+    value: creep,
+    score: getScore(creep, "tenergy"),
+  };
 }
 
 function doHarvest(state: GlobalState,
@@ -396,7 +445,7 @@ function doHarvest(state: GlobalState,
   // garbage collect any workers assigned to negative score sources!
   state.sources().map(byTotalScore).filter(it => it.score <= 0).map(function(scoredSource) {
     const source: SourceState = scoredSource.value;
-    const workers = source.memory("workers", true);
+    const workers = source.memory(REL.CREEPS_MINING, true);
     for (let site = workers.length - 1; site >= 0; site--) {
       const worker = workers[site];
       if (worker) {
@@ -418,7 +467,7 @@ function doHarvest(state: GlobalState,
       const dirToPosition = F.dirToPositionCall(source.pos());
       const scoreEnergy = distanceEnergyFitness(source.pos());
 
-      const workers = source.memory("workers", true);
+      const workers = source.memory(REL.CREEPS_MINING, true);
       for (let site = workers.length - 1; site >= 0; site--) {
         const worker = workers[site];
         if (worker) {
@@ -460,7 +509,7 @@ function doHarvest(state: GlobalState,
         }
         return true;
       }).map(CreepState.build).filter(function(cs: CreepState) {
-        const working = cs.memory().working;
+        const working = cs.memory()[REL.SOURCE_MINED];
         if (working !== undefined && working !== source.getId()) {
           // log.debug("already working", creep.name);
           return false;
@@ -510,7 +559,7 @@ function doHarvest(state: GlobalState,
         }
 
         creep.lock();
-        if (creep.memory().working !== undefined) {
+        if (creep.memory()[REL.SOURCE_MINED] !== undefined) {
           debugger;
           // was assigned!
           // free current source
@@ -635,7 +684,7 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>, 
       } else {
         debugger;
         // spawn haulers
-        // TODO SOON calculate time to transport under carry capacity
+        // TODO calculate time to transport under carry capacity
         let budget = spawn.room.energyCapacityAvailable - movePartCost - carryPartCost;
         const body: string[] = [CARRY, MOVE];
         // TODO budget >= 0 assertion!
@@ -644,7 +693,7 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>, 
           budget -= haulerBodyCost;
         }
         api(structureState).createCreep(body);
-      }
+      } // TODO SOON builder body!
   }
 }
 
@@ -699,24 +748,24 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
 }
 
 function assignCreep(source: SourceState, site: number, creep: Creep) {
-  CreepState.left(creep).memory().working = source.getId();
+  CreepState.left(creep).memory()[REL.SOURCE_MINED] = source.getId();
   if (creep.id === null) {
     throw new Error("bad creep");
   }
-  source.memory("workers", true)[ site ] = creep.id;
+  source.memory(REL.CREEPS_MINING, true)[ site ] = creep.id;
 }
 
 function freeSite(sourceState: SourceState, site: number) {
-  const workers: string[] = sourceState.memory("workers", true);
+  const workers: string[] = sourceState.memory(REL.CREEPS_MINING, true);
   const id = workers[ site ];
   if (id) {
-    delete CreepState.vleft(id).memory().working;
+    delete CreepState.vleft(id).memory()[REL.SOURCE_MINED];
     delete workers[ site ];
   }
 }
 
 function freeCreep(creep: CreepState) {
-  const oldsite: string[] = SourceState.vleft(creep.memory().working).memory("workers", true);
+  const oldsite: string[] = SourceState.vleft(creep.memory()[REL.SOURCE_MINED]).memory(REL.CREEPS_MINING, true);
   delete oldsite[oldsite.indexOf(creep.getId())];
 }
 
@@ -726,8 +775,8 @@ function resetAssignments(state: GlobalState, shuffled: boolean) {
   } else {
     log.error("recovering from failing activity or foreign branch");
   }
-  state.sources().filter(s => delete s.memory().workers).value();
-  state.creeps().filter(s => delete s.memory().working).value();
+  state.sources().filter(s => delete s.memory()[REL.CREEPS_MINING]).value();
+  state.creeps().filter(s => delete s.memory()[REL.SOURCE_MINED]).value();
 }
 
 function energy(creep: Creep) {
@@ -776,6 +825,11 @@ const isTrueAccumulator: MemoIterator<any, number> = (prev, curr) => curr ? (pre
 
 // TODO - you don't need _.chain, lodash says that flow/flowRight avoids intermediates / "shortcut fusion" even with FP
 const compactSize = _.curryRight(_.foldl, 3)(0)(isTrueAccumulator) as (x: any[]) => number;
+
+function getRawScore(state: State<any>, metric: string): number|undefined {
+  const mem = state.memory(SCORE_KEY);
+  return scoreManager.getScore(mem, metric, undefined);
+}
 
 function getScore(state: State<any>, metric: string): number {
   const mem = state.memory(SCORE_KEY);
