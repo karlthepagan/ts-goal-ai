@@ -71,7 +71,8 @@ Room.serializePath([
 ]);
 
 Room.serializePath([
-  {"x":14,"y":32,"dx":-1,"dy":-1,"direction":8},
+  {"x":15,"y":32,"dx":-1,"dy":-1,"direction":8},
+  {"x":14,"y":32,"dx":-1,"dy":0,"direction":7},
   {"x":13,"y":32,"dx":-1,"dy":0,"direction":7},
   {"x":13,"y":33,"dx":0,"dy":1,"direction":5},
   {"x":14,"y":34,"dx":1,"dy":1,"direction":4}

@@ -21,6 +21,7 @@ type StateScoreImpl<T> = { [key: string]: ScoreHandler<T, GlobalState> };
 export const DISTANCE_WEIGHT = 9;
 export const FATIGUE_WEIGHT = 4;
 export const ENERGY_WORK_WEIGHT = 2; // harvest 2 units per tick
+export const BUILD_WORK_WEIGHT = 5; // add 5 progress per tick
 export const ROAD_WEIGHT = 3; // cost to maintain roads
 export const SWAMP_WEIGHT = 1; // cost to route around swamps
 export const COMBAT_DANGER = 10; // TODO implement risk

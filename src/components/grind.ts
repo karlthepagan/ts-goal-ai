@@ -68,11 +68,13 @@ export function grind(state: GlobalState) {
       return false;
     }).value();
 
-    doHaulEnergy(state, creeps, tasked);
+    const idleHaulSites = doHaulEnergy(state, creeps, tasked);
 
-    doBuildStuff(state, creeps, tasked);
+    log.info("idle sites", idleHaulSites.length);
 
-    doRepairStuff(state, creeps, tasked);
+    let idleSites = doBuildStuff(state, creeps, tasked).length;
+
+    idleSites += doRepairStuff(state, creeps, tasked).length;
 
     if (creeps.length > 0 && commands.hardidle) {
       doIdle(state, opts, creeps, tasked);
@@ -261,7 +263,7 @@ export function doQuickTransfers(state: State<any>, ignore: any): void {
     state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).map(function(c) {
       if (c.resolve(globalLifecycle)) {
         api(c).transfer(state.subject(), RESOURCE_ENERGY);
-        scoreManager.rescore(c, c.memory(SCORE_KEY), "tenergy", Game.time, 0);
+        scoreManager.rescore(c, c.memory(SCORE_KEY), "tenergy", Game.time, 1000);
         // TODO don't ignore unless full?
         ignore[c.getId()] = true;
         doQuickTransfers(c, ignore);
@@ -275,7 +277,7 @@ export function doQuickTransfers(state: State<any>, ignore: any): void {
     state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).map(function(c) {
       if (c.resolve(globalLifecycle)) {
         api(c).transfer(state.subject(), RESOURCE_ENERGY);
-        scoreManager.rescore(c, c.memory(SCORE_KEY), "tenergy", Game.time, 0);
+        scoreManager.rescore(c, c.memory(SCORE_KEY), "tenergy", Game.time, 1000);
         // TODO don't ignore unless full?
         ignore[c.getId()] = true;
         doQuickTransfers(c, ignore);
@@ -366,8 +368,21 @@ function doHaulEnergy(state: GlobalState,
   }
 
   // TODO find sources with miners who have non-zero tenergy, move to them and haul energy back to spawn
+  state.sources().reject(hasBucketBrigade).map(byWorkerVenergy).sortBy("score");
 
   return [];
+}
+
+function hasBucketBrigade(source: SourceState): boolean {
+  const workers = source.memory("workers", true);
+  workers = workers; // TODO finish this filter
+  return false;
+}
+
+function byWorkerVenergy(source: SourceState): Scored<SourceState> {
+  const value = source;
+  const score = 0;
+  return {value, score};
 }
 
 function doHarvest(state: GlobalState,
@@ -451,7 +466,7 @@ function doHarvest(state: GlobalState,
           return false;
         }
         return true;
-      }).map(scoreEnergy).sortBy(it => it.score).reverse().value();
+      }).map(scoreEnergy).sortBy("score").reverse().value();
       // highest score by fitness (body + distance)
 
       if (candidates === undefined || candidates.length === 0) {
