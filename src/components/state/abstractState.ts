@@ -243,6 +243,9 @@ abstract class State<T> implements Named {
 
   public onPart(other: CreepState, direction: number) {
     other = other;
+    if ((botMemory() as Commands).debugTouch) {
+      debugger; // Commands.debugTouch
+    }
     this.memory("touch.creep", true)[direction] = null;
     this.memory("touch.types", true)[direction] = null;
     const dirs = this.memory("touch.dir", true) as number[];
@@ -250,10 +253,29 @@ abstract class State<T> implements Named {
   }
 
   public onMeet(other: CreepState, direction: number) {
+    if ((botMemory() as Commands).debugTouch) {
+      debugger; // Commands.debugTouch
+    }
     this.memory("touch.creep", true)[direction] = other.getId();
     this.memory("touch.types", true)[direction] = "CreepState";
     const dirs = this.memory("touch.dir", true) as number[];
     F.add(dirs, direction);
+  }
+
+  public onSlide(other: CreepState, newDirection: number) {
+    if ((botMemory() as Commands).debugTouch) {
+      debugger; // Commands.debugTouch
+    }
+
+    const creeps = this.memory("touch.creep", true);
+    creeps[newDirection] = other.getId();
+    // remove the old direction
+    F.arrayUniq(creeps, other.getId(), newDirection);
+
+    // can't remove types, it's a class not a UID
+    this.memory("touch.types", true)[newDirection] = "CreepState";
+    const dirs = this.memory("touch.dir", true) as number[];
+    F.add(dirs, newDirection);
   }
 
   public touchedCreepIds(): LoDashExplicitArrayWrapper<string> {

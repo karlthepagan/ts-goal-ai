@@ -64,6 +64,17 @@ function isForFight(b: string) {
   return WORK_FIGHT[b] <= 0;
 }
 
+function sparseExactDifference<T>(a: T[], b: T[]) {
+  const result: T[] = [];
+  for (let i = a.length - 1; i >= 0; i--) {
+    const found = b.indexOf(a[i]);
+    if (found >= 0 && found !== i) { // indexOf is strict ===
+      result[i] = a[i];
+    }
+  }
+  return result;
+}
+
 function sparseDifference<T>(a: T[], b: T[]) {
   const result: T[] = [];
   for (let i = a.length - 1; i >= 0; i--) {
@@ -74,11 +85,12 @@ function sparseDifference<T>(a: T[], b: T[]) {
   return result;
 }
 
-function changes<T>(oldList: T[], newList: T[]): {removed: T[], added: T[]} {
+function changes<T>(oldList: T[], newList: T[]): {removed: T[], added: T[], slid: T[]} {
   const removed = sparseDifference(oldList, newList);
   const added = sparseDifference(newList, oldList);
+  const slid = sparseExactDifference(newList, oldList);
 
-  return {removed, added};
+  return {removed, added, slid};
 }
 
 function iterateNeighbors(neighborIds: string[],
@@ -352,16 +364,23 @@ export default class CreepState extends State<Creep> {
     const oldEnergy = F.elvis(this.memory("touch").energy, []);
     const oldTypes = F.elvis(this.memory("touch").types, []);
 
+    // TODO when I move, I need to tell my neighbors about my new position even if I'm not saying goodbye - onSlide
     const self = this;
     const structs = changes(oldEnergy, newEnergy);
 
-    iterateNeighbors(structs.removed, dir => oldTypes[dir], "onPart", (dir) => [self, F.reverse(dir)]);
-    iterateNeighbors(structs.added, dir => newTypes[dir], "onMeet", (dir) => [self, F.reverse(dir)]);
+    const argFunc = function(dir: number) {
+      return [self, F.reverse(dir)];
+    };
+
+    iterateNeighbors(structs.removed, dir => oldTypes[dir], "onPart", argFunc);
+    iterateNeighbors(structs.added, dir => newTypes[dir], "onMeet", argFunc);
+    iterateNeighbors(structs.slid, dir => newTypes[dir], "onSlide", argFunc);
 
     const creeps = changes(oldCreeps, newCreeps);
 
-    iterateNeighbors(creeps.removed, () => "CreepState", "onPart", (dir) => [self, F.reverse(dir)]);
-    iterateNeighbors(creeps.added, () => "CreepState", "onMeet", (dir) => [self, F.reverse(dir)]);
+    iterateNeighbors(creeps.removed, () => "CreepState", "onPart", argFunc);
+    iterateNeighbors(creeps.added, () => "CreepState", "onMeet", argFunc);
+    iterateNeighbors(creeps.slid, () => "CreepState", "onSlide", argFunc);
 
     this.memory("touch").creep = newCreeps;
     this.memory("touch").energy = newEnergy;

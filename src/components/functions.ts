@@ -389,6 +389,21 @@ export function str(x: any, f: (x: any) => string|number): {} {
   };
 }
 
+export function arrayUniq<T>(array: (T|null)[], item: T, expected?: number) {
+  let mutated = false;
+  for (let i = array.length - 1; i >= 0; i--) {
+    if (array[i] === item) {
+      if (expected === undefined) {
+        expected = i;
+      } else if (i !== expected) {
+        array[i] = null;
+        mutated = true;
+      }
+    }
+  }
+  return mutated;
+}
+
 export function remove<T>(array: T[], item: T): boolean {
   const i = array.indexOf(item);
   if (i >= 0) {

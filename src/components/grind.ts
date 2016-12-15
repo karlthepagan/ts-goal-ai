@@ -7,7 +7,7 @@ import {throttle} from "./util/throttle";
 import {scoreManager} from "./score/scoreSingleton";
 import {SCORE_KEY} from "./score/scoreManager";
 import State from "./state/abstractState";
-import {DISTANCE_WEIGHT} from "./impl/stateScoreProvider";
+import {DISTANCE_WEIGHT, ENERGY_WORK_WEIGHT} from "./impl/stateScoreProvider";
 import MemoIterator = _.MemoIterator;
 import LookForIterator from "./util/lookForIterator";
 import {FindCallback} from "./util/lookForIterator";
@@ -53,7 +53,20 @@ export function grind(state: GlobalState) {
       doTransfers(state, creeps, tasked);
     }
 
-    const idleSources = doHarvest(state, creeps, tasked);
+    let idleSources = doHarvest(state, creeps, tasked);
+
+    // TODO need better scoring for sources as it relates to goals
+    idleSources = _.chain(idleSources).filter(function(s) {
+      // sources which have all sites full aren't actually idle
+      const sites = s.value.nodeDirs();
+      const workers = s.value.memory("workers", true);
+      for (let i = sites.length - 1; i >= 0; i--) {
+        if (!workers[sites[i]]) { // null or undef
+          return true;
+        }
+      }
+      return false;
+    }).value();
 
     if (creeps.length > 0 && commands.hardidle) {
       doIdle(state, opts, creeps, tasked);
@@ -374,6 +387,9 @@ export function doHarvest(state: GlobalState,
           log.info("failed:", failed[creep.id], creep.name);
           return false;
         }
+        if (!_(creep.body).some((b: any) => b.type === WORK)) {
+          return false;
+        }
         return true;
       }).map(CreepState.build).filter(function(cs: CreepState) {
         const working = cs.memory().working;
@@ -393,60 +409,61 @@ export function doHarvest(state: GlobalState,
       log.debug(candidates.length, "left");
 
       let sites = source.nodeDirs();
-      // special quick start ranking!
-      if (creeps.length === 1 && _.size(Game.spawns) === 1) {
-        sites = _.chain(source.nodeDirs())
-          .map(dirToPosition)
-          .sortBy(F.byPosRangeTo(_.values<Spawn>(Game.spawns)[0].pos))
-          .map(F.posToDirection(source.pos())).value();
-      }
 
-      for (const site of sites) {
+      // only consider the best candidates!
+      candidates = candidates.slice(0, sites.length);
 
-        const worker = workers[site];
-        if (worker) {
-          continue;
+      // TODO NOW score all sites based on distance from creep and mine them in that order
+      const byRangeToSource = F.byStateRangeTo(source.pos());
+
+      const assignedWorkers = _.chain(candidates).map(it => it.value).sortBy(byRangeToSource).value();
+
+      _.chain(assignedWorkers).map(function(creep) {
+        if (scoredSource.score <= 0) {
+          // TODO temporary mining goal
+          return false;
         }
 
+        const scoredSite = _.chain(sites).reject(s => workers[s]) // TODO later shuffle workers?
+          .map(siteDistanceFitness(source.pos(), creep.pos())).sortBy(s => s.score).value()[0];
+
+        if (scoredSite === undefined) {
+          // slots full!
+          return false;
+        }
+
+        const site = scoredSite.value;
+
         const pos = dirToPosition(site);
-        const byRangeToSite = F.byStateRangeTo(pos);
 
-        // log.info("allocating", source, "site", site);
-        let harvested = false;
-        do {
-          // allocate worker, find closest, TODO prefer role=sourcer? look up bot compat?
+        if (creep === null || creep === undefined) {
+          debugger;
+          throw new Error("oops! no worker found");
+        }
 
-          // log.debug(candidates[1].length, "creep candidates score:", candidates[0]);
-          // then tie-break by range to site
-          let creep = _.chain(candidates).map(it => it.value).sortBy(byRangeToSite).first().valueOf() as CreepState;
+        creep.lock();
+        if (creep.memory().working !== undefined) {
+          debugger;
+          // was assigned!
+          // free current source
+          freeCreep(creep);
+        }
 
-          if (creep === null || creep === undefined) {
-            log.error("no worker found");
-            return scoredSource;
-          }
+        let harvested = tryHarvest(creep, source, pos, site, tasked, failed);
+        creep.release();
 
-          creep.lock();
-          if (creep.memory().working !== undefined) {
-            // free current source
-            freeCreep(creep);
-          }
+        if (!harvested) {
+          return false;
+        }
 
-          harvested = tryHarvest(creep, source, pos, site, tasked, failed);
-          creep.release();
+        creeps[creeps.indexOf(creep.subject())] = null;
+        // MUTATING!
+        scoredSource.score = scoredSource.score - getScore(creep, "venergy");
 
-          if (harvested) {
-            creeps[creeps.indexOf(creep.subject())] = null;
-            scoredSource.score = scoredSource.score - getScore(creep, "venergy");
+        return true;
+      }).value();
 
-            if (scoredSource.score <= 0) {
-              // TODO temporary mining goal
-              return null;
-            }
-          }
-        } while (!harvested);
-      }
-
-      return null;
+      return scoredSource.score > 0 ? scoredSource : null;
     }
   ).compact().value() as Scored<SourceState>[];
   // TODO compact<SourceState> should remove null|undefined in the parameterized type
@@ -477,7 +494,9 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
         count++;
       }
     }).value();
-    log.debug("rooms without vision:", count);
+    if (count > 0) {
+      log.debug("rooms without vision:", count);
+    }
   }
 }
 
@@ -494,9 +513,12 @@ export function doSpawn(state: GlobalState, idleSources: Scored<SourceState>[], 
 }
 
 const movePartCost = BODYPART_COST.move;
-const carryPartCost = BODYPART_COST.move;
-const workerBody = [CARRY, WORK, MOVE, MOVE];
-const workerBodyCost = _(workerBody).sum(i => BODYPART_COST[i]);
+const carryPartCost = BODYPART_COST.carry;
+const workPartCost = BODYPART_COST.work;
+// const workerBody = [CARRY, WORK, MOVE, MOVE];
+// const workerBodyCost = _(workerBody).sum(i => BODYPART_COST[i]);
+const haulerBody = [CARRY, MOVE];
+const haulerBodyCost = _(haulerBody).sum(i => BODYPART_COST[i]);
 
 function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>, idleSources: Scored<SourceState>[]) {
   state = state;
@@ -531,36 +553,31 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>, 
 
       if (idleSources.length > 0) {
         // spawn miners
+        const targetSource = idleSources[0].value; // TODO sort.first!
+        let venergy = getScore(targetSource, "maxvenergy");
+        let budget = spawn.room.energyCapacityAvailable - movePartCost - carryPartCost;
+        const body: string[] = [CARRY, MOVE];
+        // TODO budget >= 0 assertion!
+        while (venergy > 0 && budget >= workPartCost) {
+          body.push(WORK);
+          budget -= workPartCost;
+          venergy -= ENERGY_WORK_WEIGHT;
+        }
+        api(structureState).createCreep(body);
       } else {
+        debugger;
         // spawn haulers
-      }
-
-      const majorSize = Math.floor(spawn.room.energyCapacityAvailable / workerBodyCost);
-      let remaining = spawn.room.energyCapacityAvailable % workerBodyCost;
-      let cost = majorSize * workerBodyCost;
-      const body: string[] = [];
-      for (let i = 0; i < majorSize; i++) {
-        Array.prototype.push.apply(body, workerBody); // body.push(...workerBody);
-      }
-      while (remaining >= carryPartCost) {
-        remaining = remaining - carryPartCost;
-        cost = cost + carryPartCost;
-        body.push(CARRY);
-        if (remaining >= carryPartCost) {
-          remaining = remaining - carryPartCost;
-          cost = cost + carryPartCost;
-          body.push(CARRY);
+        // TODO SOON calculate time to transport under carry capacity
+        let budget = spawn.room.energyCapacityAvailable - movePartCost - carryPartCost;
+        const body: string[] = [CARRY, MOVE];
+        // TODO budget >= 0 assertion!
+        while (budget >= haulerBodyCost) {
+          Array.prototype.push.apply(body, haulerBody); // body.push(...haulerBody);
+          budget -= haulerBodyCost;
         }
-        if (remaining >= movePartCost) {
-          remaining = remaining - movePartCost;
-          cost = cost + movePartCost;
-          body.push(MOVE);
-        }
+        api(structureState).createCreep(body);
       }
-
-      api(structureState).createCreep(body);
   }
-  // log.info("I want to spawn creeps!", spawn);
 }
 
 function tryHarvest(creepState: CreepState, sourceState: SourceState,
@@ -671,6 +688,13 @@ function distanceEnergyFitness(pos: RoomPosition): ScoreFunc<CreepState> {
     }
     return score + DISTANCE_WEIGHT / F.rangeScore(s.pos(), pos);
   });
+}
+
+function siteDistanceFitness(origin: RoomPosition, target: RoomPosition): ScoreFunc<number> {
+  return function(value: number): Scored<number> {
+    const score = F.dirToPosition(origin, value).getRangeTo(target);
+    return {value, score};
+  };
 }
 
 // function tapLog<T>(message: string): (s: T) => T {
