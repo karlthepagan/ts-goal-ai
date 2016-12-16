@@ -469,6 +469,12 @@ export default class CreepState extends State<Creep> {
       if (this.resolve()) {
         const creep = this.subject();
 
+        if (!creep.body) {
+          debugger; // creep cannot init!
+          log.error("can't init creep, no body");
+          return false;
+        }
+
         const move = this.memory("move", true);
         const okRoad = move[MOVE_KEYS.ROAD] = CreepState.calculateFatigue(creep.body, 1, 0);
         const roadLoad = move[MOVE_KEYS.ROAD_LOAD]

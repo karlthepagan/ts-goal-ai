@@ -49,7 +49,9 @@ export function defineEvents(em: EventRegistry) {
     return jp.returnValue as string;
   });
 
-  em.intercept(CreepState).after(i => i.move).wait(1, function(jp: Joinpoint<CreepState, void>, dir: number) {
+  em.intercept(CreepState).after(i => i.move).filter(function(jp: Joinpoint<CreepState, number>) {
+    return jp.returnValue === 0;
+  }).wait(1, function(jp: Joinpoint<CreepState, number>, dir: number) {
     const ejp = Joinpoint.withSource(jp);
     ejp.args = [jp.target.pos(), dir]; // OnMove spec: fromPos: RoomPosition, forwardDir: number
     return [ejp].concat(jp.args); // [ejp, ...jp.args];
@@ -57,7 +59,9 @@ export function defineEvents(em: EventRegistry) {
   const moveTo = em.intercept(CreepState).after(i => i.moveTo);
   const moveByPath = em.intercept(CreepState).after(i => i.moveByPath);
   [moveTo, moveByPath].map(i =>
-    i.wait(1, function(jp: Joinpoint<CreepState, void>) {
+    i.filter(function(jp: Joinpoint<CreepState, number>) {
+      return jp.returnValue === 0;
+    }).wait(1, function(jp: Joinpoint<CreepState, number>) {
       const ejp = Joinpoint.withSource(jp);
       ejp.resolve(); // TODO hack to unwrap the intercepted target, should be repeated when InterceptorSpec dispatches
       ejp.args = [jp.target.pos()];

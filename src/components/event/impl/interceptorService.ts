@@ -113,11 +113,11 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
   public triggerBehaviors(jp: Joinpoint<any, any>, eventName: string, targetBuilder?: OnBuildTarget<any, any>) {
     if (targetBuilder === null) {
       debugger; // targetBuilder is null
-      throw new Error("fireEvent cannot specify targetBuilder after a wait condition"); // TODO AnonCache targetBuilders
+      log.error("targetBuilder === null, specified builder after a wait? was an immediately triggered event serialized?");
     }
 
-    // TODO messy, no array resturn destructuring
-    const eventTemplate = targetBuilder === undefined ? jp : targetBuilder(jp)[0] as Joinpoint<any, any>;
+    // TODO messy, no array return destructuring
+    const eventTemplate = !targetBuilder ? jp : targetBuilder(jp)[0] as Joinpoint<any, any>;
 
     // TODO discarding targetBuilder information about args (other use-cases will restructure args for callbacks)
     // see ScheduleSpec.invoke

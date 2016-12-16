@@ -262,7 +262,7 @@ const impl = {
     risk: ((state: SourceState) => {
       const pos = state.pos();
       return F.elvis(_.chain(Game.flags).values().filter((f: Flag) => _.isEqual(f.pos, pos))
-        .map((f: Flag) => f.color === COLOR_RED ? -1000 : 0).first().valueOf(), 0);
+        .sum((f: Flag) => f.color === COLOR_RED ? -1000 : 0).value(), 0);
     }) as ScoreHandler<SourceState, GlobalState>,
   } as StateScoreImpl<SourceState>,
 
