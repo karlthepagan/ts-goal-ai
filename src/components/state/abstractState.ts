@@ -9,6 +9,7 @@ import getConstructor from "../types";
 import {scoreManager} from "../score/scoreSingleton";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import AnonCache from "../event/impl/anonCache";
+import {SCORE_KEY, ENVIROME_KEY} from "../constants";
 
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
@@ -290,6 +291,14 @@ abstract class State<T> implements Named {
 
   public isEnergyMover() {
     return false;
+  }
+
+  public getScore() {
+    return this.memory(SCORE_KEY);
+  }
+
+  public getEnvirome() {
+    return this.memory(ENVIROME_KEY);
   }
 
   protected abstract _accessAddress(): string[];

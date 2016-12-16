@@ -7,7 +7,6 @@ import ScheduleSpec from "./impl/scheduledSpec";
 import {log} from "../support/log";
 import GlobalState from "../state/globalState";
 import ScoreManager from "../score/scoreManager";
-import {SCORE_KEY} from "../score/scoreManager";
 
 export const interceptorService = new InterceptorService();
 
@@ -57,7 +56,7 @@ export function detectChanges(state: GlobalState, score: ScoreManager<GlobalStat
         // TODO temp?
         state.sources().map(function(s) {
           debugger; // rescoring all states
-          return score.getOrRescore(s, s.memory(SCORE_KEY), undefined, Game.time);
+          return score.getOrRescore(s, s.getScore(), undefined, Game.time);
         }).value();
         break;
       case GlobalState.CHANGED_SITES:

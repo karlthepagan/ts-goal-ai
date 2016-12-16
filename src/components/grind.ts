@@ -5,7 +5,6 @@ import CreepState from "./state/creepState";
 import SourceState from "./state/sourceState";
 import {throttle} from "./util/throttle";
 import {scoreManager} from "./score/scoreSingleton";
-import {SCORE_KEY} from "./score/scoreManager";
 import State from "./state/abstractState";
 import {DISTANCE_WEIGHT, ENERGY_WORK_WEIGHT} from "./impl/stateScoreProvider";
 import MemoIterator = _.MemoIterator;
@@ -63,6 +62,8 @@ export function grind(state: GlobalState) {
 
     let idleSources = doHarvest(state, creeps, tasked);
 
+    // score room's current energy velocity based on allocated workers / score of idle sources
+
     // TODO need better scoring for sources as it relates to goals
     idleSources = _.chain(idleSources).filter(function(s) {
       // sources which have all sites full aren't actually idle
@@ -75,6 +76,8 @@ export function grind(state: GlobalState) {
       }
       return false;
     }).value();
+
+    // TODO also prune non-zero risk sources from idle count (GENOME!)
 
     const idleHaulSites = doHaulEnergy(state, creeps, tasked);
 
@@ -218,13 +221,13 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
  */
 function byScore<T extends State<any>>(metric?: string, decorator?: MemoIterator<any, number> ): ScoreFunc<T> {
 
-  const scorer = metric === undefined ? scoreManager.byScore(SCORE_KEY) : scoreManager.byScore(metric);
+  const scorer = metric === undefined ? scoreManager.byScore() : scoreManager.byScore(metric);
 
   // DRY is a nontrivial cost
   if (decorator === undefined) {
     return function(value: T) {
       // log.info("byScore input", s);
-      const mem = value.memory(SCORE_KEY);
+      const mem = value.getScore();
       const score = scorer(mem);
       // log.info("byScore result", score);
       return {value, score};
@@ -233,13 +236,13 @@ function byScore<T extends State<any>>(metric?: string, decorator?: MemoIterator
 
   /* TODO functional? more expressive, why not just use comments? :P
    _.flow(
-   (s: T) => s.memory(SCORE_KEY),
+   (s: T) => s.getScore(),
    scoreManager.byScore(score)
    ) as (s: T) => number;
    */
   return function(value: T) {
     // log.info("byScore input", s);
-    const mem = value.memory(SCORE_KEY);
+    const mem = value.getScore();
     let score = scorer(mem);
     // log.info("byScore middle", score);
     score = decorator(score, value);
@@ -273,7 +276,7 @@ export function doQuickTransfers(state: State<any>, ignore: any): void {
     state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).map(function(c) {
       if (c.resolve(globalLifecycle)) {
         api(c).transfer(state.subject(), RESOURCE_ENERGY);
-        // scoreManager.rescore(c, c.memory(SCORE_KEY), "tenergy", Game.time, 1000);
+        // scoreManager.rescore(c, c.getScore(), "tenergy", Game.time, 1000);
         // TODO don't ignore unless full?
         ignore[c.getId()] = true;
         doQuickTransfers(c, ignore);
@@ -287,7 +290,7 @@ export function doQuickTransfers(state: State<any>, ignore: any): void {
     state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).map(function(c) {
       if (c.resolve(globalLifecycle)) {
         api(c).transfer(state.subject(), RESOURCE_ENERGY);
-        // scoreManager.rescore(c, c.memory(SCORE_KEY), "tenergy", Game.time, 1000);
+        // scoreManager.rescore(c, c.getScore(), "tenergy", Game.time, 1000);
         // TODO don't ignore unless full?
         ignore[c.getId()] = true;
         doQuickTransfers(c, ignore);
@@ -612,7 +615,7 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
       debugger; // command.debugScore
     }
     log.info("rescoring game state");
-    scoreManager.rescore(state, state.memory(SCORE_KEY), undefined, Game.time);
+    scoreManager.rescore(state, state.getScore(), undefined, Game.time);
   }
 
   if (remoteRoomScan) {
@@ -635,8 +638,9 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
 export function doSpawn(state: GlobalState, idleSources: Scored<SourceState>[], commands: Options) {
   commands = commands;
 
-  return state.spawns().map(function(structureState) {
+  return state.spawns().any(function(structureState) {
     spawnCreeps(state, structureState, idleSources);
+    return true;
   }).value();
 }
 
@@ -693,6 +697,7 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>, 
         }
         api(structureState).createCreep(body);
       } else {
+        // spawn 20% energy spenders - TODO genome!
         // spawn haulers
         // TODO calculate time to transport under carry capacity
         let budget = spawn.room.energyCapacityAvailable - movePartCost - carryPartCost;
@@ -865,12 +870,12 @@ const isTrueAccumulator: MemoIterator<any, number> = (prev, curr) => curr ? (pre
 const compactSize = _.curryRight(_.foldl, 3)(0)(isTrueAccumulator) as (x: any[]) => number;
 
 // function getRawScore(state: State<any>, metric: string): number|undefined {
-//   const mem = state.memory(SCORE_KEY);
+//   const mem = state.getScore();
 //   return scoreManager.getScore(mem, metric, undefined);
 // }
 
 function getScore(state: State<any>, metric: string): number {
-  const mem = state.memory(SCORE_KEY);
+  const mem = state.getScore();
   let calculated = scoreManager.getScore(mem, metric, undefined);
   if (calculated === undefined) {
     calculated = scoreManager.rescore(state, mem, metric, Game.time);

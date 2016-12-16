@@ -8,7 +8,6 @@ import ScoreManager from "../score/scoreManager";
 import ScoreHandler from "../score/scoreHandler";
 import {log} from "../support/log";
 import * as F from "../functions";
-import {SCORE_KEY} from "../score/scoreManager";
 import EnemyCreepState from "../state/enemyCreepState";
 import {TERRAIN_PLAIN, TERRAIN_ROAD, TERRAIN_SWAMP} from "../constants";
 import StructureState from "../state/structureState";
@@ -116,23 +115,23 @@ const impl = {
       // sum of control for all rooms
       return _.sum(state.subject().rooms, room => {
         return F.lockAnd(RoomState.right(room),
-          s => score.getOrRescore(s, s.memory(SCORE_KEY), "control", time));
+          s => score.getOrRescore(s, s.getScore(), "control", time));
       });
     }) as ScoreHandler<GlobalState, GlobalState>,
     energy: ((state: GlobalState, score: ScoreManager<GlobalState>, time: number) =>
       // log.debug("scoring global energy");
       state.sources().map(source => { // TODO automatic total score?
-        score.rescore(source, source.memory(SCORE_KEY), undefined, time); // TODO workaround for time set spam
+        score.rescore(source, source.getScore(), undefined, time); // TODO workaround for time set spam
 
         let rval = 0;
         // TODO source access bonus
         // energy velocity for each source
-        rval = rval + score.getOrRescore(source, source.memory(SCORE_KEY), "venergy", time);
+        rval = rval + score.getOrRescore(source, source.getScore(), "venergy", time);
         // energy transport score for each source
-        rval = rval + score.getOrRescore(source, source.memory(SCORE_KEY), "tenergy", time);
+        rval = rval + score.getOrRescore(source, source.getScore(), "tenergy", time);
         // military risk is folded into the SourceState's raw score
         // also the score delta between global.energy and sum of sources? TODO consider
-        rval = rval + score.getOrRescore(source, source.memory(SCORE_KEY), "risk", time);
+        rval = rval + score.getOrRescore(source, source.getScore(), "risk", time);
 
         return rval;
       }).sum().value()
@@ -150,9 +149,9 @@ const impl = {
         // TODO weights per mineral type
         // TODO mineral access bonus
         // mineral velocity for each mine
-        rval = rval + score.getOrRescore(source, source.memory(SCORE_KEY), "vminerals", time);
+        rval = rval + score.getOrRescore(source, source.getScore(), "vminerals", time);
         // mineral transport score for each mine
-        rval = rval + score.getOrRescore(source, source.memory(SCORE_KEY), "tminerals", time);
+        rval = rval + score.getOrRescore(source, source.getScore(), "tminerals", time);
         // military risk is folded into the MineralState's raw score
         // also the score delta between global.energy and sum of sources? TODO consider
         return rval;
@@ -189,14 +188,19 @@ const impl = {
       // TODO the room's energy capacity determines its capabilities (what it can produce)
       return 0;
     }) as ScoreHandler<RoomState, GlobalState>,
-    venergy: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) =>
+    maxvenergy: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) =>
+      // maximum energy income
       state.sources().map(source =>
-        score.getOrRescore(source, source.memory(SCORE_KEY), "venergy", time)
+        score.getOrRescore(source, source.getScore(), "maxvenergy", time)
       ).sum().value()
+    ) as ScoreHandler<RoomState, GlobalState>,
+    venergy: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) =>
+      // current energy income
+      undefined // synthetic, only reported by creeps in motion
     ) as ScoreHandler<RoomState, GlobalState>,
     vminerals: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) =>
       state.minerals().map(minerals =>
-        score.getOrRescore(minerals, minerals.memory(SCORE_KEY), "venergy", time)
+        score.getOrRescore(minerals, minerals.getScore(), "venergy", time)
       ).sum().value()
     ) as ScoreHandler<RoomState, GlobalState>,
   } as StateScoreImpl<RoomState>,

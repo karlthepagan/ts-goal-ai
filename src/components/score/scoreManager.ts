@@ -2,12 +2,12 @@ import * as F from "../functions";
 import ScoreHandler from "./scoreHandler";
 import Named from "../named";
 import {log} from "../support/log";
+import {SCORE_KEY} from "../constants";
 
-export const SCORE_KEY = "score";
 export const TIME_KEY = "time";
 
 function defaultScore(state: any, score: ScoreManager<any>, time: number) {
-  const memory = state.memory(SCORE_KEY);
+  const memory = state.memory(SCORE_KEY); // TODO leaky abstraction
   return _.sum(score.getMetricKeys(state), function(key) {
     return score.getOrRescore(state, memory, key, time);
   });
@@ -68,7 +68,7 @@ export default class ScoreManager<C> {
     return value;
   }
 
-  // TODO higher order sum? call like: return score.sum("venergy", state.eachSource, s => s.memory(SCORE_KEY));
+  // TODO higher order sum? call like: return score.sum("venergy", state.eachSource, s => s.getScore());
   // public sum<T extends Named>(time: number, metric: string,
   // visitor: (callback: (o: T) => any) => any[], mem: (o: T) => any): number {
   //   return _(visitor(object => {
