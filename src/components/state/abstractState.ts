@@ -134,10 +134,12 @@ abstract class State<T> implements Named {
 
   public wrapRemote(id: string, memory: any, callback?: LifecycleCallback<State<T>>): State<T> {
     if (this._locked) {
+      debugger; // flyweight is locked
       throw new Error(id);
     }
 
     if (id === null || id === undefined) {
+      debugger; // bad wrapRemote id
       throw new Error("bad id");
     }
     this._id = id;

@@ -267,8 +267,9 @@ export default class CreepState extends State<Creep> {
     return this.memory().seal !== undefined;
   }
 
+  // TODO behavior tests for fatigue functions?
   public minMoveFatigue(terrain: number) {
-    return this.memory().move[terrain];
+    return Math.max(1, this.memory().move[terrain]);
   }
 
   public maxMovePenalty(terrain: number) {
@@ -281,7 +282,7 @@ export default class CreepState extends State<Creep> {
   }
 
   public maxMoveFatigue(terrain: number) {
-    return this.maxMovePenalty(terrain) + this.minMoveFatigue(terrain);
+    return Math.max(1, this.maxMovePenalty(terrain) + this.minMoveFatigue(terrain));
   }
 
   public moveFatigue(terrain?: number, carry?: number) {
@@ -293,7 +294,7 @@ export default class CreepState extends State<Creep> {
       if (carry === undefined) {
         carry = this.getCarrying();
       }
-      return CreepState.calculateFatigue(this.subject().body, terrain, carry);
+      return Math.max(1, CreepState.calculateFatigue(this.subject().body, terrain, carry));
     }
 
     if (carry === undefined) {
@@ -301,7 +302,7 @@ export default class CreepState extends State<Creep> {
     }
 
     // TODO is this valid for move penalty?
-    return Math.ceil(this.maxMovePenalty(terrain) * CARRY_RECIPROCAL) + this.minMoveFatigue(terrain);
+    return Math.max(1, Math.ceil(this.maxMovePenalty(terrain) * CARRY_RECIPROCAL) + this.minMoveFatigue(terrain));
   }
 
   public touching(jp: Joinpoint<CreepState, void>, fromPos: RoomPosition, forwardDir: number) {
@@ -385,16 +386,6 @@ export default class CreepState extends State<Creep> {
     this.memory("touch").creep = newCreeps;
     this.memory("touch").energy = newEnergy;
     this.memory("touch").types = newTypes;
-  }
-
-  public onPart(other: CreepState, direction: number) {
-    super.onPart(other, direction);
-    log.debug("bye");
-  }
-
-  public onMeet(other: CreepState, direction: number) {
-    super.onMeet(other, direction);
-    log.debug("bye");
   }
 
   public keepSaying(say: string, toPublic?: boolean, count?: number) {

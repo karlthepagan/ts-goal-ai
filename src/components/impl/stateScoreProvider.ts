@@ -98,6 +98,7 @@ const impl = {
     move: scoreMove,
     vwork: scoreWork(1), // TODO cascade into dependent stats
     venergy: scoreWork(ENERGY_WORK_WEIGHT), // TODO make this dependent on vwork
+    tenergy: scoreMove,
     ttl: scoreTtl,
     road: scoreRoad, // this goes very low if the creep gets no benefit from roads and has large part count
     swamp: scoreSwamp, // this goes very low when the creep gains large fatigue from swamps

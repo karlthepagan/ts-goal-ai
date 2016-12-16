@@ -21,3 +21,5 @@ export default class GlobalEnergyVelocity implements Goal<GlobalState> {
     return [];
   }
 }
+
+// TODO
