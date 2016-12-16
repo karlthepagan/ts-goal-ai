@@ -23,6 +23,14 @@ export function identity<T>(): Func<T, T> {
   return IDENTITY;
 }
 
+export function True() {
+  return true;
+}
+
+export function False() {
+  return false;
+}
+
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
 

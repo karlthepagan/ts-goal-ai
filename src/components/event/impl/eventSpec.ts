@@ -1,5 +1,5 @@
 import Joinpoint from "../api/joinpoint";
-import {OnIntercept, OnBuildTarget} from "../api/index";
+import {OnIntercept, OnBuildTarget, InterceptFilter} from "../api/index";
 import InterceptorService from "./interceptorService";
 import Named from "../../named";
 import * as F from "../../functions";
@@ -21,6 +21,9 @@ class EventSpec<I, T> {
     Object.setPrototypeOf(task, EventSpec.prototype); // TODO benchmark task.__proto__ = EventSpec.prototype;
     if (task.targetBuilder === undefined) {
       task.targetBuilder = AnonCache.instance[task.targetBuilderRef as number];
+    }
+    if (task.actionFilter === undefined) {
+      task.actionFilter = AnonCache.instance[task.actionFilterRef as number];
     }
     Object.setPrototypeOf(task.definition, Joinpoint.prototype);
     if (task.definition.source !== undefined) {
@@ -46,12 +49,14 @@ class EventSpec<I, T> {
   public instanceId: string;
   public actionMethod: string;
   public targetBuilder?: OnBuildTarget<any, any>;
+  public actionFilter?: InterceptFilter<any, any>;
   /**
    * because our scheduled events are stored in memory, targetbuilder functions are erased
    *
    * instead we cache them using AnonCache
    */
   protected targetBuilderRef?: number;
+  protected actionFilterRef?: number;
 
   public clone<R extends EventSpec<I, T>>(into?: R): R {
     if (into === undefined) {
@@ -72,6 +77,15 @@ class EventSpec<I, T> {
     if (this.targetBuilder !== undefined) {
       into.targetBuilder = this.targetBuilder;
     }
+    if (this.targetBuilderRef !== undefined) {
+      into.targetBuilderRef = this.targetBuilderRef;
+    }
+    if (this.actionFilter !== undefined) {
+      into.actionFilter = this.actionFilter;
+    }
+    if (this.actionFilterRef !== undefined) {
+      into.actionFilterRef = this.actionFilterRef;
+    }
     return into;
   }
 
@@ -90,8 +104,10 @@ class EventSpec<I, T> {
   }
 
   public test(jp: Joinpoint<any, any>): boolean {
-    jp = jp;
-    return true; // TODO return false on filter block
+    if (this.actionFilter === undefined) {
+      return true;
+    }
+    return this.actionFilter(jp);
   }
 
   public invoke(jp: Joinpoint<any, any>, context: InterceptorService): boolean {
@@ -134,7 +150,7 @@ class EventSpec<I, T> {
   protected resolveArgs(jp: Joinpoint<any, any>): any[] {
     if (this.actionArgs === undefined) {
       if (jp.args === undefined) {
-        debugger;
+        debugger; // jp.args is undefined
         throw new Error("jp.args is undefined");
       }
       return jp.args;

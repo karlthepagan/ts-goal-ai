@@ -18,6 +18,7 @@ type OnEnergy<DST extends CreepState|StructureState<any>, R> = (jp: Joinpoint<DS
 type OnScheduled = (jp: Joinpoint<any, void>, ... args: any[]) => void;
 export type OnIntercept<DST, R> = (jp: Joinpoint<DST, R>, ... args: any[]) => void;
 type OnInfo<DST> = (jp: Joinpoint<DST, any>, ... args: any[]) => void;
+export type InterceptFilter<DST, R> = (jp: Joinpoint<DST, R>, ... args: any[]) => boolean;
 export type OnBuildTarget<SRC, DST> = (jp: Joinpoint<SRC, any>, ... args: any[]) => any[]; // conventionally first return is Joinpoint<DST, any>;
 
 export interface WhenEvent<INST, CALLBACK> {
@@ -39,7 +40,7 @@ export interface EventSelector {
    * src spawn
    * dst creep
    */
-  spawn(): WhenEvent<CreepState, OnLifecycle<CreepState, void>>;
+  spawn(): WhenEvent<CreepState, OnLifecycle<CreepState, string>>;
   /**
    * creep will die: after spawn fires when TTL is set to expire
    *
@@ -153,7 +154,7 @@ export interface Action<CALLBACK, TYPE, SELECT> { // TODO TYPE for jp.source?
    * @param targetBuilder function used to transform the data stored in memory
    */
   wait          (relativeTime: number, targetBuilder?: OnBuildTarget<TYPE, any>): Action<CALLBACK, TYPE, SELECT>;
-  // TODO filter on source or destination
+  filter        (filter: InterceptFilter<TYPE, any>): Action<CALLBACK, TYPE, SELECT>;
   // filterOn      (thisArg: Named, callback: CALLBACK, ... args: any[]): SELECT; // illegal for When.after or EventSelector
   // or            (): SELECT; // TODO difficult,
   // TODO don't implement and, just save the builder object and invoke multiple times?

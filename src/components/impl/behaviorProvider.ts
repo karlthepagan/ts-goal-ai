@@ -37,6 +37,7 @@ export default function registerBehaviorProvider(em: EventRegistry) {
     const vjp = InterceptorSpec.joinpointFor(creep, "move");
     vjp.unresolve();
     whenBorn.callHandler().touching(vjp, creep.pos(), TOP); // TODO automatic joinpoint from dispatch?
+    return jp.returnValue as string;
   });
 
   em.when().move().ofAll().call().touching($, $, $);

@@ -25,7 +25,7 @@ import {defineEvents} from "./event/api/builtinEvents";
 export const bootstrap: (() => void)[] = [];
 
 bootstrap.push(() => {
-  log.info("bootstrap starting");
+  log.debug("bootstrap starting");
   GlobalState.protectMemory("config");
 });
 

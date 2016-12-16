@@ -322,6 +322,7 @@ export default class CreepState extends State<Creep> {
     const newCreeps: string[] = [];
     const newEnergy: string[] = [];
     const newTypes: string[] = [];
+    const newDrops: { [resource: string]: string[] } = {};
 
     const posToDir = F.posToDirection(selfpos);
     LookForIterator.search(selfpos, 1, this, [{
@@ -354,8 +355,17 @@ export default class CreepState extends State<Creep> {
         return true;
       },
     }, {
-      key: LOOK_ENERGY, value: function(resource) {
-        log.debug("touching energy: ", resource);
+      key: LOOK_ENERGY, value: function(resource: Resource) {
+        const i = posToDir(resource.pos);
+        const type = F.expand([resource.resourceType], newDrops, true);
+        type[i] = resource.id;
+        return true;
+      },
+    }, {
+      key: LOOK_RESOURCES, value: function(resource: Resource) {
+        const i = posToDir(resource.pos);
+        const type = F.expand([resource.resourceType], newDrops, true);
+        type[i] = resource.id;
         return true;
       },
     }]);
@@ -386,6 +396,7 @@ export default class CreepState extends State<Creep> {
     this.memory("touch").creep = newCreeps;
     this.memory("touch").energy = newEnergy;
     this.memory("touch").types = newTypes;
+    this.memory("touch").drops = newDrops;
   }
 
   public keepSaying(say: string, toPublic?: boolean, count?: number) {
@@ -424,10 +435,19 @@ export default class CreepState extends State<Creep> {
     return true;
   }
 
+  public touchedDropTypes(): string[] {
+    return _.keys(this.memory("touch.drops"));
+  }
+
+  public touchedDrops(type: string): LoDashExplicitArrayWrapper<Resource> {
+    const drops = this.memory("touch.drops");
+    return _.chain(F.elvis(drops[type], [])).compact<string>().map(Game.getObjectById).compact();
+  }
+
   public touchedStorage(): LoDashExplicitArrayWrapper<State<any>> {
     const types = this.memory("touch.types", true);
-    return _.chain(this.memory("touch.energy", true)).filter(F.isReal)
-      .map((s, i) => State.vright(types[i], s) as State<any>).filter(F.isReal);
+    return _.chain(this.memory("touch.energy", true) as string[]) // don't compact, order matters
+      .map((s, i) => (s ? State.vright(types[i], s) : null) as State<any>).compact();
   }
 
   protected _accessAddress() {

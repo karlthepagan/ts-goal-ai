@@ -6,6 +6,7 @@ import Joinpoint from "./joinpoint";
 import CreepState from "../../state/creepState";
 import {registerFunctionLibrary} from "./builders";
 import AnonCache from "../impl/anonCache";
+import {log} from "../../support/log";
 
 export function birthday(spawn: StructureState<Spawn>, body: string[], concievedTicks?: number) {
   return spawn.resolve(globalLifecycle)
@@ -16,12 +17,18 @@ export function birthday(spawn: StructureState<Spawn>, body: string[], concieved
 export function defineEvents(em: EventRegistry) {
   registerFunctionLibrary(AnonCache.instance);
 
-  em.intercept(StructureState).after((i: Spawn) => i.createCreep).wait(1).advice(function(jp: Joinpoint<StructureState<Spawn>, string>) {
+  em.intercept(StructureState).after((i: Spawn) => i.createCreep).filter(function(jp: Joinpoint<StructureState<Spawn>, string>) {
+    const okReturn = typeof jp.returnValue === "string";
+    if (!okReturn) {
+      debugger; // spawn failed, filtering this event
+    }
+    return okReturn;
+  }).wait(1).advice(function(jp: Joinpoint<StructureState<Spawn>, string>) {
     const creepName = jp.returnValue as string;
     const apiCreep = Game.creeps[creepName]; // complex because creep doesn't exist until now
     if (apiCreep === undefined) {
       debugger; // TODO spawn failed
-      throw new Error("spawn failed");
+      log.error("spawn failed", creepName);
     }
     const creep = CreepState.right(apiCreep);
     const eventJp = Joinpoint.withSource(jp, creep, creep.getId());
@@ -39,6 +46,7 @@ export function defineEvents(em: EventRegistry) {
     const creep = jp.target;
     const spawn = jp.source.target as StructureState<Spawn>;
     em.schedule(birthday(spawn, body) + 1499, creep).fireEvent("death");
+    return jp.returnValue as string;
   });
 
   em.intercept(CreepState).after(i => i.move).wait(1, function(jp: Joinpoint<CreepState, void>, dir: number) {
@@ -52,8 +60,8 @@ export function defineEvents(em: EventRegistry) {
     i.wait(1, function(jp: Joinpoint<CreepState, void>) {
       const ejp = Joinpoint.withSource(jp);
       ejp.resolve(); // TODO hack to unwrap the intercepted target, should be repeated when InterceptorSpec dispatches
-      ejp.args = [jp.target.pos()]; // OnMove spec: fromPos: RoomPosition, forwardDir: number
-      return [ejp].concat(ejp.args); // [ejp, ...ejp.args];
+      ejp.args = [jp.target.pos()];
+      return [ejp].concat(ejp.args);
     }).advice(function(jp: Joinpoint<CreepState, number>, fromPos: RoomPosition) {
       if (jp.target.resolve(globalLifecycle)) {
         jp.args[1] = F.posToDirection(fromPos)(jp.target.pos()); // TODO if 0?

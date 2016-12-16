@@ -1,6 +1,6 @@
 import {AnyEvent} from "../impl/eventSpec";
 import {interceptorService} from "../behaviorContext";
-import {OnIntercept, OnBuildTarget} from "./index";
+import {OnIntercept, OnBuildTarget, InterceptFilter} from "./index";
 import ScheduleSpec from "../impl/scheduledSpec";
 import AnonCache from "../impl/anonCache";
 
@@ -20,9 +20,20 @@ function discardJointpoint( ... args: any[]) {
   return args.slice(1);
 }
 
+export function assignFilterThen(next?: Function) {
+  return function(is: AnyEvent, filter: InterceptFilter<any, any>) {
+    is = Object.create(is);
+    is.actionFilter = filter;
+    return [is, next];
+  };
+}
+
 export function actionGet(select?: Function) {
   return function(is: AnyEvent, actionName: string) {
     switch (actionName) {
+      case "filter":
+        return [is, assignFilterThen(actionGet(select))];
+
       case "fireEvent":
         is = Object.create(is); // was .clone();
         is.setAction(interceptorService, function(i) { return i.triggerBehaviors; });

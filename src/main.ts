@@ -58,7 +58,8 @@ export function loop() {
     const state = GlobalState.boot();
 
     if (!imported) {
-      log.info("detected bots:", importManager.detect());
+      const bots = importManager.detect();
+      log.debug("detected bots:", bots);
       imported = true;
     }
 

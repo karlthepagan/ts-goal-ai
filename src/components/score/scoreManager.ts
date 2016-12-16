@@ -60,10 +60,14 @@ export default class ScoreManager<C> {
     return this._context;
   }
 
-  public getOrRescore(object: Named, memory: any, metric?: string, time?: number) {
-    const value = this.getScore(memory, metric, time); // TODO time should always be undefined?
+  public getOrRescore(object: Named, memory: any, metric?: string, time?: number): number {
+    let value = this.getScore(memory, metric, time); // TODO time should always be undefined?
     if (value === undefined || value === null) {
-      return this.rescore(object, memory, metric, time);
+      value = this.rescore(object, memory, metric, time);
+    }
+    if (value === undefined) {
+      debugger; // no stored or derived score
+      return 0;
     }
     return value;
   }
@@ -108,7 +112,7 @@ export default class ScoreManager<C> {
    * @param value - if undefined set the given metric to this value
    * @return {number}
    */
-  public rescore(object: Named, memory: any, metric: string|undefined, time: number|undefined, value?: number): number {
+  public rescore(object: Named, memory: any, metric: string|undefined, time: number|undefined, value?: number): number|undefined {
 
     let metrics: string[];
 
@@ -136,8 +140,8 @@ export default class ScoreManager<C> {
         } else {
           const rval = handler(object, this, time);
           if (rval === null || rval === undefined) {
-            log.error("no result", submetric, object);
-            throw new Error("no result");
+            log.debug("no result", submetric, object);
+            return undefined;
           }
           value = rval;
           if (time !== undefined) {

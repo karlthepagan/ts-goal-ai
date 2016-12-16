@@ -14,6 +14,7 @@ import api from "./event/behaviorContext";
 import {isReal} from "./functions";
 import StructureState from "./state/structureState";
 import {globalLifecycle} from "./event/behaviorContext";
+import ListIterator = _.ListIterator;
 
 const cachedIdleActions: { [id: string]: FindCallback<any> } = {};
 
@@ -78,6 +79,10 @@ export function grind(state: GlobalState) {
     }).value();
 
     // TODO also prune non-zero risk sources from idle count (GENOME!)
+
+    if (commands.debugHaul) {
+      debugger; // Commands.debugHaul
+    }
 
     const idleHaulSites = doHaulEnergy(state, creeps, tasked);
 
@@ -255,47 +260,55 @@ function byScore<T extends State<any>>(metric?: string, decorator?: MemoIterator
  * @param state wants more energy! go get it
  * @param ignore don't steal from these id's
  */
-export function doQuickTransfers(state: State<any>, ignore: any): void {
+export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIterator<State<any>, boolean>): void {
   ignore[state.getId()] = true;
   if (state.isEnergyMover()) {
-    // creeps can withdraw
     const creep = state as CreepState;
-    creep.touchedStorage().map(function(c) {
-      if (!isReal(ignore[c.getId()])) {
+    // creeps can pickup
+    creep.touchedDrops(RESOURCE_ENERGY).reject(F.onKeys(ignore)).map(function(d) {
+      if (api(creep).pickup(d) !== 0) {
+        debugger; // failed to pickup
+      }
+    }).value();
+    // creeps can withdraw
+    creep.touchedStorage().filter(filter).map(function(c) {
+      if (isReal(ignore[c.getId()])) {
+        // reject if in ignore list
         return;
       }
-      debugger; // TODO REMOVE quick transfers from storage
       if (c.resolve(globalLifecycle)) {
-        api(creep).withdraw(c.subject(), RESOURCE_ENERGY);
-        doQuickTransfers(c, ignore);
+        if (api(creep).withdraw(c.subject(), RESOURCE_ENERGY) !== 0) {
+          debugger; // failed to withdraw
+        }
+        doQuickTransfers(c, ignore, filter);
       } else {
-        debugger;
+        debugger; // structure destroyed
         log.error("structure destroyed", c.getId());
       }
     }).value();
-    state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).map(function(c) {
+    creep.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).filter(filter).map(function(c) {
       if (c.resolve(globalLifecycle)) {
-        api(c).transfer(state.subject(), RESOURCE_ENERGY);
+        if (api(c).transfer(state.subject(), RESOURCE_ENERGY) !== 0) {
+          log.debug("attempted empty transfer from ", c);
+        }
         // scoreManager.rescore(c, c.getScore(), "tenergy", Game.time, 1000);
         // TODO don't ignore unless full?
-        ignore[c.getId()] = true;
-        doQuickTransfers(c, ignore);
+        doQuickTransfers(c, ignore, filter);
       } else {
-        debugger;
+        debugger; // creep died
         log.error("creep died", c.getId());
       }
     }).value();
   } else {
     // structures have to find creep neighbors
-    state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).map(function(c) {
+    state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).filter(filter).map(function(c) {
       if (c.resolve(globalLifecycle)) {
         api(c).transfer(state.subject(), RESOURCE_ENERGY);
         // scoreManager.rescore(c, c.getScore(), "tenergy", Game.time, 1000);
         // TODO don't ignore unless full?
-        ignore[c.getId()] = true;
-        doQuickTransfers(c, ignore);
+        doQuickTransfers(c, ignore, filter);
       } else {
-        debugger;
+        debugger; // creep died
         log.error("creep died", c.getId());
       }
     }).value();
@@ -383,7 +396,7 @@ function doHaulEnergy(state: GlobalState,
   // TODO COOL STUFF - nagel's algorithm for hauler assignment! (or just calculate delta venergy)
 
   // find sources with miners who have low tenergy score, move to them and haul energy back to spawn
-  return state.sources().reject(hasBucketBrigade).map(workerVenergyFitness).sortBy("score").map(function(scoredSource): Scored<SourceState>|null {
+  return state.sources().reject(hasBucketBrigade).map(workerVenergyFitness).sortBy("score").reverse().map(function(scoredSource): Scored<SourceState>|null {
 
     const source = scoredSource.value;
     const workers = source.memory(REL.CREEPS_HAULING); // map worker -> destination struct
@@ -411,7 +424,11 @@ function doHaulEnergy(state: GlobalState,
 
       source.memory(REL.CREEPS_HAULING)[creep.getId()] = structState.getId();
 
-      return tryHaul(creep, source, structState.pos());
+      if (tryHaul(creep, source, structState.pos())) {
+        creeps[creeps.indexOf(creep.subject())] = null;
+        return true;
+      }
+      return false;
     }).value();
 
     return assigned ? null : scoredSource;
@@ -463,7 +480,7 @@ function doHarvest(state: GlobalState,
     for (let site = workers.length - 1; site >= 0; site--) {
       const worker = workers[site];
       if (worker) {
-        debugger;
+        debugger; // garbage collect a worker
         freeSite(source, site);
         delete workers[site];
       }
@@ -568,13 +585,13 @@ function doHarvest(state: GlobalState,
         const pos = dirToPosition(site);
 
         if (creep === null || creep === undefined) {
-          debugger;
+          debugger; // no worker found
           throw new Error("oops! no worker found");
         }
 
         creep.lock();
         if (creep.memory()[REL.SOURCE_MINED] !== undefined) {
-          debugger;
+          debugger; // creep assigned to mine
           // was assigned!
           // free current source
           freeCreep(creep);
@@ -614,7 +631,7 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
     if (commands.debugScore) {
       debugger; // command.debugScore
     }
-    log.info("rescoring game state");
+    log.debug("rescoring game state");
     scoreManager.rescore(state, state.getScore(), undefined, Game.time);
   }
 
@@ -638,7 +655,7 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
 export function doSpawn(state: GlobalState, idleSources: Scored<SourceState>[], commands: Options) {
   commands = commands;
 
-  return state.spawns().any(function(structureState) {
+  return state.spawns().any(function(structureState: StructureState<Spawn>) {
     spawnCreeps(state, structureState, idleSources);
     return true;
   }).value();
@@ -653,8 +670,6 @@ const haulerBody = [CARRY, MOVE];
 const haulerBodyCost = _(haulerBody).sum(i => BODYPART_COST[i]);
 
 function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>, idleSources: Scored<SourceState>[]) {
-  state = state;
-
   const spawn = structureState.subject();
 
   const creepCount = state.creeps().value().length;
@@ -669,7 +684,7 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>, 
     case 1:
     case 2:
       if (spawn.room.energyAvailable < 300) {
-        doQuickTransfers(structureState, {});
+        doQuickTransfers(structureState, {}, F.True);
         return;
       }
       api(structureState).createCreep([CARRY, WORK, WORK, MOVE]);
@@ -679,7 +694,12 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>, 
       // TODO workers: 5 * WORK, 1 * CARRY, 5 * MOVE
       // TODO transporters: 1 * WORK, 2n * CARRY, n+1 MOVE
       if (spawn.room.energyAvailable < spawn.room.energyCapacityAvailable) {
-        doQuickTransfers(structureState, {});
+        doQuickTransfers(structureState, {}, F.True);
+        return;
+      }
+
+      if (spawn.spawning && spawn.spawning.remainingTime > 0) { // spawn.spawning.remainingTime > 0
+        // debugger; // you should have been building extensions a while ago, but let's make a nest now
         return;
       }
 
@@ -720,17 +740,18 @@ function tryHaul(creepState: CreepState, sourceState: SourceState,
       if (deliveryPos === undefined) {
         const spawn  = _.chain(creep.room.find(FIND_MY_SPAWNS)).first() as Spawn;
         sourceState.memory(REL.CREEPS_HAULING)[creepState.getId()] = spawn.id;
-        creep.moveTo(spawn.pos);
+        api(creepState).moveTo(spawn.pos);
       } else {
-        creep.moveTo(deliveryPos);
+        api(creepState).moveTo(deliveryPos);
       }
     } else {
-      // TODO pickup dropped energy?
-      doQuickTransfers(creepState, {});
+      doQuickTransfers(creepState, {}, function(s) {
+        return _.size(s.memory(REL.CREEPS_MINING, true)) > 0;
+      });
 
       // TODO determine pickup location(s)
-      if (creep.moveTo(sourceState.pos()) !== 0) {
-        creep.move(1 + Math.floor(Math.random() * 8));
+      if (api(creepState).moveTo(sourceState.pos()) !== 0) {
+        api(creepState).move(1 + Math.floor(Math.random() * 8));
       }
     }
 

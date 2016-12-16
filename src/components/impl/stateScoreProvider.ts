@@ -194,7 +194,7 @@ const impl = {
         score.getOrRescore(source, source.getScore(), "maxvenergy", time)
       ).sum().value()
     ) as ScoreHandler<RoomState, GlobalState>,
-    venergy: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) =>
+    venergy: (() =>
       // current energy income
       undefined // synthetic, only reported by creeps in motion
     ) as ScoreHandler<RoomState, GlobalState>,

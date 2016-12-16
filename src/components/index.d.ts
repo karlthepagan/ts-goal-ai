@@ -63,6 +63,11 @@ interface Commands {
    * debug creep & structure touch events
    */
   debugTouch: boolean;
+
+  /**
+   * debug haulers
+   */
+  debugHaul: boolean;
 }
 
 interface Options {

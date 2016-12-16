@@ -60,6 +60,7 @@ export default class ScheduleSpec<I, T> extends EventSpec<I, T> {
 
   public unresolve() {
     this.targetBuilderRef = AnonCache.instance.allocate(this.targetBuilder);
+    this.actionFilterRef = AnonCache.instance.allocate(this.actionFilter);
 
     super.unresolve();
     // keep relative time, in the case of "wait" the schedule trigger occurs after another event

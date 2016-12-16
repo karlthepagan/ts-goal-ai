@@ -112,6 +112,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
   public triggerBehaviors(jp: Joinpoint<any, any>, eventName: string, targetBuilder?: OnBuildTarget<any, any>) {
     if (targetBuilder === null) {
+      debugger; // targetBuilder is null
       throw new Error("fireEvent cannot specify targetBuilder after a wait condition"); // TODO AnonCache targetBuilders
     }
 

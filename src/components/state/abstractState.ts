@@ -282,7 +282,7 @@ abstract class State<T> implements Named {
   }
 
   public touchedCreepIds(): LoDashExplicitArrayWrapper<string> {
-    return _.chain(this.memory("touch.creep", true)).filter(F.isReal);
+    return _.chain(this.memory("touch.creep", true)).compact<string>();
   }
 
   public score(stat: string) {
