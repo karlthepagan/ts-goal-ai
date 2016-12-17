@@ -7,6 +7,7 @@ import CreepState from "../../state/creepState";
 import {registerFunctionLibrary} from "./builders";
 import AnonCache from "../impl/anonCache";
 import {log} from "../../support/log";
+import Retry from "../impl/retry";
 
 export function birthday(spawn: StructureState<Spawn>, body: string[], concievedTicks?: number) {
   return spawn.resolve(globalLifecycle)
@@ -27,8 +28,8 @@ export function defineEvents(em: EventRegistry) {
     const creepName = jp.returnValue as string;
     const apiCreep = Game.creeps[creepName]; // complex because creep doesn't exist until now
     if (apiCreep === undefined) {
-      debugger; // TODO spawn failed
       log.error("spawn failed", creepName);
+      return;
     }
     const creep = CreepState.right(apiCreep);
     const eventJp = Joinpoint.withSource(jp, creep, creep.getId());
@@ -44,6 +45,10 @@ export function defineEvents(em: EventRegistry) {
       throw new Error("no event source");
     }
     const creep = jp.target;
+    if (!creep.subject().ticksToLive) {
+      debugger; // invalid TTL
+      throw new Retry("invalid TTL");
+    }
     const spawn = jp.source.target as StructureState<Spawn>;
     em.schedule(birthday(spawn, body) + 1499, creep).fireEvent("death");
     return jp.returnValue as string;

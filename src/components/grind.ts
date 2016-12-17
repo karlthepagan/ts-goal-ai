@@ -286,7 +286,7 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
         if (api(creep).withdraw(c.subject(), RESOURCE_ENERGY) !== 0) {
           debugger; // failed to withdraw
         } else {
-          c.subject().say("💱", false);
+          creep.subject().say("💱", false);
           transferred = true;
         }
         doQuickTransfers(c, ignore, filter);
@@ -426,7 +426,7 @@ function doHaulEnergy(state: GlobalState,
         const creep = CreepState.vright(worker);
         const dst = workers[worker];
         const dstPos = dst === undefined ? undefined : StructureState.vright(dst).pos();
-        if (tryHaul(creep, source, dstPos)) {
+        if (tryHaul(state, creep, source, dstPos)) {
           creeps[creeps.indexOf(creep.subject())] = null;
         } else {
           delete workers[worker];
@@ -444,7 +444,7 @@ function doHaulEnergy(state: GlobalState,
 
       source.memory(REL.CREEPS_HAULING)[creep.getId()] = structState.getId();
 
-      if (tryHaul(creep, source, structState.pos())) {
+      if (tryHaul(state, creep, source, structState.pos())) {
         creeps[creeps.indexOf(creep.subject())] = null;
         return true;
       }
@@ -456,8 +456,10 @@ function doHaulEnergy(state: GlobalState,
 }
 
 function findEnergyStorage(state: GlobalState, source: SourceState): StructureState<any> {
+  state = state;
   source = source; // TODO fitness etc
-  return state.spawns().first().valueOf() as StructureState<any>;
+  // return state.spawns().first().valueOf() as StructureState<any>;
+  return StructureState.right(source.subject().room.controller as Controller);
 }
 
 function hasBucketBrigade(source: SourceState): boolean {
@@ -752,15 +754,15 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>, 
   }
 }
 
-function tryHaul(creepState: CreepState, sourceState: SourceState,
+function tryHaul(state: GlobalState, creepState: CreepState, sourceState: SourceState,
                  deliveryPos: RoomPosition|undefined): boolean {
   if (creepState.resolve(globalLifecycle)) {
     const creep = creepState.subject();
     if (_.chain(creep.carry).values().sum().value() >= creep.carryCapacity) {
       if (deliveryPos === undefined) {
-        const spawn = _.chain(creep.room.find(FIND_MY_SPAWNS)).first() as Spawn; // TODO later BETTER TARGET
-        sourceState.memory(REL.CREEPS_HAULING)[creepState.getId()] = spawn.id;
-        deliveryPos = spawn.pos;
+        const structState = findEnergyStorage(state, sourceState);
+        sourceState.memory(REL.CREEPS_HAULING)[creepState.getId()] = structState.getId();
+        deliveryPos = structState.pos();
       }
       api(creepState).moveTo(deliveryPos);
       // TODO NOW give away energy to every building on the way

@@ -10,6 +10,7 @@ import Named from "../../named";
 import {interceptorService} from "../behaviorContext";
 import InterceptorSpec from "./interceptorSpec";
 import {OnBuildTarget} from "../api/index";
+import Retry from "./retry";
 
 type ClassSpec<T extends EventSpec<any, any>> = { [methodName: string]: T[] };
 export type SpecMap<T extends EventSpec<any, any>> = { [className: string]: ClassSpec<T> };
@@ -211,7 +212,17 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
                 debugger; // task not invokable
                 throw new Error("cannot invoke");
               }
-              task.invoke(jp, this);
+              try {
+                task.invoke(jp, this);
+              } catch (retry) {
+                if (retry instanceof Retry) {
+                  const sched = task as ScheduleSpec<any, any>;
+                  sched.relativeTime = 1;
+                  this.scheduleExec(sched);
+                } else {
+                  throw retry;
+                }
+              }
             }
           }
         }
