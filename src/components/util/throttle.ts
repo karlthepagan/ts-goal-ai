@@ -12,9 +12,9 @@ export class Throttle {
   constructor(mem: Options) {
     this._cpuOut = F.elvis(mem.cpuOut, 150);
     this._cpuWarn = F.elvis(mem.cpuWarn, 3000);
-    this._rescoreTicks = F.elvis(mem.rescoreTicks, 10);
+    this._rescoreTicks = F.elvis(mem.rescoreTicks, 50);
     this._remoteRoomscanTicks = F.elvis(mem.remoteRoomscanTicks, 10);
-    this._roomscanTicks = F.elvis(mem.roomscanTicks, 5);
+    this._roomscanTicks = F.elvis(mem.roomscanTicks, 10);
   }
 
   public isCpuOk() {

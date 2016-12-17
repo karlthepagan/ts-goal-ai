@@ -68,6 +68,11 @@ interface Commands {
    * debug haulers
    */
   debugHaul: boolean;
+
+  /**
+   * disable spawning in grind.js
+   */
+  disableSpawn: boolean;
 }
 
 interface Options {

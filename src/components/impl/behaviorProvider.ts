@@ -15,7 +15,7 @@ const $ = {} as any;
 export default function registerBehaviorProvider(em: EventRegistry) {
   em.when().aggro().ofAll().advice((jp: Joinpoint<RoomState, void>) => {
     jp = jp;
-    log.debug("AGGRO! TODO find turrets and FIRE! later do enemy priority scoring & elections");
+    log.debug("👺 AGGRO! TODO find turrets and FIRE! later do enemy priority scoring & elections");
   });
 
   em.when().spawn().ofAll().advice((jp: Joinpoint<CreepState, string>, body: string[], mem?: any) => {

@@ -43,11 +43,25 @@ export default class LookForIterator<T> implements Iterable<boolean>, Iterator<b
     this._callbackFailure = callbackFailure;
   }
 
+  /*
+   [9:11:09 PM] Error: look coords are out of bounds
+   at _lookSpatialRegister (/opt/engine/dist/game/rooms.js:627:19)
+   at . (/opt/engine/dist/game/rooms.js:737:16)
+   at .lookForAt (evalmachine.:1:72)
+   at . (/opt/engine/dist/game/rooms.js:1347:21)
+   at .lookFor (evalmachine.:1:72)
+   at LookForIterator.next (main:5347:30)
+   */
   public next(): IteratorResult<boolean> {
-    const pos = this._itr.next().value;
-    if (pos.y < this._minY) {
-      return {done: true} as IteratorResult<boolean>;
+    let pos: RoomPosition;
+    do {
+      pos = this._itr.next().value;
+      if (pos.y < this._minY) {
+        return {done: true} as IteratorResult<boolean>;
+      }
     }
+    while (pos.x < 0 || pos.x > 49 || pos.y < 0 || pos.y > 49);
+
     const dist = this._start.getRangeTo(pos);
 
     let doContinue = true;

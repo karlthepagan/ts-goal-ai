@@ -327,7 +327,7 @@ export default class CreepState extends State<Creep> {
     const posToDir = F.posToDirection(selfpos);
     LookForIterator.search(selfpos, 1, this, [{
       key: LOOK_CREEPS, value: function(creep: Creep, range: number) {
-        if (creep.spawning) {
+        if (creep.spawning || creep.ticksToLive > 1495) {
           return true;
         }
         if (range < 1) {

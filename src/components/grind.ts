@@ -98,7 +98,9 @@ export function grind(state: GlobalState) {
       doIdle(state, opts, creeps, tasked);
     }
 
-    doSpawn(state, idleSources, opts);
+    if (!commands.disableSpawn) {
+      doSpawn(state, idleSources, opts);
+    }
   }
 
   commands.last = Game.time;
@@ -260,8 +262,9 @@ function byScore<T extends State<any>>(metric?: string, decorator?: MemoIterator
  * @param state wants more energy! go get it
  * @param ignore don't steal from these id's
  */
-export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIterator<State<any>, boolean>): void {
+export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIterator<State<any>, boolean>): boolean {
   ignore[state.getId()] = true;
+  let transferred = false;
   if (state.isEnergyMover()) {
     const creep = state as CreepState;
     // creeps can pickup
@@ -270,6 +273,7 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
         log.debug("failed to pickup (this is fine)");
       } else {
         creep.subject().say("🔆", false);
+        transferred = true;
       }
     }).value();
     // creeps can withdraw
@@ -283,6 +287,7 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
           debugger; // failed to withdraw
         } else {
           c.subject().say("💱", false);
+          transferred = true;
         }
         doQuickTransfers(c, ignore, filter);
       } else {
@@ -296,6 +301,7 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
           log.debug("attempted empty transfer from ", c);
         } else {
           c.subject().say("👋", false);
+          transferred = true;
         }
         // scoreManager.rescore(c, c.getScore(), "tenergy", Game.time, 1000);
         // TODO don't ignore unless full?
@@ -313,6 +319,7 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
           log.debug("attempted empty transfer from ", c);
         } else {
           c.subject().say("👋", false);
+          transferred = true;
         }
         // scoreManager.rescore(c, c.getScore(), "tenergy", Game.time, 1000);
         // TODO don't ignore unless full?
@@ -323,6 +330,8 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
       }
     }).value();
   }
+
+  return transferred;
 }
 
 // TODO planned transfers, calculate venergy of all participants and move to meet deadline
@@ -374,6 +383,7 @@ function doRepairStuff(state: GlobalState,
   }
 
   // TODO find buildings at less than 100% hits
+  // need to filter / genome? figure out how to build up walls
 
   return [];
 }
@@ -748,20 +758,33 @@ function tryHaul(creepState: CreepState, sourceState: SourceState,
     const creep = creepState.subject();
     if (_.chain(creep.carry).values().sum().value() >= creep.carryCapacity) {
       if (deliveryPos === undefined) {
-        const spawn  = _.chain(creep.room.find(FIND_MY_SPAWNS)).first() as Spawn;
+        const spawn = _.chain(creep.room.find(FIND_MY_SPAWNS)).first() as Spawn; // TODO later BETTER TARGET
         sourceState.memory(REL.CREEPS_HAULING)[creepState.getId()] = spawn.id;
-        api(creepState).moveTo(spawn.pos);
-      } else {
-        api(creepState).moveTo(deliveryPos);
+        deliveryPos = spawn.pos;
       }
+      api(creepState).moveTo(deliveryPos);
+      // TODO NOW give away energy to every building on the way
     } else {
-      doQuickTransfers(creepState, {}, function(s) {
-        return _.size(s.memory(REL.CREEPS_MINING, true)) > 0;
+      const transferred = doQuickTransfers(creepState, {}, function(s: State<any>) {
+        return scoreManager.getScore(s.getScore(), "loading", undefined) === 1
+          || _.size(s.memory(REL.SOURCE_MINED, true)) > 0;
       });
+
+      if (transferred) {
+        // really suck down the available energy!
+        doQuickTransfers(creepState, {}, F.True);
+      }
 
       // TODO determine pickup location(s)
       if (api(creepState).moveTo(sourceState.pos()) !== 0) {
-        api(creepState).move(1 + Math.floor(Math.random() * 8));
+        if (transferred) {
+          // make "transferred" sticky and allow haulers to steal from others who have picked up energy
+          // TODO this should be in the score
+          scoreManager.rescore(sourceState, sourceState.getScore(), "loading", Game.time, 1);
+        } else {
+          api(creepState).move(1 + Math.floor(Math.random() * 8));
+          scoreManager.rescore(sourceState, sourceState.getScore(), "loading", Game.time, 0);
+        }
       }
     }
 
