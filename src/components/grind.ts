@@ -457,8 +457,8 @@ function doHaulEnergy(state: GlobalState,
 
 function findEnergyStorage(state: GlobalState, source: SourceState): StructureState<any> {
   state = state;
-  source = source; // TODO fitness etc
   // return state.spawns().first().valueOf() as StructureState<any>;
+  source.resolve(globalLifecycle);
   return StructureState.right(source.subject().room.controller as Controller);
 }
 
@@ -767,14 +767,15 @@ function tryHaul(state: GlobalState, creepState: CreepState, sourceState: Source
       api(creepState).moveTo(deliveryPos);
       // TODO NOW give away energy to every building on the way
     } else {
-      const transferred = doQuickTransfers(creepState, {}, function(s: State<any>) {
+      const ignore = {};
+      const transferred = doQuickTransfers(creepState, ignore, function(s: State<any>) {
         return scoreManager.getScore(s.getScore(), "loading", undefined) === 1
           || _.size(s.memory(REL.SOURCE_MINED, true)) > 0;
       });
 
       if (transferred) {
-        // really suck down the available energy!
-        doQuickTransfers(creepState, {}, F.True);
+        // really suck down the available energy (but only new friends)
+        doQuickTransfers(creepState, ignore, F.True);
       }
 
       // TODO determine pickup location(s)

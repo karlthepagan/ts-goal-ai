@@ -45,7 +45,10 @@ export function defineEvents(em: EventRegistry) {
       throw new Error("no event source");
     }
     const creep = jp.target;
-    if (!creep.subject().ticksToLive) {
+    if (creep.subject() === undefined) {
+      creep.resolve(globalLifecycle);
+    }
+    if (!creep.subject().spawning && !creep.subject().ticksToLive) {
       debugger; // invalid TTL
       throw new Retry("invalid TTL");
     }

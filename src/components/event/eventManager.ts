@@ -21,7 +21,7 @@ export default class EventManager implements EventRegistry {
     },
     (spec) => {
       // cleanup, erase constructor info
-      const is = spec.clone();
+      const is = Object.create(spec); // was .clone();
       is.unresolve();
       delete is.targetConstructor;
       registerBehavior("event", is);
@@ -36,7 +36,7 @@ export default class EventManager implements EventRegistry {
     },
     (spec) => {
       // cleanup, erase constructor info
-      const is = spec.clone();
+      const is = Object.create(spec); // was .clone();
       is.unresolve();
       registerBehavior("intercept", is);
     }
@@ -49,9 +49,9 @@ export default class EventManager implements EventRegistry {
       return [is, actionGet(undefined)];
     },
     (spec) => {
-      spec = spec.clone() as any;
+      spec = Object.create(spec); // was .clone();
       spec.unresolve();
-      spec.actionArgs.splice(0, 1); // TODO cleanup
+      spec.actionArgs = spec.actionArgs.slice(1); // TODO cleanup
       scheduleExec("scheduled", spec);
     }
   );
