@@ -44,6 +44,10 @@ bootstrap.push(() => {
   // registerType(SpawnState);
 
   registerTypeAs(StructureState, STRUCTURE_SPAWN); // TODO all structures?
+  registerTypeAs(StructureState, STRUCTURE_CONTAINER);
+  registerTypeAs(StructureState, STRUCTURE_EXTENSION);
+  registerTypeAs(StructureState, STRUCTURE_STORAGE);
+  registerTypeAs(StructureState, STRUCTURE_TOWER);
 
   registerType(InterceptorService);
   registerType(AnonCache);

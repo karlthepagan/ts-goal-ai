@@ -145,6 +145,8 @@ export interface Action<CALLBACK, TYPE, SELECT> { // TODO TYPE for jp.source?
   /**
    * transform one capture into another event: utilizes InterceptorService.triggerBehaviors
    *
+   * WARNING: targetbuilder preceeding fireEvent must not set arguments on its return (use jp.args)
+   *
    * @param targetBuilder for IMMEDIATE trigger only transform the call parameters
    */
   fireEvent     (eventName: string, targetBuilder?: OnBuildTarget<TYPE, any>): Action<CALLBACK, TYPE, SELECT>;

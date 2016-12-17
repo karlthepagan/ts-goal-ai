@@ -55,8 +55,8 @@ class EventSpec<I, T> {
    *
    * instead we cache them using AnonCache
    */
-  protected targetBuilderRef?: number;
-  protected actionFilterRef?: number;
+  public targetBuilderRef?: number;
+  public actionFilterRef?: number;
 
   public clone<R extends EventSpec<I, T>>(into?: R): R {
     if (into === undefined) {

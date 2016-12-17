@@ -53,8 +53,9 @@ export function defineEvents(em: EventRegistry) {
     return jp.returnValue === 0;
   }).wait(1, function(jp: Joinpoint<CreepState, number>, dir: number) {
     const ejp = Joinpoint.withSource(jp);
+    ejp.resolve();
     ejp.args = [jp.target.pos(), dir]; // OnMove spec: fromPos: RoomPosition, forwardDir: number
-    return [ejp].concat(jp.args); // [ejp, ...jp.args];
+    return [ejp, "move"]; // passed to triggerBehaviors TODO hack, the wait args are overriding the spec args
   }).fireEvent("move");
   const moveTo = em.intercept(CreepState).after(i => i.moveTo);
   const moveByPath = em.intercept(CreepState).after(i => i.moveByPath);
@@ -62,10 +63,11 @@ export function defineEvents(em: EventRegistry) {
     i.filter(function(jp: Joinpoint<CreepState, number>) {
       return jp.returnValue === 0;
     }).wait(1, function(jp: Joinpoint<CreepState, number>) {
+      const pos = jp.target.pos();
       const ejp = Joinpoint.withSource(jp);
       ejp.resolve(); // TODO hack to unwrap the intercepted target, should be repeated when InterceptorSpec dispatches
-      ejp.args = [jp.target.pos()];
-      return [ejp].concat(ejp.args);
+      ejp.args = [pos];
+      return [ejp, pos]; // passed to the advice function
     }).advice(function(jp: Joinpoint<CreepState, number>, fromPos: RoomPosition) {
       if (jp.target.resolve(globalLifecycle)) {
         jp.args[1] = F.posToDirection(fromPos)(jp.target.pos()); // TODO if 0?

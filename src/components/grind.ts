@@ -267,7 +267,9 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
     // creeps can pickup
     creep.touchedDrops(RESOURCE_ENERGY).reject(F.onKeys(ignore)).map(function(d) {
       if (api(creep).pickup(d) !== 0) {
-        debugger; // failed to pickup
+        log.debug("failed to pickup (this is fine)");
+      } else {
+        creep.subject().say("🔆", false);
       }
     }).value();
     // creeps can withdraw
@@ -279,6 +281,8 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
       if (c.resolve(globalLifecycle)) {
         if (api(creep).withdraw(c.subject(), RESOURCE_ENERGY) !== 0) {
           debugger; // failed to withdraw
+        } else {
+          c.subject().say("💱", false);
         }
         doQuickTransfers(c, ignore, filter);
       } else {
@@ -290,6 +294,8 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
       if (c.resolve(globalLifecycle)) {
         if (api(c).transfer(state.subject(), RESOURCE_ENERGY) !== 0) {
           log.debug("attempted empty transfer from ", c);
+        } else {
+          c.subject().say("👋", false);
         }
         // scoreManager.rescore(c, c.getScore(), "tenergy", Game.time, 1000);
         // TODO don't ignore unless full?
@@ -303,7 +309,11 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
     // structures have to find creep neighbors
     state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).filter(filter).map(function(c) {
       if (c.resolve(globalLifecycle)) {
-        api(c).transfer(state.subject(), RESOURCE_ENERGY);
+        if (api(c).transfer(state.subject(), RESOURCE_ENERGY) !== 0) {
+          log.debug("attempted empty transfer from ", c);
+        } else {
+          c.subject().say("👋", false);
+        }
         // scoreManager.rescore(c, c.getScore(), "tenergy", Game.time, 1000);
         // TODO don't ignore unless full?
         doQuickTransfers(c, ignore, filter);

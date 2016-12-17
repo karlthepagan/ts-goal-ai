@@ -24,6 +24,7 @@ export function assignFilterThen(next?: Function) {
   return function(is: AnyEvent, filter: InterceptFilter<any, any>) {
     is = Object.create(is);
     is.actionFilter = filter;
+    is.actionFilterRef = AnonCache.instance.allocate(filter);
     return [is, next];
   };
 }
@@ -78,7 +79,8 @@ export function waitApply(next: Function) {
     }
 
     ss.relativeTime = relativeTime;
-    ss.targetBuilder = targetBuilder; // TODO AnonCache?
+    ss.targetBuilder = targetBuilder;
+    ss.targetBuilderRef = AnonCache.instance.allocate(targetBuilder);
 
     return [ss, next]; // ss needs to get send to the schedule handler
   };

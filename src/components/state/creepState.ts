@@ -327,11 +327,18 @@ export default class CreepState extends State<Creep> {
     const posToDir = F.posToDirection(selfpos);
     LookForIterator.search(selfpos, 1, this, [{
       key: LOOK_CREEPS, value: function(creep: Creep, range: number) {
+        if (creep.spawning) {
+          return true;
+        }
         if (range < 1) {
           return true;
         }
         const dir = posToDir(creep.pos);
         newCreeps[dir] = creep.id;
+        if (newTypes[dir]) {
+          debugger;
+          log.warning("overwriting touch!");
+        }
         newTypes[dir] = "CreepState";
         return true;
       },
@@ -339,13 +346,17 @@ export default class CreepState extends State<Creep> {
       key: LOOK_STRUCTURES, value: function(struct: OwnedStructure, range: number) {
         range = range;
         const i = posToDir(struct.pos);
+        if (newTypes[i]) {
+          debugger;
+          log.warning("overwriting touch!");
+        }
         switch (struct.structureType) {
           case STRUCTURE_SPAWN:
-            newTypes[i] = struct.structureType;
           case STRUCTURE_CONTAINER:
           case STRUCTURE_EXTENSION:
           case STRUCTURE_STORAGE:
           case STRUCTURE_TOWER:
+            newTypes[i] = struct.structureType;
             newEnergy[i] = struct.id;
 
             break;
