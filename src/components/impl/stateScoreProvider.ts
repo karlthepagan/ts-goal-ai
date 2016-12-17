@@ -96,7 +96,8 @@ const impl = {
   creepState: {
     move: scoreMove,
     vwork: scoreWork(1), // TODO cascade into dependent stats
-    venergy: scoreWork(ENERGY_WORK_WEIGHT), // TODO make this dependent on vwork
+    venergy: _.constant(undefined), // runtime score
+    maxvenergy: scoreWork(ENERGY_WORK_WEIGHT), // TODO make this dependent on vwork
     tenergy: scoreMove,
     ttl: scoreTtl,
     road: scoreRoad, // this goes very low if the creep gets no benefit from roads and has large part count
@@ -126,7 +127,7 @@ const impl = {
         let rval = 0;
         // TODO source access bonus
         // energy velocity for each source
-        rval = rval + score.getOrRescore(source, source.getScore(), "venergy", time);
+        rval = rval + score.getOrRescore(source, source.getScore(), "maxvenergy", time);
         // energy transport score for each source
         rval = rval + score.getOrRescore(source, source.getScore(), "tenergy", time);
         // military risk is folded into the SourceState's raw score
@@ -194,13 +195,11 @@ const impl = {
         score.getOrRescore(source, source.getScore(), "maxvenergy", time)
       ).sum().value()
     ) as ScoreHandler<RoomState, GlobalState>,
-    venergy: (() =>
-      // current energy income
-      undefined // synthetic, only reported by creeps in motion
-    ) as ScoreHandler<RoomState, GlobalState>,
-    vminerals: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) =>
+    venergy: _.constant(undefined),
+      // current energy income, only reported by creeps in motion
+    maxvminerals: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) =>
       state.minerals().map(minerals =>
-        score.getOrRescore(minerals, minerals.getScore(), "venergy", time)
+        score.getOrRescore(minerals, minerals.getScore(), "maxvminerals", time)
       ).sum().value()
     ) as ScoreHandler<RoomState, GlobalState>,
   } as StateScoreImpl<RoomState>,
@@ -272,6 +271,7 @@ const impl = {
       state = state; // TODO does control of a room influence building's capabilities?
       return 0;
     }) as ScoreHandler<StructureState<any>, GlobalState>,
+    venergy: _.constant(undefined),
     energy: ((state: StructureState<any>) => {
       return state.subject().carry.energy;
     }) as ScoreHandler<StructureState<any>, GlobalState>,

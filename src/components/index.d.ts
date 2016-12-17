@@ -73,6 +73,11 @@ interface Commands {
    * disable spawning in grind.js
    */
   disableSpawn: boolean;
+
+  /**
+   * debug energy handoffs
+   */
+  debugTransfers: boolean;
 }
 
 interface Options {
