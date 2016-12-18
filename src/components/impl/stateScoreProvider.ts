@@ -96,7 +96,8 @@ const impl = {
   creepState: {
     move: scoreMove,
     vwork: scoreWork(1), // TODO cascade into dependent stats
-    venergy: _.constant(undefined), // runtime score
+    denergy: _.constant(undefined),  // denergy - current energy transport delta
+    venergy: _.constant(undefined), // venergy - current energy income
     maxvenergy: scoreWork(ENERGY_WORK_WEIGHT), // TODO make this dependent on vwork
     tenergy: scoreMove,
     ttl: scoreTtl,
@@ -206,6 +207,12 @@ const impl = {
 
   // SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES SOURCES
   sourceState: {
+    // denergy - current energy delta, sum of active creeps
+    denergy: ((state: SourceState) => {
+      state = state;
+      // TODO complete
+      return 0;
+    }) as ScoreHandler<SourceState, GlobalState>,
     tenergy: ((state: SourceState) => {
       const pos = state.pos();
       const ownRoom = RoomState.vleft(pos.roomName);
