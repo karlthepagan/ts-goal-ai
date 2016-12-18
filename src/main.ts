@@ -8,7 +8,7 @@ import {throttle} from "./components/util/throttle";
 import monkeypatch from "./monkeypatch";
 import {dispatchTick, detectChanges} from "./components/event/behaviorContext";
 import {scoreManager} from "./components/score/scoreSingleton";
-import {maps} from "./components/map/mapsSingleton";
+import maps from "./components/map/mapsSingleton";
 import {botMemory} from "./config/config";
 
 // Any code written outside the `loop()` method is executed only when the
