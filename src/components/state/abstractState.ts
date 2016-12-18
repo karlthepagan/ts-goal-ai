@@ -6,7 +6,6 @@ import {botMemory} from "../../config/config";
 import EventRegistry from "../event/api/index";
 import CreepState from "./creepState";
 import getConstructor from "../types";
-import {scoreManager} from "../score/scoreSingleton";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import AnonCache from "../event/impl/anonCache";
 import {SCORE_KEY, ENVIROME_KEY} from "../constants";
@@ -283,10 +282,6 @@ abstract class State<T> implements Named {
 
   public touchedCreepIds(): LoDashExplicitArrayWrapper<string> {
     return _.chain(this.memory("touch.creep", true)).compact<string>();
-  }
-
-  public score(stat: string) {
-    scoreManager.rescore(this, this.memory(), stat, Game.time);
   }
 
   public isEnergyMover() {

@@ -144,6 +144,10 @@ export default class GlobalState extends State<Game> {
     return _.chain(this._memory.index.structures).values().map(StructureState.vright);
   }
 
+  public gcl(): number {
+    return Game.gcl.level;
+  }
+
   protected _accessAddress() {
     return [];
   }

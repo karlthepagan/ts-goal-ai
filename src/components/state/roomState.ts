@@ -59,6 +59,15 @@ export default class RoomState extends State<Room> {
     return _.chain(this._memory.minerals).values().map(MineralState.vright);
   }
 
+  public rcl(): number {
+    let rcl = this.memory().rcl;
+    if (this.resolve()) {
+      const controller = this.subject().controller;
+      this.memory().rcl = rcl = controller ? controller.level : 0;
+    }
+    return rcl;
+  }
+
   protected _accessAddress() {
     return ["rooms"];
   }
@@ -88,6 +97,9 @@ export default class RoomState extends State<Room> {
 
         // spawns
         this.subject().find(FIND_MY_SPAWNS).forEach(StructureState.left);
+
+        const controller = this.subject().controller;
+        this.memory().rcl = controller ? controller.level : 0;
       }
 
       if (callback !== undefined) {
