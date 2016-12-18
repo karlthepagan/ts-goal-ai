@@ -114,30 +114,29 @@ const impl = {
   globalState: {
     // TODO intellij enhancement? ((state, score, time) => {
     control: ((state: GlobalState, score: ScoreManager<GlobalState>, time: number) => {
+      score = score;
       // sum of control for all rooms
-      return _.sum(state.subject().rooms, room => {
-        return F.lockAnd(RoomState.right(room),
-          s => score.getOrRescore(s, s.getScore(), "control", time));
-      });
+      return _.sum(state.subject().rooms, room => RoomState.right(room).getOrRescore("control", time));
     }) as ScoreHandler<GlobalState, GlobalState>,
-    energy: ((state: GlobalState, score: ScoreManager<GlobalState>, time: number) =>
+    energy: ((state: GlobalState, score: ScoreManager<GlobalState>, time: number) => {
+      score = score;
       // log.debug("scoring global energy");
-      state.sources().map(source => { // TODO automatic total score?
-        score.rescore(source, source.getScore(), undefined, time); // TODO workaround for time set spam
+      return state.sources().map(source => { // TODO automatic total score?
+        source.rescore(undefined, time); // TODO workaround for time set spam
 
         let rval = 0;
         // TODO source access bonus
         // energy velocity for each source
-        rval = rval + score.getOrRescore(source, source.getScore(), "maxvenergy", time);
+        rval = rval + source.getOrRescore("maxvenergy", time);
         // energy transport score for each source
-        rval = rval + score.getOrRescore(source, source.getScore(), "tenergy", time);
+        rval = rval + source.getOrRescore("tenergy", time);
         // military risk is folded into the SourceState's raw score
         // also the score delta between global.energy and sum of sources? TODO consider
-        rval = rval + score.getOrRescore(source, source.getScore(), "risk", time);
+        rval = rval + source.getOrRescore("risk", time);
 
         return rval;
-      }).sum().value()
-    ) as ScoreHandler<GlobalState, GlobalState>,
+      }).sum().value();
+    }) as ScoreHandler<GlobalState, GlobalState>,
     military: ((state: GlobalState, score: ScoreManager<GlobalState>, time: number) => {
       state = state;
       score = score;
@@ -146,14 +145,15 @@ const impl = {
       return 0;
     }) as ScoreHandler<GlobalState, GlobalState>,
     minerals: ((state: GlobalState, score: ScoreManager<GlobalState>, time: number) => {
+      score = score;
       return _.sum(state.minerals(), source => {
         let rval = 0;
         // TODO weights per mineral type
         // TODO mineral access bonus
         // mineral velocity for each mine
-        rval = rval + score.getOrRescore(source, source.getScore(), "vminerals", time);
+        rval = rval + source.getOrRescore("vminerals", time);
         // mineral transport score for each mine
-        rval = rval + score.getOrRescore(source, source.getScore(), "tminerals", time);
+        rval = rval + source.getOrRescore("tminerals", time);
         // military risk is folded into the MineralState's raw score
         // also the score delta between global.energy and sum of sources? TODO consider
         return rval;
@@ -193,14 +193,14 @@ const impl = {
     maxvenergy: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) =>
       // maximum energy income
       state.sources().map(source =>
-        score.getOrRescore(source, source.getScore(), "maxvenergy", time)
+        score.getOrRescore(source, source.getScoreMemory(), "maxvenergy", time)
       ).sum().value()
     ) as ScoreHandler<RoomState, GlobalState>,
     venergy: _.constant(undefined),
       // current energy income, only reported by creeps in motion
     maxvminerals: ((state: RoomState, score: ScoreManager<GlobalState>, time: number) =>
       state.minerals().map(minerals =>
-        score.getOrRescore(minerals, minerals.getScore(), "maxvminerals", time)
+        score.getOrRescore(minerals, minerals.getScoreMemory(), "maxvminerals", time)
       ).sum().value()
     ) as ScoreHandler<RoomState, GlobalState>,
   } as StateScoreImpl<RoomState>,

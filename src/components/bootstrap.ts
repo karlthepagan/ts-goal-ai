@@ -21,6 +21,7 @@ import DropState from "./state/dropState";
 import FlagState from "./state/flagState";
 import StructureState from "./state/structureState";
 import {defineEvents} from "./event/api/builtinEvents";
+import {scoreManager} from "./score/scoreSingleton";
 
 export const bootstrap: (() => void)[] = [];
 
@@ -56,6 +57,7 @@ bootstrap.push(() => {
 bootstrap.push(() => {
   // log.debug("registering score functions");
   registerStateScoreProvider();
+  State.setScoreManager(scoreManager);
 });
 
 bootstrap.push(() => {

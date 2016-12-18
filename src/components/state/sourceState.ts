@@ -3,6 +3,13 @@ import {log} from "../support/log";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 
+const REL = {
+  SOURCE: {
+    CREEPS_MINING: "workers",
+    CREEPS_HAULING: "haulers",
+  },
+};
+
 export default class SourceState extends State<Source> {
   public static apiType() {
     return Source;
@@ -43,6 +50,18 @@ export default class SourceState extends State<Source> {
 
   public nodeDirs(): number[] {
     return this._memory.nodes as number[];
+  }
+
+  public getWorkers(): string[] {
+    return this.memory(REL.SOURCE.CREEPS_MINING, true);
+  }
+
+  public clearWorkers() {
+    delete this.memory()[REL.SOURCE.CREEPS_MINING];
+  }
+
+  public getHaulers(): any { // TODO Map<string>
+    return this.memory(REL.SOURCE.CREEPS_HAULING); // map worker -> destination struct
   }
 
   public nodesAsPos(): RoomPosition[] {

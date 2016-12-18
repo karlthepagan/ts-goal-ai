@@ -46,6 +46,7 @@ export function scheduleExec(name: string, spec: ScheduleSpec<any, any>) {
 }
 
 export function detectChanges(state: GlobalState, score: ScoreManager<GlobalState>) {
+  score = score;
   // TODO call this after dispatchTick? or as a scheduled tick (but low pirority)
 
   const changes = state.getChanges();
@@ -56,7 +57,7 @@ export function detectChanges(state: GlobalState, score: ScoreManager<GlobalStat
         // TODO temp?
         state.sources().map(function(s) {
           debugger; // rescoring all states
-          return score.getOrRescore(s, s.getScore(), undefined, Game.time);
+          return s.getOrRescore(undefined, Game.time);
         }).value();
         break;
       case GlobalState.CHANGED_SITES:

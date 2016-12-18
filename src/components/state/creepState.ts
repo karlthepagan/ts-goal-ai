@@ -9,6 +9,14 @@ import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import {globalLifecycle} from "../event/behaviorContext";
 // const BiMap = require("bimap"); // TODO BiMap
 
+export const REL = {
+  CREEP: {
+    SOURCE_MINED: "working",
+    SOURCE_HAULED: "working",
+    STRUCT_DELIVER: "carrying",
+  },
+};
+
 const MOVE_KEYS = {
   // yes i'm being clever here, don't change constants
   ROAD: TERRAIN_ROAD,
@@ -459,6 +467,26 @@ export default class CreepState extends State<Creep> {
     const types = this.memory("touch.types", true);
     return _.chain(this.memory("touch.energy", true) as string[]) // don't compact, order matters
       .map((s, i) => (s ? State.vright(types[i], s) : null) as State<any>).compact();
+  }
+
+  public getSourceMined(): string {
+    return this.memory()[REL.CREEP.SOURCE_MINED];
+  }
+
+  public setSourceMined(sourceId: string) {
+    this.memory()[REL.CREEP.SOURCE_MINED] = sourceId;
+  }
+
+  public deleteSourceMined() {
+    delete this.memory()[REL.CREEP.SOURCE_MINED];
+  }
+
+  public getSourceHauled(): string {
+    return this.memory()[REL.CREEP.SOURCE_HAULED];
+  }
+
+  public setSourceHauled(sourceId: string) {
+    this.memory()[REL.CREEP.SOURCE_HAULED] = sourceId;
   }
 
   protected _accessAddress() {

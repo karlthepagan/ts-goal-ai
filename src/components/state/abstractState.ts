@@ -9,6 +9,8 @@ import getConstructor from "../types";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import AnonCache from "../event/impl/anonCache";
 import {SCORE_KEY, ENVIROME_KEY} from "../constants";
+import ScoreManager from "../score/scoreManager";
+import GlobalState from "./globalState";
 
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
@@ -89,12 +91,17 @@ abstract class State<T> implements Named {
     State.events = events;
   }
 
+  public static setScoreManager(scores: ScoreManager<GlobalState>) {
+    State.scores = scores;
+  }
+
   public static vright<I>(className: string, id: string): State<I>|undefined {
     const ctor = (getConstructor(className) as any);
     return ctor === undefined ? undefined : ctor.vright(id); // TODO startPool and transaction?
   }
 
   protected static events: EventRegistry;
+  protected static scores: ScoreManager<GlobalState>;
 
   /**
    * describes flywight handedness for debugging
@@ -288,12 +295,43 @@ abstract class State<T> implements Named {
     return false;
   }
 
-  public getScore() {
+  public getEnvirome() {
+    return this.memory(ENVIROME_KEY);
+  }
+
+  public getScoreMemory() {
     return this.memory(SCORE_KEY);
   }
 
-  public getEnvirome() {
-    return this.memory(ENVIROME_KEY);
+  public getScore(metric: string): number {
+    const mem = this.getScoreMemory();
+    let calculated = State.scores.getScore(mem, metric, undefined);
+    if (calculated === undefined) {
+      calculated = State.scores.rescore(this, mem, metric, Game.time);
+      if (calculated === undefined) {
+        debugger; // can't score
+        log.debug("can't score", metric);
+        return 0;
+      }
+    }
+    return calculated;
+  }
+
+  public getOrRescore(metric?: string, time?: number): number {
+    return State.scores.getOrRescore(this, this.getScoreMemory(), metric, time);
+  }
+
+  public rescore(metric?: string, time?: number) {
+    return State.scores.rescore(this, this.getScoreMemory(), metric, time);
+  }
+
+  public setScore(metric: string, value: number) {
+    State.scores.rescore(this, this.getScoreMemory(), metric, Game.time, value);
+  }
+
+  public copyScore(dstMetric: string, srcMetric: string) {
+    const value = this.getScore(srcMetric);
+    this.setScore(dstMetric, value);
   }
 
   protected abstract _accessAddress(): string[];
