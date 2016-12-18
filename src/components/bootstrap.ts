@@ -16,12 +16,12 @@ import {registerType, registerTypeAs} from "./types";
 import registerBehaviorProvider from "./impl/behaviorProvider";
 import InterceptorService from "./event/impl/interceptorService";
 import AnonCache from "./event/impl/anonCache";
-import {botMemory} from "../config/config";
 import DropState from "./state/dropState";
 import FlagState from "./state/flagState";
 import StructureState from "./state/structureState";
 import {defineEvents} from "./event/api/builtinEvents";
 import {scoreManager} from "./score/scoreSingleton";
+import * as Debug from "./util/debug";
 
 export const bootstrap: (() => void)[] = [];
 
@@ -63,11 +63,7 @@ bootstrap.push(() => {
 bootstrap.push(() => {
   State.setEventRegistry(eventManager);
 
-  const commands = botMemory() as Commands;
-
-  if (commands.debugBuilders) {
-    debugger; // Commands.debugBuilders = true
-  }
+  Debug.on("debugBuilders");
 
   defineEvents(eventManager);
 

@@ -6,6 +6,7 @@ import * as F from "../../functions";
 import getConstructor from "../../types";
 import NAME_CAPTURE from "./nameCapture";
 import AnonCache from "./anonCache";
+import * as Debug from "../../util/debug";
 
 export type AnyEvent = EventSpec<any, any>;
 
@@ -63,7 +64,7 @@ class EventSpec<I, T> {
       into = new EventSpec<I, T>() as R;
     }
     if (this.definition === undefined) {
-      debugger; // spec definition is undef
+      Debug.always(); // spec definition is undef
     }
     into.definition = this.definition.clone(); // TODO deep prototype
     into.targetConstructor = this.targetConstructor;
@@ -116,7 +117,7 @@ class EventSpec<I, T> {
     // if (this.targetBuilder === undefined) {
     //   this.targetBuilder = AnonCache.instance[this.targetBuilderRef as number];
     //   if (this.targetBuilder !== undefined) {
-    //     debugger; // TODO WUT? reload clears this function?
+    //     Debug.always(); // TODO WUT? reload clears this function?
     //   }
     // }
     if (this.targetBuilder !== undefined) {
@@ -150,8 +151,7 @@ class EventSpec<I, T> {
   protected resolveArgs(jp: Joinpoint<any, any>): any[] {
     if (this.actionArgs === undefined) {
       if (jp.args === undefined) {
-        debugger; // jp.args is undefined
-        throw new Error("jp.args is undefined");
+        throw Debug.throwing(new Error("jp.args is undefined"));
       }
       return jp.args;
     }

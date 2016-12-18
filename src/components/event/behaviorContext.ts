@@ -4,27 +4,24 @@ import * as F from "../functions";
 import {botMemory} from "../../config/config";
 import {AnyEvent} from "./impl/eventSpec";
 import ScheduleSpec from "./impl/scheduledSpec";
-import {log} from "../support/log";
 import GlobalState from "../state/globalState";
 import ScoreManager from "../score/scoreManager";
+import * as Debug from "../util/debug";
 
 export const interceptorService = new InterceptorService();
 
 export function globalLifecycle(state: State<any>, lifecycle: number) {
   switch (lifecycle) {
     case State.LIFECYCLE_NEW:
-      debugger;
-      log.error("something born", state);
+      Debug.error("something born", state);
       break;
 
     case State.LIFECYCLE_FREE:
-      debugger;
-      log.error("something died", state);
+      Debug.error("something died", state);
       break;
 
     case State.LIFECYCLE_HIDDEN:
-      debugger;
-      log.info("something is hidden", state);
+      Debug.error("something is hidden", state);
       break;
 
     default:
@@ -56,12 +53,12 @@ export function detectChanges(state: GlobalState, score: ScoreManager<GlobalStat
         state.flags().value(); // TODO lifecycle?
         // TODO temp?
         state.sources().map(function(s) {
-          debugger; // rescoring all states
+          Debug.always(); // rescoring all states
           return s.getOrRescore(undefined, Game.time);
         }).value();
         break;
       case GlobalState.CHANGED_SITES:
-        debugger;
+        Debug.always(); // sites changed
         state.sites().value();
         break;
       case GlobalState.CHANGED_CREEPS:
@@ -69,8 +66,7 @@ export function detectChanges(state: GlobalState, score: ScoreManager<GlobalStat
         state.bodies().map(function(s) {
           if (!s.resolve(globalLifecycle)) {
             // creep died!
-            debugger;
-            log.error("DIED!");
+            Debug.error("DIED!");
           }
         });
         break;
@@ -79,8 +75,7 @@ export function detectChanges(state: GlobalState, score: ScoreManager<GlobalStat
         state.ruins().map(function(s) {
           if (!s.resolve(globalLifecycle)) {
             // structure died!
-            debugger;
-            log.error("DESTROYED!");
+            Debug.error("DESTROYED!");
           }
         });
         break;

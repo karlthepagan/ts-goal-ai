@@ -4,6 +4,7 @@ import Joinpoint from "../api/joinpoint";
 import {getType} from "../../functions";
 import Named from "../../named";
 import AnonCache from "./anonCache";
+import * as Debug from "../../util/debug";
 
 /**
  * @param I - captured? joinpoint's instance type
@@ -13,8 +14,7 @@ export default class ScheduleSpec<I, T> extends EventSpec<I, T> {
   public static fromTimeAndInstance(relativeTime: number, instance: Named) {
     // instance param becomes the parameter in my joinpoint
     if (isNaN(relativeTime)) {
-      debugger; // illegal relativeTime
-      throw new Error("illegal relativeTime");
+      throw Debug.throwing(new Error("illegal relativeTime"));
     }
     if (relativeTime < 1) {
       throw new Error("illegal relativeTime=" + relativeTime);

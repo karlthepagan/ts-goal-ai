@@ -16,6 +16,7 @@ import StructureState from "./state/structureState";
 import {globalLifecycle} from "./event/behaviorContext";
 import ListIterator = _.ListIterator;
 import maps from "./map/mapsSingleton";
+import * as Debug from "./util/debug";
 
 const cachedIdleActions: { [id: string]: FindCallback<any> } = {};
 
@@ -23,10 +24,7 @@ export function grind(state: GlobalState) {
   const commands = state.memory() as Commands;
   const opts = state.memory("config") as Options;
 
-  if (commands.debug) {
-    debugger; // break command
-    delete commands.debug;
-  }
+  Debug.on("debug", true);
 
   if (commands.shuffle || commands.last === undefined
       || (Game.time - commands.last) > F.elvis(opts.failedTicksToShuffle, 5)) { // TODO integrate into event manager
@@ -39,9 +37,9 @@ export function grind(state: GlobalState) {
   if (opts.respawn || opts.suicide) {
     // stop aggressive scanning unless cpu bucket is over 85% full
     let scan = Game.cpu.bucket > 8500;
-    doScans(state, true, scan, scan, commands); // always roomscan to pickup new enemies
+    doScans(state, true, scan, scan); // always roomscan to pickup new enemies
   } else {
-    doScans(state, th.isRoomscanTime(), th.isRescoreTime(), th.isRemoteRoomScanTime(), commands);
+    doScans(state, th.isRoomscanTime(), th.isRescoreTime(), th.isRemoteRoomScanTime());
   }
 
   const creeps = _.values<Creep|null>(Game.creeps).filter(i => !(i === null || i.ticksToLive === undefined));
@@ -54,7 +52,7 @@ export function grind(state: GlobalState) {
       doTransfers(state, creeps, tasked);
     }
 
-    let idleSources = doHarvest(state, creeps, tasked, commands);
+    let idleSources = doHarvest(state, creeps, tasked);
 
     // score room's current energy velocity based on allocated workers / score of idle sources
 
@@ -75,7 +73,7 @@ export function grind(state: GlobalState) {
     // TODO also prune non-zero risk sources from idle count (GENOME!)
 
     // TODO NOW tenergy per source
-    const idleHaulSites = doHaulEnergy(state, creeps, tasked, commands);
+    const idleHaulSites = doHaulEnergy(state, creeps, tasked);
 
     if (idleHaulSites.length > 0) {
       log.info("idle sites", idleHaulSites.length);
@@ -91,7 +89,7 @@ export function grind(state: GlobalState) {
     }
 
     if (!commands.disableSpawn) {
-      doSpawn(state, idleSources, idleHaulSites, idleSites, commands);
+      doSpawn(state, idleSources, idleHaulSites, idleSites);
     }
   }
 
@@ -276,16 +274,15 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
       }
       if (c.resolve(globalLifecycle)) {
         if (api(creep).withdraw(c.subject(), RESOURCE_ENERGY) !== 0) {
-          debugger; // failed to withdraw
+          Debug.always(); // failed to withdraw
         } else {
-          debugger; // TODO observe
+          Debug.always(); // TODO observe
           api(creep).say("💱", false);
           transferred = true;
         }
         doQuickTransfers(c, ignore, filter);
       } else {
-        debugger; // structure destroyed
-        log.error("structure destroyed", c.getId());
+        Debug.error("structure destroyed", c.getId());
       }
     }).value();
     creep.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).filter(filter).map(function(c) {
@@ -301,8 +298,7 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
         // TODO don't ignore unless full?
         doQuickTransfers(c, ignore, filter);
       } else {
-        debugger; // creep died
-        log.error("creep died", c.getId());
+        Debug.error("creep died", c.getId());
       }
     }).value();
   } else {
@@ -320,8 +316,7 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
         // TODO don't ignore unless full?
         doQuickTransfers(c, ignore, filter);
       } else {
-        debugger; // creep died
-        log.error("creep died", c.getId());
+        Debug.error("creep died", c.getId());
       }
     }).value();
   }
@@ -400,8 +395,7 @@ function doBuildStuff(state: GlobalState,
 
 function doHaulEnergy(state: GlobalState,
                       creeps: (Creep|null)[],
-                      tasked: { [creepIdToSourceId: string]: string },
-                      commands: Commands): Scored<SourceState>[] {
+                      tasked: { [creepIdToSourceId: string]: string }): Scored<SourceState>[] {
   state = state;
   tasked = tasked;
 
@@ -419,7 +413,7 @@ function doHaulEnergy(state: GlobalState,
         const creep = CreepState.vright(worker);
         const dst = workers[worker];
         const dstPos = dst === undefined ? undefined : StructureState.vright(dst).pos();
-        if (tryHaul(state, creep, source, dstPos, commands)) {
+        if (tryHaul(state, creep, source, dstPos)) {
           creeps[creeps.indexOf(creep.subject())] = null;
           assigned = true;
         } else {
@@ -429,9 +423,7 @@ function doHaulEnergy(state: GlobalState,
     }
 
     if (!assigned) {
-      if (commands.debugHaul) {
-        debugger; // Commands.debugHaul
-      }
+      Debug.on("debugHaul");
 
       // TODO later roads!
       assigned = _.chain(creeps).compact().map(CreepState.right).map(haulerTenergyFitness)
@@ -444,7 +436,7 @@ function doHaulEnergy(state: GlobalState,
 
           source.getHaulers()[creep.getId()] = structState.getId();
 
-          if (tryHaul(state, creep, source, structState.pos(), commands)) {
+          if (tryHaul(state, creep, source, structState.pos())) {
             creeps[creeps.indexOf(creep.subject())] = null;
             return true;
           }
@@ -493,8 +485,7 @@ function haulerTenergyFitness(creep: CreepState): Scored<CreepState> {
 
 function doHarvest(state: GlobalState,
                    creeps: (Creep|null)[],
-                   tasked: { [creepIdToSourceId: string]: string },
-                   commands: Commands): Scored<SourceState>[] {
+                   tasked: { [creepIdToSourceId: string]: string }): Scored<SourceState>[] {
 
   if (compactSize(creeps) === 0) {
     return [];
@@ -507,7 +498,7 @@ function doHarvest(state: GlobalState,
     for (let site = workers.length - 1; site >= 0; site--) {
       const worker = workers[site];
       if (worker) {
-        debugger; // garbage collect a worker
+        Debug.always(); // garbage collect a worker
         freeSite(source, site);
         delete workers[site];
       }
@@ -581,9 +572,7 @@ function doHarvest(state: GlobalState,
         return scoredSource;
       }
 
-      if (commands.debugHarvest) {
-        debugger; // debugHarvest
-      }
+      Debug.on("debugHarvest");
 
       log.debug(candidates.length, "left");
 
@@ -616,13 +605,12 @@ function doHarvest(state: GlobalState,
         const pos = dirToPosition(site);
 
         if (creep === null || creep === undefined) {
-          debugger; // no worker found
-          throw new Error("oops! no worker found");
+          throw Debug.throwing(new Error("oops! no worker found"));
         }
 
         creep.lock();
         if (creep.getSourceMined() !== undefined) {
-          debugger; // creep assigned to mine
+          Debug.always(); // creep assigned to mine
           // was assigned!
           // free current source
           freeCreep(creep);
@@ -648,7 +636,7 @@ function doHarvest(state: GlobalState,
   // TODO compact<SourceState> should remove null|undefined in the parameterized type
 }
 
-function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remoteRoomScan: boolean, commands: Commands) {
+function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remoteRoomScan: boolean) {
   if (roomScan) {
     // scan real rooms
     state.rooms().map(function(room) {
@@ -659,9 +647,8 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
   }
 
   if (rescore) {
-    if (commands.debugScore) {
-      debugger; // command.debugScore
-    }
+    Debug.on("debugScore");
+
     log.debug("rescoring game state");
     scoreManager.rescore(state, state.getScoreMemory(), undefined, Game.time);
   }
@@ -685,10 +672,9 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
  */
 export function doSpawn(state: GlobalState, idleSources: Scored<SourceState>[],
                         idleHaulSites: Scored<SourceState>[],
-                        idleSites: number,
-                        commands: Commands) {
+                        idleSites: number) {
   return state.spawns().any(function(structureState: StructureState<Spawn>) {
-    spawnCreeps(state, structureState, idleSources, idleHaulSites, idleSites, commands);
+    spawnCreeps(state, structureState, idleSources, idleHaulSites, idleSites);
     return true;
   }).value();
 }
@@ -704,8 +690,7 @@ const haulerBodyCost = _(haulerBody).sum(i => BODYPART_COST[i]);
 function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>,
                      idleSources: Scored<SourceState>[],
                      idleHaulSites: Scored<SourceState>[],
-                     idleSites: number,
-                     commands: Commands) {
+                     idleSites: number) {
   const spawn = structureState.subject();
 
   const creepCount = state.creeps().value().length;
@@ -721,9 +706,7 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>,
     case 1:
     case 2:
       if (spawn.room.energyAvailable < 300) {
-        if (commands.debugTransfers) {
-          debugger;
-        }
+        Debug.on("debugTransfers");
         structureState.setScore("venergy", -25); // TODO fix goal and set real venergy
         doQuickTransfers(structureState, {}, F.True);
         return;
@@ -735,16 +718,14 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>,
       // TODO workers: 5 * WORK, 1 * CARRY, 5 * MOVE
       // TODO transporters: 1 * WORK, 2n * CARRY, n+1 MOVE
       if (spawn.room.energyAvailable < spawn.room.energyCapacityAvailable) {
-        if (commands.debugTransfers) {
-          debugger;
-        }
+        Debug.on("debugTransfers");
         structureState.setScore("venergy", -25); // TODO fix goal and set real venergy
         doQuickTransfers(structureState, {}, F.True);
         return;
       }
 
       if (spawn.spawning && spawn.spawning.remainingTime > 0) { // spawn.spawning.remainingTime > 0
-        // debugger; // you should have been building extensions a while ago, but let's make a nest now
+        // Debug.always(); // you should have been building extensions a while ago, but let's make a nest now
         return;
       }
 
@@ -774,14 +755,14 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>,
         }
         api(structureState).createCreep(body);
       } else if (idleSites > 0) {
-        debugger; // TODO spawn builders
+        Debug.always(); // TODO spawn builders
         log.debug("i want to spawn builders");
       }
   }
 }
 
 function tryHaul(state: GlobalState, creepState: CreepState, sourceState: SourceState,
-                 deliveryPos: RoomPosition|undefined, commands: Commands): boolean {
+                 deliveryPos: RoomPosition|undefined): boolean {
   if (creepState.resolve(globalLifecycle)) {
     const creep = creepState.subject();
     if (_.chain(creep.carry).values().sum().value() >= creep.carryCapacity) {
@@ -797,9 +778,7 @@ function tryHaul(state: GlobalState, creepState: CreepState, sourceState: Source
       }
       // TODO NOW give away energy to every building on the way
     } else {
-      if (commands.debugTransfers) {
-        debugger; // debug transfers
-      }
+      Debug.on("debugTransfers");
       const transferred = doQuickTransfers(creepState, {}, function(s: State<any>) {
         return !(s.getScore("venergy") < 1);
       });
@@ -910,8 +889,7 @@ function freeSite(sourceState: SourceState, site: number) {
         }
       }
     } else {
-      debugger;
-      log.warning("double free?");
+      Debug.error("double free?");
     }
   }
 }

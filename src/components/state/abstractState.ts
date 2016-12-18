@@ -6,11 +6,12 @@ import {botMemory} from "../../config/config";
 import EventRegistry from "../event/api/index";
 import CreepState from "./creepState";
 import getConstructor from "../types";
-import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import AnonCache from "../event/impl/anonCache";
 import {SCORE_KEY, ENVIROME_KEY} from "../constants";
 import ScoreManager from "../score/scoreManager";
 import GlobalState from "./globalState";
+import * as Debug from "../util/debug";
+import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
@@ -141,13 +142,11 @@ abstract class State<T> implements Named {
 
   public wrapRemote(id: string, memory: any, callback?: LifecycleCallback<State<T>>): State<T> {
     if (this._locked) {
-      debugger; // flyweight is locked
-      throw new Error(id);
+      throw Debug.throwing(new Error(id));
     }
 
     if (id === null || id === undefined) {
-      debugger; // bad wrapRemote id
-      throw new Error("bad id");
+      throw Debug.throwing(new Error("bad id"));
     }
     this._id = id;
 
@@ -219,13 +218,13 @@ abstract class State<T> implements Named {
       if (lifeCallback !== undefined) {
         lifeCallback(this, State.LIFECYCLE_FREE);
       } else {
-        debugger; // tell someone!
+        Debug.always(); // tell someone!
       }
     } else {
       if (lifeCallback !== undefined) {
         lifeCallback(this, State.LIFECYCLE_HIDDEN);
       } else {
-        debugger; // tell someone!
+        Debug.always(); // tell someone!
       }
     }
 
@@ -242,7 +241,7 @@ abstract class State<T> implements Named {
 
   public rescan(callback?: LifecycleCallback<State<T>>) {
     if (callback !== undefined) {
-      debugger; // TODO is callback a Joinpoint?
+      Debug.always(); // TODO is callback a Joinpoint?
       const grr = AnonCache.instance;
       log.debug(grr.length);
     }
@@ -252,9 +251,7 @@ abstract class State<T> implements Named {
 
   public onPart(other: CreepState, direction: number) {
     other = other;
-    if ((botMemory() as Commands).debugTouch) {
-      debugger; // Commands.debugTouch
-    }
+    Debug.on("debugTouch");
     this.memory("touch.creep", true)[direction] = null;
     this.memory("touch.types", true)[direction] = null;
     const dirs = this.memory("touch.dir", true) as number[];
@@ -262,9 +259,7 @@ abstract class State<T> implements Named {
   }
 
   public onMeet(other: CreepState, direction: number) {
-    if ((botMemory() as Commands).debugTouch) {
-      debugger; // Commands.debugTouch
-    }
+    Debug.on("debugTouch");
     this.memory("touch.creep", true)[direction] = other.getId();
     this.memory("touch.types", true)[direction] = "CreepState";
     const dirs = this.memory("touch.dir", true) as number[];
@@ -272,9 +267,7 @@ abstract class State<T> implements Named {
   }
 
   public onSlide(other: CreepState, newDirection: number) {
-    if ((botMemory() as Commands).debugTouch) {
-      debugger; // Commands.debugTouch
-    }
+    Debug.on("debugTouch");
 
     const creeps = this.memory("touch.creep", true);
     creeps[newDirection] = other.getId();
@@ -309,7 +302,7 @@ abstract class State<T> implements Named {
     if (calculated === undefined) {
       calculated = State.scores.rescore(this, mem, metric, Game.time);
       if (calculated === undefined) {
-        debugger; // can't score
+        Debug.always(); // can't score
         log.debug("can't score", metric);
         return 0;
       }

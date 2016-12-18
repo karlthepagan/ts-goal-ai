@@ -3,6 +3,7 @@ import {interceptorService} from "../behaviorContext";
 import {OnIntercept, OnBuildTarget, InterceptFilter} from "./index";
 import ScheduleSpec from "../impl/scheduledSpec";
 import AnonCache from "../impl/anonCache";
+import * as Debug from "../../util/debug";
 
 export const EMITTING_CALLS = {
   advice: 2,
@@ -71,8 +72,7 @@ export function waitApply(next: Function) {
   return function(is: AnyEvent, relativeTime: number, targetBuilder?: OnBuildTarget<any, any>) {
     const ss = is.clone(new ScheduleSpec<any, any>());
     if (isNaN(relativeTime)) {
-      debugger; // illegal relativeTime
-      throw new Error("illegal relativeTime=NaN");
+      throw Debug.throwing(new Error("illegal relativeTime=NaN"));
     }
     if (relativeTime < 1 || relativeTime === undefined || relativeTime === null) {
       throw new Error("illegal relativeTime=" + relativeTime);

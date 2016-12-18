@@ -1,3 +1,5 @@
+import * as Debug from "../../util/debug";
+
 type NameAndArgs = {name: string, args: any[]|undefined };
 
 interface CaptureTarget {
@@ -35,7 +37,7 @@ export class NameCapture implements ProxyHandler<CaptureTarget> {
    * Intermediate function calls are too complex for this class, use proxyChainBuilder for that.
    */
   public captureAsync<T>(count: number, callback: (properties: NameAndArgs[]) => T): (i: any) => T {
-    debugger; // TODO test this
+    Debug.temporary(); // TODO test this
     const gets = this.newTarget(count, callback); // TODO test deep replacement
     return new Proxy(gets, this) as any;
   }

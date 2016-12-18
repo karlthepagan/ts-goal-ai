@@ -3,6 +3,7 @@ import Joinpoint from "../api/joinpoint";
 import InterceptorService from "./interceptorService";
 import getConstructor from "../../types";
 import State from "../../state/abstractState";
+import * as Debug from "../../util/debug";
 
 export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements ProxyHandler<Function> {
   public static fromConstructor(constructor: Constructor<State<any>>) {
@@ -27,7 +28,7 @@ export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements Pr
   public invoke(jp: Joinpoint<any, any>, context: InterceptorService): boolean {
     context = context; // context used to schedule dependent actions
 
-    debugger; // TODO REMOVE incerceptor invoke
+    Debug.temporary(); // TODO REMOVE incerceptor invoke
     // special resolve case for intercepted objects, use override category as the target
     const wrapped = Object.create(jp);
     wrapped.resolve();
@@ -36,7 +37,7 @@ export default class InterceptorSpec<I, T> extends EventSpec<I, T> implements Pr
     const inst = this.resolve() as any;
     // TODO break this out and call in switch (for beforecall handling)
     if (this.targetBuilder !== undefined) {
-      debugger; // TODO observe target builder
+      Debug.temporary(); // TODO observe target builder
       inst[this.actionMethod](...this.targetBuilder(jp, ...this.resolveArgs(jp))); // TODO NOW spread bad es6 perf
     } else {
       inst[this.actionMethod](wrapped, ...this.actionArgs); // TODO NOW spread bad es6 perf

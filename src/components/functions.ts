@@ -1,6 +1,7 @@
 import {log} from "./support/log";
 import State from "./state/abstractState";
 import {getApiName} from "./types";
+import * as Debug from "./util/debug";
 
 // export type GoalLambda<T> = (resource: Plan<T>) => Goal<any, T, State<any>>;
 // export type GoalFactory<T> = { [key: string]: GoalLambda<T> };
@@ -115,8 +116,7 @@ export function rposAsStr(pos?: {x: number, y: number, roomName: string}): strin
 
 export function posAsStr(pos?: XY): string {
   if (pos === undefined || pos.x === undefined || pos.y === undefined) {
-    debugger; // posAsStr error
-    throw new Error("no pos");
+    throw Debug.throwing(new Error("no pos"));
   }
 
   return xyAsStr(pos.x, pos.y);
@@ -228,16 +228,14 @@ export function deleteExpand(address: (PropertyKey|undefined)[], memory: any, ar
   for (let i = 0; i < last; i++) {
     const node = address[i];
     if (node === undefined) {
-      debugger; // bad address
-      throw new Error("bad address: " + JSON.stringify(address));
+      throw Debug.throwing(new Error("bad address: " + JSON.stringify(address)));
     }
     memory = buildFollow(memory, node, {});
   }
 
   const key = address[last];
   if (key === undefined) {
-    debugger; // bad address
-    throw new Error("bad address: " + JSON.stringify(address));
+    throw Debug.throwing(new Error("bad address: " + JSON.stringify(address)));
   }
   if (array) {
     const list: PropertyKey[] = memory[last];
@@ -261,16 +259,14 @@ export function expand(address: (PropertyKey|undefined)[], memory: any, array?: 
   for (let i = 0; i < last; i++) {
     const node = address[i];
     if (node === undefined) {
-      debugger; // bad address
-      throw new Error("bad address: " + JSON.stringify(address));
+      throw Debug.throwing(new Error("bad address: " + JSON.stringify(address)));
     }
     memory = buildFollow(memory, node, {});
   }
 
   const node = address[last];
   if (node === undefined) {
-    debugger; // bad address
-    throw new Error("bad address: " + JSON.stringify(address));
+    throw Debug.throwing(new Error("bad address: " + JSON.stringify(address)));
   }
   return buildFollow(memory, node, array ? [] : {});
 }

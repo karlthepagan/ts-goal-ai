@@ -8,6 +8,7 @@ import {registerFunctionLibrary} from "./builders";
 import AnonCache from "../impl/anonCache";
 import {log} from "../../support/log";
 import Retry from "../impl/retry";
+import * as Debug from "../../util/debug";
 
 export function birthday(spawn: StructureState<Spawn>, body: string[], concievedTicks?: number) {
   return spawn.resolve(globalLifecycle)
@@ -21,7 +22,7 @@ export function defineEvents(em: EventRegistry) {
   em.intercept(StructureState).after((i: Spawn) => i.createCreep).filter(function(jp: Joinpoint<StructureState<Spawn>, string>) {
     const okReturn = typeof jp.returnValue === "string";
     if (!okReturn) {
-      debugger; // spawn failed, filtering this event
+      Debug.always(); // spawn failed, filtering this event
     }
     return okReturn;
   }).wait(1).advice(function(jp: Joinpoint<StructureState<Spawn>, string>) {
@@ -41,16 +42,14 @@ export function defineEvents(em: EventRegistry) {
   // spawning is delayed when your spawn is surrounded!
   em.when().spawn().ofAll().advice(function(jp: Joinpoint<CreepState, string>, body: string[]) {
     if (jp.source === undefined) {
-      debugger; // no event source
-      throw new Error("no event source");
+      throw Debug.throwing(new Error("no event source"));
     }
     const creep = jp.target;
     if (creep.subject() === undefined) {
       creep.resolve(globalLifecycle);
     }
     if (!creep.subject().spawning && !creep.subject().ticksToLive) {
-      debugger; // invalid TTL
-      throw new Retry("invalid TTL");
+      throw Debug.throwing(new Retry("invalid TTL"));
     }
     const spawn = jp.source.target as StructureState<Spawn>;
     em.schedule(birthday(spawn, body) + 1499, creep).fireEvent("death");

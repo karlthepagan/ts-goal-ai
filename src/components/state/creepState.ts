@@ -7,6 +7,7 @@ import LookForIterator from "../util/lookForIterator";
 import Joinpoint from "../event/api/joinpoint";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import {globalLifecycle} from "../event/behaviorContext";
+import * as Debug from "../util/debug";
 // const BiMap = require("bimap"); // TODO BiMap
 
 export const REL = {
@@ -317,14 +318,11 @@ export default class CreepState extends State<Creep> {
     jp = jp;
     forwardDir = forwardDir;
 
-    if ((botMemory() as Commands).debugTouch) {
-      debugger; // Commands.debugTouch
-    }
+    Debug.on("debugTouch");
 
     const selfpos = this.pos();
     if (fromPos.x === selfpos.x && fromPos.y === selfpos.y) {
-      debugger; // touching, same position, move failed?
-      throw new Error("birthday violation! TOO SOON! TRY AGAIN!");
+      throw Debug.throwing(new Error("birthday violation! TOO SOON! TRY AGAIN!"));
     }
 
     const newCreeps: string[] = [];
@@ -344,8 +342,7 @@ export default class CreepState extends State<Creep> {
         const dir = posToDir(creep.pos);
         newCreeps[dir] = creep.id;
         if (newTypes[dir]) {
-          debugger;
-          log.warning("overwriting touch!");
+          Debug.error("overwriting touch!");
         }
         newTypes[dir] = "CreepState";
         return true;
@@ -355,8 +352,7 @@ export default class CreepState extends State<Creep> {
         range = range;
         const i = posToDir(struct.pos);
         if (newTypes[i]) {
-          debugger;
-          log.warning("overwriting touch!");
+          Debug.error("overwriting touch!");
         }
         switch (struct.structureType) {
           case STRUCTURE_SPAWN:
@@ -509,8 +505,7 @@ export default class CreepState extends State<Creep> {
         const creep = this.subject();
 
         if (!creep.body) {
-          debugger; // creep cannot init!
-          log.error("can't init creep, no body");
+          Debug.error("can't init creep, no body");
           return false;
         }
 

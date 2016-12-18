@@ -6,6 +6,7 @@ import InterceptorSpec from "../event/impl/interceptorSpec";
 import StructureState from "../state/structureState";
 import RoomState from "../state/roomState";
 import {birthday} from "../event/api/builtinEvents"; // TODO leaky abstraction
+import * as Debug from "../util/debug";
 
 const $ = {} as any;
 
@@ -21,8 +22,7 @@ export default function registerBehaviorProvider(em: EventRegistry) {
   em.when().spawn().ofAll().advice((jp: Joinpoint<CreepState, string>, body: string[], mem?: any) => {
     body = body;
     if (jp.source === undefined) {
-      debugger; // no event source
-      throw new Error("no event source");
+      throw Debug.throwing(new Error("no event source"));
     }
     const creep = jp.target;
     const spawn = jp.source.target as StructureState<Spawn>;

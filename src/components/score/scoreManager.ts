@@ -3,6 +3,7 @@ import ScoreHandler from "./scoreHandler";
 import Named from "../named";
 import {log} from "../support/log";
 import {SCORE_KEY} from "../constants";
+import * as Debug from "../util/debug";
 
 export const TIME_KEY = "time";
 
@@ -66,7 +67,7 @@ export default class ScoreManager<C> {
       value = this.rescore(object, memory, metric, time);
     }
     if (value === undefined) {
-      debugger; // no stored or derived score
+      Debug.always(); // no stored or derived score
       return 0;
     }
     return value;

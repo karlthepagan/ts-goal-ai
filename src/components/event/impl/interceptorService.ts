@@ -11,6 +11,7 @@ import {interceptorService} from "../behaviorContext";
 import InterceptorSpec from "./interceptorSpec";
 import {OnBuildTarget} from "../api/index";
 import Retry from "./retry";
+import * as Debug from "../../util/debug";
 
 type ClassSpec<T extends EventSpec<any, any>> = { [methodName: string]: T[] };
 export type SpecMap<T extends EventSpec<any, any>> = { [className: string]: ClassSpec<T> };
@@ -60,8 +61,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
   public register(name: string, spec: AnyEvent) {
     name = name;
     if (!spec.isRegisterable()) {
-      debugger; // invalid spec
-      throw new Error("invalid spec=" + JSON.stringify(spec));
+      throw Debug.throwing(new Error("invalid spec=" + JSON.stringify(spec)));
     }
     // log.debug("register", name, spec.callState, spec.definition.getMatchingClass(), spec.definition.method);
     const specs = F.expand(
@@ -72,10 +72,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
   public get(target: State<any>, p: PropertyKey, receiver: any): any {
     // TODO this might slow us down
-    const commands = botMemory() as Commands;
-    if (commands.debugInterceptor) {
-      debugger; // Commands.debugKernel
-    }
+    Debug.on("debugInterceptor");
 
     receiver = receiver;
     if (target.resolve()) {
@@ -113,8 +110,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
   public triggerBehaviors(jp: Joinpoint<any, any>, eventName: string, targetBuilder?: OnBuildTarget<any, any>) {
     if (targetBuilder === null) {
-      debugger; // targetBuilder is null
-      log.error("targetBuilder === null, specified builder after a wait? was an immediately triggered event serialized?");
+      Debug.error("targetBuilder === null, specified builder after a wait? was an immediately triggered event serialized?");
     }
 
     // TODO messy, no array return destructuring
@@ -129,17 +125,14 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
   public dispatch(jp: Joinpoint<any, any>): any {
     if (!jp.isReturned()) {
-      debugger; // jp not captured before call
+      Debug.always(); // jp not captured before call
     }
     const interceptors = this.getInterceptors(jp, EventSpec.AFTER_CALL);
     if (interceptors === undefined || interceptors.length === 0) {
       return jp.returnValue;
     }
 
-    const commands = botMemory() as Commands;
-    if (commands.debugEvents) {
-      debugger; // Commands.debugEvents
-    }
+    Debug.on("debugEvents");
 
     const unwrapped = Object.create(jp);
     unwrapped.resolve();
@@ -199,18 +192,14 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
           for (const methodName in classSpec) {
             const tasks: AnyEvent[] = classSpec[methodName];
             for (let i = 0; i < tasks.length; i++) {
-              const commands = botMemory() as Commands;
-              if (commands.debugScheduled) {
-                debugger; // Commands.debugEvents
-              }
+              Debug.on("debugScheduled");
               const task = EventSpec.hydrate(tasks[i]);
               const jp = task.definition.clone();
               jp.resolve();
               // EventSpec invoke is immediate execution
               // ScheduleSpec invoke will re-schedule when invoked
               if (!task.isInvokable()) {
-                debugger; // task not invokable
-                throw new Error("cannot invoke");
+                throw Debug.throwing(new Error("cannot invoke"));
               }
               try {
                 task.invoke(jp, this);
@@ -236,7 +225,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
   protected beforeCall(jp: Joinpoint<any, any>): Function {
     if (!jp.isCaptured()) {
-      debugger; // jp not captured before call
+      Debug.always(); // jp not captured before call
     }
     // : BeforeCallback<any> = (className, objectId, func, result, args) => {
     const interceptors = this.getInterceptors(jp, EventSpec.BEFORE_CALL);
@@ -259,7 +248,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
   protected afterFail(jp: Joinpoint<any, any>): any {
     if (!jp.isFailed()) {
-      debugger; // jp not captured before call
+      Debug.always(); // jp not captured before call
     }
     jp.unresolve(); // TODO remove, should be safe with Object.create in stack
     const interceptors = this.getInterceptors(jp, EventSpec.AFTER_FAIL);
