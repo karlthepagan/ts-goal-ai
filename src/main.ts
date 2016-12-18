@@ -8,6 +8,8 @@ import {throttle} from "./components/util/throttle";
 import monkeypatch from "./monkeypatch";
 import {dispatchTick, detectChanges} from "./components/event/behaviorContext";
 import {scoreManager} from "./components/score/scoreSingleton";
+import {maps} from "./components/map/mapsSingleton";
+import {botMemory} from "./config/config";
 
 // Any code written outside the `loop()` method is executed only when the
 // Screeps system reloads your script.
@@ -65,6 +67,8 @@ export function loop() {
 
     scoreManager.setContext(state);
 
+    maps.load(botMemory().maps);
+
     dispatchTick(Game.time);
 
     detectChanges(state, scoreManager);
@@ -90,6 +94,8 @@ export function loop() {
       }
     }
   }
+
+  botMemory().maps = maps.store();
 
   if (Game.cpu.bucket !== undefined) {
     log.info(Game.cpu.getUsed(), "+", Game.cpu.bucket);

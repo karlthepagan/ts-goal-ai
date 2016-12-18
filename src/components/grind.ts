@@ -15,6 +15,7 @@ import {isReal} from "./functions";
 import StructureState from "./state/structureState";
 import {globalLifecycle} from "./event/behaviorContext";
 import ListIterator = _.ListIterator;
+import maps from "./map/mapsSingleton";
 
 const cachedIdleActions: { [id: string]: FindCallback<any> } = {};
 
@@ -61,7 +62,7 @@ export function grind(state: GlobalState) {
       doTransfers(state, creeps, tasked);
     }
 
-    let idleSources = doHarvest(state, creeps, tasked);
+    let idleSources = doHarvest(state, creeps, tasked, commands);
 
     // score room's current energy velocity based on allocated workers / score of idle sources
 
@@ -499,7 +500,8 @@ function haulerTenergyFitness(creep: CreepState): Scored<CreepState> {
 
 function doHarvest(state: GlobalState,
                    creeps: (Creep|null)[],
-                   tasked: { [creepIdToSourceId: string]: string }): Scored<SourceState>[] {
+                   tasked: { [creepIdToSourceId: string]: string },
+                   commands: Commands): Scored<SourceState>[] {
 
   if (compactSize(creeps) === 0) {
     return [];
@@ -584,6 +586,10 @@ function doHarvest(state: GlobalState,
       if (candidates === undefined || candidates.length === 0) {
         // no creeps to harvest this source!
         return scoredSource;
+      }
+
+      if (commands.debugHarvest) {
+        debugger; // debugHarvest
       }
 
       log.debug(candidates.length, "left");
@@ -791,7 +797,11 @@ function tryHaul(state: GlobalState, creepState: CreepState, sourceState: Source
         sourceState.memory(REL.CREEPS_HAULING)[creepState.getId()] = structState.getId();
         deliveryPos = structState.pos();
       }
-      api(creepState).moveTo(deliveryPos);
+      // TODO moveByPath
+      let result = 1;
+      for (let n = 0; result !== 0 && n < 2; n++) {
+        result = api(creepState).moveTo(deliveryPos, {ignoreCreeps: n === 0});
+      }
       // TODO NOW give away energy to every building on the way
     } else {
       if (commands.debugTransfers) {
@@ -802,7 +812,7 @@ function tryHaul(state: GlobalState, creepState: CreepState, sourceState: Source
       });
 
       // TODO determine pickup location(s)
-      if (api(creepState).moveTo(sourceState.pos()) !== 0 && !transferred) {
+      if (api(creepState).moveTo(sourceState.pos(), {ignoreCreeps: true}) !== 0 && !transferred) {
         api(creepState).move(1 + Math.floor(Math.random() * 8));
       }
     }
@@ -870,7 +880,25 @@ function assignCreep(source: SourceState, site: number, creep: Creep) {
   if (creep.id === null) {
     throw new Error("bad creep");
   }
-  source.memory(REL.CREEPS_MINING, true)[ site ] = creep.id;
+  const sites = source.memory(REL.CREEPS_MINING, true);
+  if (!sites[site]) {
+    // first allocation!
+
+    // TODO method to cost and transform energy handoff
+    const room = source.pos().roomName;
+    let heatMap = maps.energySource[room];
+    if (!heatMap) {
+      maps.energySource[room] = heatMap = maps.init(room);
+    }
+
+    const pos = F.dirToPosition(source.pos(), site);
+    for (let x = pos.x + 1; x >= pos.x - 1; x--) {
+      for (let y = pos.y + 1; y >= pos.y - 1; y--) {
+        heatMap.set(x, y, heatMap.get(x, y) - 10);
+      }
+    }
+  }
+  sites[site] = creep.id;
 }
 
 function freeSite(sourceState: SourceState, site: number) {
@@ -879,6 +907,19 @@ function freeSite(sourceState: SourceState, site: number) {
   if (id) {
     delete CreepState.vleft(id).memory()[REL.SOURCE_MINED];
     delete workers[ site ];
+
+    const heatMap = maps.energySource[sourceState.pos().roomName];
+    if (heatMap) {
+      const pos = F.dirToPosition(sourceState.pos(), site);
+      for (let x = pos.x + 1; x >= pos.x - 1; x--) {
+        for (let y = pos.y + 1; y >= pos.y - 1; y--) {
+          heatMap.set(x, y, heatMap.get(x, y) + 10);
+        }
+      }
+    } else {
+      debugger;
+      log.warning("double free?");
+    }
   }
 }
 
@@ -956,7 +997,8 @@ function getScore(state: State<any>, metric: string): number {
     calculated = scoreManager.rescore(state, mem, metric, Game.time);
     if (calculated === undefined) {
       debugger; // can't score
-      throw new Error("can't score " + metric);
+      log.debug("can't score", metric);
+      return 0;
     }
   }
   return calculated;

@@ -78,6 +78,11 @@ interface Commands {
    * debug energy handoffs
    */
   debugTransfers: boolean;
+
+  /**
+   * debugHarvest
+   */
+  debugHarvest: boolean;
 }
 
 interface Options {
