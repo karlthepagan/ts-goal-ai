@@ -22,7 +22,7 @@ export default class ScoreManager<C> {
 
   public addMetric(name: string, metric: string) {
     if (metric !== SCORE_KEY) {
-      F.expand([ name ], this._metricKeys, true).push(metric);
+      F.expand([ name ], this._metricKeys, []).push(metric);
     }
     if (metric === TIME_KEY) {
       throw new Error("illegal argument");

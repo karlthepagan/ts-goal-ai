@@ -372,14 +372,14 @@ export default class CreepState extends State<Creep> {
     }, {
       key: LOOK_ENERGY, value: function(resource: Resource) {
         const i = posToDir(resource.pos);
-        const type = F.expand([resource.resourceType], newDrops, true);
+        const type = F.expand([resource.resourceType], newDrops, []);
         type[i] = resource.id;
         return true;
       },
     }, {
       key: LOOK_RESOURCES, value: function(resource: Resource) {
         const i = posToDir(resource.pos);
-        const type = F.expand([resource.resourceType], newDrops, true);
+        const type = F.expand([resource.resourceType], newDrops, []);
         type[i] = resource.id;
         return true;
       },

@@ -249,7 +249,7 @@ export function deleteExpand(address: (PropertyKey|undefined)[], memory: any, ar
 }
 
 // TODO consider replacing with _.defaultsDeep
-export function expand(address: (PropertyKey|undefined)[], memory: any, array?: boolean): any {
+export function expand(address: (PropertyKey|undefined)[], memory: any, finalStep?: any): any {
   if (address.length === 0) {
     return memory;
   }
@@ -268,7 +268,7 @@ export function expand(address: (PropertyKey|undefined)[], memory: any, array?: 
   if (node === undefined) {
     throw Debug.throwing(new Error("bad address: " + JSON.stringify(address)));
   }
-  return buildFollow(memory, node, array ? [] : {});
+  return buildFollow(memory, node, elvis(finalStep, {}));
 }
 
 export function parseRoomName(roomName: string): XY {

@@ -45,7 +45,7 @@ function _register(state: any, rootMemory: any): boolean {
     return false;
   }
 
-  let memory = F.expand(state._indexAddress(), rootMemory, true) as string[];
+  let memory = F.expand(state._indexAddress(), rootMemory, []) as string[];
 
   memory.push(state._id);
 
@@ -179,7 +179,7 @@ abstract class State<T> implements Named {
       return this._memory;
     }
 
-    return F.expand(key.split("."), this._memory, array);
+    return F.expand(key.split("."), this._memory, array ? [] : {});
   }
 
   public isPaused(): boolean {

@@ -66,7 +66,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
     // log.debug("register", name, spec.callState, spec.definition.getMatchingClass(), spec.definition.method);
     const specs = F.expand(
       [ spec.callState, spec.definition.getMatchingClass(), spec.definition.method ],
-      this._interceptors, true) as AnyEvent[];
+      this._interceptors, []) as AnyEvent[];
     specs.push(spec);
   }
 
@@ -169,7 +169,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
     const taskList = F.expand(
       [ "timeline", scheduledTick, spec.definition.getMatchingClass(), spec.definition.method],
-      this.eventMemory(), true) as AnyEvent[];
+      this.eventMemory(), []) as AnyEvent[];
 
     delete event.relativeTime; // relative time is used and discarded
 
@@ -270,7 +270,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
   }
 
   protected getInterceptors(jp: Joinpoint<any, any>, callState: number): EventSpec<any, any>[] {
-    return F.expand([ callState, jp.getMatchingClass(), jp.method ], this._interceptors, true) as AnyEvent[];
+    return F.expand([ callState, jp.getMatchingClass(), jp.method ], this._interceptors, []) as AnyEvent[];
   }
 
   protected eventMemory(): EventMemory {
