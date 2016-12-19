@@ -43,29 +43,29 @@ export default class SourceState extends State<Source> {
   public delete() {
     super.delete();
 
-    delete this._memory.nodes;
+    delete this.memory.nodes;
 
     log.debug("delete", this);
   }
 
   public nodeDirs(): number[] {
-    return this._memory.nodes as number[];
+    return this.memory.nodes as number[];
   }
 
   public getWorkers(): string[] {
-    return this.memory(REL.SOURCE.CREEPS_MINING, true);
+    return this.memory[REL.SOURCE.CREEPS_MINING];
   }
 
   public clearWorkers() {
-    delete this.memory()[REL.SOURCE.CREEPS_MINING];
+    delete this.memory[REL.SOURCE.CREEPS_MINING];
   }
 
   public getHaulers(): any { // TODO Map<string>
-    return this.memory(REL.SOURCE.CREEPS_HAULING); // map worker -> destination struct
+    return this.memory[REL.SOURCE.CREEPS_HAULING]; // map worker -> destination struct
   }
 
   public nodesAsPos(): RoomPosition[] {
-    return (this._memory.nodes as number[]).map(F.dirToPositionCall(this.subject().pos));
+    return (this.memory.nodes as number[]).map(F.dirToPositionCall(this.subject().pos));
   }
 
   protected _accessAddress() {
@@ -78,9 +78,13 @@ export default class SourceState extends State<Source> {
 
   protected init(rootMemory: any, callback?: LifecycleCallback<SourceState>): boolean {
     if (super.init(rootMemory, callback)) {
+      this.memory = _.defaults(this.memory, {
+        nodes: [],
+      });
+
       if (!this.isRemote()) {
         const subject = this.subject();
-        this._memory.nodes = F.findOpenPositions(subject.room, subject.pos, 1)
+        this.memory.nodes = F.findOpenPositions(subject.room, subject.pos, 1)
           .map(F.posToDirection(subject.pos));
       }
 

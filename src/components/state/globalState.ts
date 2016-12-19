@@ -67,12 +67,12 @@ export default class GlobalState extends State<Game> {
 
     log.debug("deleting", this);
 
-    for (const key in this._memory) {
+    for (const key in this.memory) {
       const handler = GlobalState._deleteHandler[key];
       if (handler === undefined) {
-        delete this._memory[key];
+        delete this.memory[key];
       } else {
-        handler(this._memory);
+        handler(this.memory);
       }
     }
   }
@@ -92,7 +92,7 @@ export default class GlobalState extends State<Game> {
    * reaper procedure - iterates thru creeps we think are alive
    */
   public bodies(): LoDashExplicitArrayWrapper<CreepState> {
-    return _.chain(this._memory.index.creeps).values().map(CreepState.vright);
+    return _.chain(this.memory.index.creeps).values().map(CreepState.vright);
   }
 
   public rooms(): LoDashExplicitArrayWrapper<RoomState> {
@@ -101,17 +101,17 @@ export default class GlobalState extends State<Game> {
   }
 
   public remoteRooms(): LoDashExplicitArrayWrapper<RoomState> {
-    return _.chain(this._memory.index.rooms).map(RoomState.vright);
+    return _.chain(this.memory.index.rooms).map(RoomState.vright);
   }
 
   public sources(): LoDashExplicitArrayWrapper<SourceState> {
     // return this.sources<SourceState>(F.identity<SourceState>());
-    return _.chain(this._memory.index.sources).map(SourceState.vright);
+    return _.chain(this.memory.index.sources).map(SourceState.vright);
   }
 
   public minerals(): MineralState[] {
     // return this.minerals<MineralState>(F.identity<MineralState>());
-    return _.values(this._memory.index.minerals).map(MineralState.vright);
+    return _.values(this.memory.index.minerals).map(MineralState.vright);
   }
 
   public getChanges(): string[] {
@@ -122,7 +122,7 @@ export default class GlobalState extends State<Game> {
   }
 
   public isChanged(type: string) {
-    return _.size((Game as any)[type]) !== _.size(this._memory[type]);
+    return _.size((Game as any)[type]) !== _.size(this.memory[type]);
   }
 
   public flags(): LoDashExplicitArrayWrapper<FlagState> {
@@ -141,7 +141,7 @@ export default class GlobalState extends State<Game> {
    * reaper procedure - iterates thru structures which we think are alive
    */
   public ruins(): LoDashExplicitArrayWrapper<StructureState<any>> {
-    return _.chain(this._memory.index.structures).values().map(StructureState.vright);
+    return _.chain(this.memory.index.structures).values().map(StructureState.vright);
   }
 
   public gcl(): number {
@@ -163,11 +163,21 @@ export default class GlobalState extends State<Game> {
   }
 
   protected init(rootMemory: any, callback?: LifecycleCallback<GlobalState>): boolean {
-    if (this._memory.reset) {
+    if (this.memory.reset) {
       this.delete();
     }
 
     if (super.init(rootMemory, callback)) {
+      this.memory = _.defaults(this.memory, {
+        index: {
+          creeps: {},
+          rooms: [],
+          sources: [],
+          minerals: [],
+          structures: {},
+        },
+      });
+
       if (!this.isRemote()) {
         // rooms
         this.rooms().value();

@@ -21,8 +21,8 @@ import * as Debug from "./util/debug";
 const cachedIdleActions: { [id: string]: FindCallback<any> } = {};
 
 export function grind(state: GlobalState) {
-  const commands = state.memory() as Commands;
-  const opts = state.memory("config") as Options;
+  const commands = state.memory as Commands;
+  const opts = state.memory.config as Options;
 
   Debug.on("debug", true);
 

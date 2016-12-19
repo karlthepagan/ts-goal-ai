@@ -226,8 +226,6 @@ export default class CreepState extends State<Creep> {
   public delete() {
     super.delete();
 
-    delete this._memory.nodes;
-
     log.debug("delete", this);
   }
 
@@ -236,7 +234,7 @@ export default class CreepState extends State<Creep> {
    */
   public isHit(): boolean {
     const creep = this.subject();
-    return creep.hitsMax - creep.hits > this.memory().armor;
+    return creep.hitsMax - creep.hits > this.memory.armor;
   }
 
   /**
@@ -244,7 +242,7 @@ export default class CreepState extends State<Creep> {
    */
   public isWounded(): boolean {
     const creep = this.subject();
-    return creep.hitsMax - creep.hits > this.memory().hull;
+    return creep.hitsMax - creep.hits > this.memory.hull;
   }
 
   public isCarrying(): boolean {
@@ -268,17 +266,16 @@ export default class CreepState extends State<Creep> {
   }
 
   public maxBody(forFight?: boolean): string {
-    const mem = this.memory();
-    return forFight ? mem.worker : F.elvis(mem.fighter, mem.seal);
+    return forFight ? F.elvis(this.memory.fighter, this.memory.seal) : this.memory.worker;
   }
 
   public isCommando(): boolean {
-    return this.memory().seal !== undefined;
+    return this.memory.seal !== undefined;
   }
 
   // TODO behavior tests for fatigue functions?
   public minMoveFatigue(terrain: number) {
-    return Math.max(1, this.memory().move[terrain]);
+    return Math.max(1, this.memory.move[terrain]);
   }
 
   public maxMovePenalty(terrain: number) {
@@ -287,7 +284,7 @@ export default class CreepState extends State<Creep> {
     } else {
       terrain--;
     }
-    return this.memory().move[terrain];
+    return this.memory.move[terrain];
   }
 
   public maxMoveFatigue(terrain: number) {
@@ -386,9 +383,9 @@ export default class CreepState extends State<Creep> {
     }]);
 
     // TODO transact touch directions
-    const oldCreeps = F.elvis(this.memory("touch").creep, []);
-    const oldEnergy = F.elvis(this.memory("touch").energy, []);
-    const oldTypes = F.elvis(this.memory("touch").types, []);
+    const oldCreeps = this.memory.touch.creep;
+    const oldEnergy = this.memory.touch.energy;
+    const oldTypes = this.memory.touch.types;
 
     // TODO when I move, I need to tell my neighbors about my new position even if I'm not saying goodbye - onSlide
     const self = this;
@@ -408,10 +405,10 @@ export default class CreepState extends State<Creep> {
     iterateNeighbors(creeps.added, () => "CreepState", "onMeet", argFunc);
     iterateNeighbors(creeps.slid, () => "CreepState", "onSlide", argFunc);
 
-    this.memory("touch").creep = newCreeps;
-    this.memory("touch").energy = newEnergy;
-    this.memory("touch").types = newTypes;
-    this.memory("touch").drops = newDrops;
+    this.memory.touch.creep = newCreeps;
+    this.memory.touch.energy = newEnergy;
+    this.memory.touch.types = newTypes;
+    this.memory.touch.drops = newDrops;
   }
 
   public keepSaying(say: string, toPublic?: boolean, count?: number) {
@@ -451,38 +448,38 @@ export default class CreepState extends State<Creep> {
   }
 
   public touchedDropTypes(): string[] {
-    return _.keys(this.memory("touch.drops"));
+    return _.keys(this.memory.touch.drops);
   }
 
   public touchedDrops(type: string): LoDashExplicitArrayWrapper<Resource> {
-    const drops = this.memory("touch.drops");
+    const drops = this.memory.touch.drops;
     return _.chain(F.elvis(drops[type], [])).compact<string>().map(Game.getObjectById).compact();
   }
 
   public touchedStorage(): LoDashExplicitArrayWrapper<State<any>> {
-    const types = this.memory("touch.types", true);
-    return _.chain(this.memory("touch.energy", true) as string[]) // don't compact, order matters
+    const types = this.memory.touch.types;
+    return _.chain(this.memory.touch.energy as string[]) // don't compact, order matters
       .map((s, i) => (s ? State.vright(types[i], s) : null) as State<any>).compact();
   }
 
   public getSourceMined(): string {
-    return this.memory()[REL.CREEP.SOURCE_MINED];
+    return this.memory[REL.CREEP.SOURCE_MINED];
   }
 
   public setSourceMined(sourceId: string) {
-    this.memory()[REL.CREEP.SOURCE_MINED] = sourceId;
+    this.memory[REL.CREEP.SOURCE_MINED] = sourceId;
   }
 
   public deleteSourceMined() {
-    delete this.memory()[REL.CREEP.SOURCE_MINED];
+    delete this.memory[REL.CREEP.SOURCE_MINED];
   }
 
   public getSourceHauled(): string {
-    return this.memory()[REL.CREEP.SOURCE_HAULED];
+    return this.memory[REL.CREEP.SOURCE_HAULED];
   }
 
   public setSourceHauled(sourceId: string) {
-    this.memory()[REL.CREEP.SOURCE_HAULED] = sourceId;
+    this.memory[REL.CREEP.SOURCE_HAULED] = sourceId;
   }
 
   protected _accessAddress() {
@@ -501,6 +498,13 @@ export default class CreepState extends State<Creep> {
 
   protected init(rootMemory: any, callback?: LifecycleCallback<CreepState>): boolean {
     if (super.init(rootMemory, callback)) {
+      this.memory = _.defaults(this.memory, {
+        move: [],
+        armor: 0,
+        hull: 0,
+        worker: "",
+      });
+
       if (this.resolve()) {
         const creep = this.subject();
 
@@ -509,7 +513,7 @@ export default class CreepState extends State<Creep> {
           return false;
         }
 
-        const move = this.memory("move", true);
+        const move = this.memory.move;
         const okRoad = move[MOVE_KEYS.ROAD] = CreepState.calculateFatigue(creep.body, 1, 0);
         const roadLoad = move[MOVE_KEYS.ROAD_LOAD]
           = CreepState.calculateFatigue(creep.body, 1, this.subject().carryCapacity) - okRoad;
@@ -518,16 +522,16 @@ export default class CreepState extends State<Creep> {
         const okSwamp = move[MOVE_KEYS.SWAMP] = CreepState.calculateFatigue(creep.body, 5, 0);
         move[MOVE_KEYS.SWAMP_LOAD] = CreepState.calculateFatigue(creep.body, 5, this.subject().carryCapacity) - okSwamp;
 
-        this.memory().worker = CreepState.calculateBody(creep.body, false) + roadLoad;
+        this.memory.worker = CreepState.calculateBody(creep.body, false) + roadLoad;
         if (okSwamp < 3) {
-          this.memory().seal = CreepState.calculateBody(creep.body, true) + okSwamp + "*";
+          this.memory.seal = CreepState.calculateBody(creep.body, true) + okSwamp + "*";
         } else {
-          this.memory().fighter = CreepState.calculateBody(creep.body, true) + okMove;
+          this.memory.fighter = CreepState.calculateBody(creep.body, true) + okMove;
         }
 
         const {armor, hull} = CreepState.calculateArmorAndHull(creep.body);
-        this.memory().armor = armor;
-        this.memory().hull = hull;
+        this.memory.armor = armor;
+        this.memory.hull = hull;
 
         // TODO creepstate behavior seed
 

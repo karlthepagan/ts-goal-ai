@@ -8,7 +8,7 @@ import * as Debug from "../util/debug";
 export const TIME_KEY = "time";
 
 function defaultScore(state: any, score: ScoreManager<any>, time: number) {
-  const memory = state.memory(SCORE_KEY); // TODO leaky abstraction
+  const memory = state.memory.score; // TODO leaky abstraction
   return _.sum(score.getMetricKeys(state), function(key) {
     return score.getOrRescore(state, memory, key, time);
   });

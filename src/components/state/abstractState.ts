@@ -1,13 +1,10 @@
 import {log} from "../support/log";
 import * as F from "../functions";
-import * as Config from "../../config/config";
 import Named from "../named";
 import {botMemory} from "../../config/config";
 import EventRegistry from "../event/api/index";
 import CreepState from "./creepState";
 import getConstructor from "../types";
-import AnonCache from "../event/impl/anonCache";
-import {SCORE_KEY, ENVIROME_KEY} from "../constants";
 import ScoreManager from "../score/scoreManager";
 import GlobalState from "./globalState";
 import * as Debug from "../util/debug";
@@ -39,12 +36,13 @@ function pad(num: any, size: number) {
 
 function _register(state: any, rootMemory: any): boolean {
   if (state._indexAddress() === undefined) {
-    return false;
+    return true;
   }
   if (state._id === undefined) {
     return false;
   }
 
+  // TODO SOON
   let memory = F.expand(state._indexAddress(), rootMemory, []) as string[];
 
   memory.push(state._id);
@@ -104,13 +102,13 @@ abstract class State<T> implements Named {
   protected static events: EventRegistry;
   protected static scores: ScoreManager<GlobalState>;
 
+  public memory: any;
   /**
    * describes flywight handedness for debugging
    */
   protected _name: string;
   protected _id: string;
   protected _subject: T|undefined;
-  protected _memory: any;
   protected _locked: boolean = false;
 
   constructor(name: string) {
@@ -132,7 +130,7 @@ abstract class State<T> implements Named {
 
     this._subject = subject;
 
-    this._memory = _access(this, memory);
+    this.memory = _access(this, memory);
 
     // TODO NOW immediately init???
     this.init(memory, callback);
@@ -150,7 +148,7 @@ abstract class State<T> implements Named {
     }
     this._id = id;
 
-    this._memory = _access(this, memory);
+    this.memory = _access(this, memory);
 
     // TODO NOW defer init???????
     this.init(memory, callback);
@@ -174,17 +172,13 @@ abstract class State<T> implements Named {
     return this._id;
   }
 
-  public memory(key?: string, array?: boolean): any {
-    if (key === undefined) {
-      return this._memory;
-    }
-
-    return F.expand(key.split("."), this._memory, array ? [] : {});
-  }
-
-  public isPaused(): boolean {
-    return this._memory === undefined;
-  }
+  // public memory(key?: string, array?: boolean): any {
+  //   if (key === undefined) {
+  //     return this._memory;
+  //   }
+  //
+  //   return F.expand(key.split("."), this._memory, array ? [] : {});
+  // }
 
   public isRemote(reason?: string): boolean {
     const virtual = this._subject === undefined;
@@ -198,13 +192,12 @@ abstract class State<T> implements Named {
     if (this._visionSource() && this.resolve()) {
       return (this.subject() as any).pos;
     }
-    return strAsPos(this._memory.room, this._memory.pos);
+    return strAsPos(this.memory.room, this.memory.pos);
   }
 
   public delete() {
-    delete this._memory.seen;
-    delete this._memory.pos;
-    delete this._memory.room;
+    delete this.memory.pos;
+    delete this.memory.room;
   }
 
   public resolve(lifeCallback?: LifecycleCallback<State<T>>): boolean {
@@ -232,56 +225,52 @@ abstract class State<T> implements Named {
   }
 
   public toString() {
-    return "[" + this._name + " " + this._id + " " + this.guid() + "]";
+    return "[" + this._name + " " + this._id + "]";
   }
 
   public setMemory(mem: any) {
-    this._memory = _access(this, botMemory(), mem);
+    this.memory = _access(this, botMemory(), mem);
   }
 
   public rescan(callback?: LifecycleCallback<State<T>>) {
     if (callback !== undefined) {
       Debug.always(); // TODO is callback a Joinpoint?
-      const grr = AnonCache.instance;
-      log.debug(grr.length);
     }
-    delete this._memory.seen;
     this.init(botMemory(), callback);
   }
 
   public onPart(other: CreepState, direction: number) {
     other = other;
     Debug.on("debugTouch");
-    this.memory("touch.creep", true)[direction] = null;
-    this.memory("touch.types", true)[direction] = null;
-    const dirs = this.memory("touch.dir", true) as number[];
-    F.remove(dirs, direction);
+    this.memory.touch.creep[direction] = null;
+    this.memory.touch.types[direction] = null;
+    F.remove(this.memory.touch.dir, direction);
   }
 
   public onMeet(other: CreepState, direction: number) {
     Debug.on("debugTouch");
-    this.memory("touch.creep", true)[direction] = other.getId();
-    this.memory("touch.types", true)[direction] = "CreepState";
-    const dirs = this.memory("touch.dir", true) as number[];
+    this.memory.touch.creep[direction] = other.getId();
+    this.memory.touch.types[direction] = "CreepState";
+    const dirs = this.memory.touch.dir as number[];
     F.add(dirs, direction);
   }
 
   public onSlide(other: CreepState, newDirection: number) {
     Debug.on("debugTouch");
 
-    const creeps = this.memory("touch.creep", true);
+    const creeps = this.memory.touch.creep;
     creeps[newDirection] = other.getId();
     // remove the old direction
     F.arrayUniq(creeps, other.getId(), newDirection);
 
     // can't remove types, it's a class not a UID
-    this.memory("touch.types", true)[newDirection] = "CreepState";
-    const dirs = this.memory("touch.dir", true) as number[];
+    this.memory.touch.types[newDirection] = "CreepState";
+    const dirs = this.memory.touch.dir as number[];
     F.add(dirs, newDirection);
   }
 
   public touchedCreepIds(): LoDashExplicitArrayWrapper<string> {
-    return _.chain(this.memory("touch.creep", true)).compact<string>();
+    return _.chain(this.memory.touch.creep).compact<string>();
   }
 
   public isEnergyMover() {
@@ -289,11 +278,11 @@ abstract class State<T> implements Named {
   }
 
   public getEnvirome() {
-    return this.memory(ENVIROME_KEY);
+    return this.memory.envirome;
   }
 
   public getScoreMemory() {
-    return this.memory(SCORE_KEY);
+    return this.memory.score;
   }
 
   public getScore(metric: string): number {
@@ -334,30 +323,32 @@ abstract class State<T> implements Named {
     return false;
   }
 
-  protected guid(): number {
-    return this._memory === undefined ? 0 : this._memory.seen;
-  }
-
   protected init(rootMemory: any, callback?: LifecycleCallback<State<T>>): boolean {
     callback = callback; // utilized by implementers
-    if (this._memory === undefined) {
+
+    if (!_register(this, rootMemory)) {
       return false;
     }
 
-    if (this._memory.seen === undefined) {
-      const guid = Config.MEMORY_GUID ? (1 + Math.random()) : 1;
-      this._memory.seen = guid;
-      if (Config.MEMORY_GUID) {
-        log.debug(this, "initializing");
-      }
-      this.updatePosition(this._subject);
+    this.memory = _.defaults(this.memory, {
+      config: {} as Options,
+      score: {},
+      envirome: {},
+      touch: {
+        creep: [] as string[],
+        energy: [] as string[],
+        types: [] as string[],
+        dir: [] as number[],
+      },
+    });
+    // const guid = Config.MEMORY_GUID ? (1 + Math.random()) : 1;
+    // this._memory.seen = guid;
+    // if (Config.MEMORY_GUID) {
+    //   log.debug(this, "initializing");
+    // }
+    this.updatePosition(this._subject);
 
-      _register(this, rootMemory);
-
-      return true;
-    }
-
-    return false;
+    return true;
   }
 
   protected updatePosition(s: any) {
@@ -366,12 +357,12 @@ abstract class State<T> implements Named {
       return;
     }
     if (s.pos !== undefined) {
-      this._memory.pos = posAsStr(s.pos as XY);
+      this.memory.pos = posAsStr(s.pos as XY);
     }
     if (s.roomName !== undefined) {
-      this._memory.room = s.roomName;
+      this.memory.room = s.roomName;
     } else if (s.room !== undefined) {
-      this._memory.room = s.room.name;
+      this.memory.room = s.room.name;
     }
   }
 

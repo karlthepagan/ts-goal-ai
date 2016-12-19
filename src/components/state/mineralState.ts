@@ -36,17 +36,17 @@ export default class MineralState extends State<Mineral> {
   public delete() {
     super.delete();
 
-    delete this._memory.nodes;
+    delete this.memory.nodes;
 
     log.debug("delete", this);
   }
 
   public nodeDirs(): number[] {
-    return this._memory.nodes as number[];
+    return this.memory.nodes as number[];
   }
 
   public nodesAsPos(): RoomPosition[] {
-    return (this._memory.nodes as number[]).map(F.dirToPositionCall(this.subject().pos));
+    return (this.memory.nodes as number[]).map(F.dirToPositionCall(this.subject().pos));
   }
 
   protected _accessAddress() {
@@ -59,9 +59,13 @@ export default class MineralState extends State<Mineral> {
 
   protected init(rootMemory: any, callback?: LifecycleCallback<MineralState>): boolean {
     if (super.init(rootMemory, callback)) {
+      this.memory = _.defaults(this.memory, {
+        nodes: [],
+      });
+
       if (!this.isRemote()) {
         const subject = this.subject();
-        this._memory.nodes = F.findOpenPositions(subject.room, subject.pos, 1)
+        this.memory.nodes = F.findOpenPositions(subject.room, subject.pos, 1)
           .map(F.posToDirection(subject.pos));
       }
 

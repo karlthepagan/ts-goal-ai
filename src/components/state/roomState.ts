@@ -52,18 +52,18 @@ export default class RoomState extends State<Room> {
   }
 
   public sources(): LoDashExplicitArrayWrapper<SourceState> {
-    return _.chain(this._memory.sources).values().map(SourceState.vright);
+    return _.chain(this.memory.sources).values().map(SourceState.vright);
   }
 
   public minerals(): LoDashExplicitArrayWrapper<MineralState> {
-    return _.chain(this._memory.minerals).values().map(MineralState.vright);
+    return _.chain(this.memory.minerals).values().map(MineralState.vright);
   }
 
   public rcl(): number {
-    let rcl = this.memory().rcl;
+    let rcl = this.memory.rcl;
     if (this.resolve()) {
       const controller = this.subject().controller;
-      this.memory().rcl = rcl = controller ? controller.level : 0;
+      this.memory.rcl = rcl = controller ? controller.level : 0;
     }
     return rcl;
   }
@@ -82,24 +82,29 @@ export default class RoomState extends State<Room> {
 
   protected init(rootMemory: any, callback?: LifecycleCallback<RoomState>): boolean {
     if (super.init(rootMemory, callback)) {
+      this.memory = _.defaults(this.memory, {
+        sources: {},
+        minerals: {},
+      });
+
       if (!this.isRemote()) {
         // sources
         const sources = this.subject().find(FIND_SOURCES)
           .map(SourceState.left) // side-effect, source states initialized
           .map(s => [ F.posAsStr(s.pos()), s.getId() ] );
-        this.memory().sources = _.object(sources);
+        this.memory.sources = _.object(sources);
 
         // minerals
-        const minerals = this.memory().minerals = this.subject().find(FIND_MINERALS)
+        const minerals = this.memory.minerals = this.subject().find(FIND_MINERALS)
           .map(MineralState.left) // side-effect, mineral states initialized
           .map(s => [ F.posAsStr(s.pos()), s.getId() ] );
-        this.memory().minerals = _.object(minerals);
+        this.memory.minerals = _.object(minerals);
 
         // spawns
         this.subject().find(FIND_MY_SPAWNS).forEach(StructureState.left);
 
         const controller = this.subject().controller;
-        this.memory().rcl = controller ? controller.level : 0;
+        this.memory.rcl = controller ? controller.level : 0;
       }
 
       if (callback !== undefined) {
