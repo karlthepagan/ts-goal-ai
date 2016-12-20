@@ -1,3 +1,5 @@
+import {log} from "../support/log";
+import * as Debug from "../util/debug";
 type MapMatrices = { [room: string]: CostMatrix };
 
 /**
@@ -54,6 +56,7 @@ export default class MapManager {
   }
 
   public makePathfindingGrid2(room: Room, opts?: FindPathOpts) {
+    Debug.always("make pathfinding grid");
     let saveMatrix = {} as CostMatrix;
     opts = opts ? Object.create(opts) : {} as FindPathOpts;
     opts.costCallback = function (name: string, matrix: CostMatrix) {
@@ -61,8 +64,16 @@ export default class MapManager {
       saveMatrix = matrix;
       return true;
     };
-    room.findPath(new RoomPosition(24, 24, room.name), new RoomPosition(25, 25, room.name), opts);
-    return saveMatrix;
+    let path: PathStep[];
+    let x = room.controller ? room.controller.pos.x : 20;
+    let y = room.controller ? room.controller.pos.y : 20;
+    do {
+      const pos = new RoomPosition(x, y, room.name);
+      x = x + (Math.random() < 0.5 ? -1 : 1);
+      y = y + (Math.random() < 0.5 ? -1 : 1);
+      path = room.findPath(pos, new RoomPosition(x, pos.y + y, room.name), opts);
+    } while (path === undefined);
+    return path ? saveMatrix : undefined;
   }
 
   public transform(costs: CostMatrix, transform: (n: number) => number) {
@@ -85,7 +96,11 @@ export default class MapManager {
       ignoreDestructibleStructures: true,
       ignoreRoads: true,
     });
-    this.transform(costs, heatRange);
+    if (costs) {
+      this.transform(costs, heatRange);
+    } else {
+      log.warning("pathfinding grid failed");
+    }
     return costs;
   }
 }

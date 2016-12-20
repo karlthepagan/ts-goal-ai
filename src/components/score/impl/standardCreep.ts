@@ -41,7 +41,7 @@ abstract class StandardCreep extends ScoreMixin<CreepState> implements CreepScor
   // }
 
   public move() {
-    return this._state.maxMoveFatigue(TERRAIN_PLAIN);
+    return -this._state.maxMoveFatigue(TERRAIN_PLAIN);
   }
 
   public transportVel() {

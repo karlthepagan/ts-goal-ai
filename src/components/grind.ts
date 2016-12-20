@@ -852,15 +852,18 @@ function assignCreep(source: SourceState, site: number, creep: Creep) {
 
     // TODO method to cost and transform energy handoff
     const room = source.pos().roomName;
-    let heatMap = maps.energySource[room];
+    let heatMap: CostMatrix|undefined = maps.energySource[room];
     if (!heatMap) {
-      maps.energySource[room] = heatMap = maps.init(room);
+      heatMap = maps.init(room);
     }
 
-    const pos = F.dirToPosition(source.pos(), site);
-    for (let x = pos.x + 1; x >= pos.x - 1; x--) {
-      for (let y = pos.y + 1; y >= pos.y - 1; y--) {
-        heatMap.set(x, y, heatMap.get(x, y) - 10);
+    if (heatMap) {
+      maps.energySource[room] = heatMap;
+      const pos = F.dirToPosition(source.pos(), site);
+      for (let x = pos.x + 1; x >= pos.x - 1; x--) {
+        for (let y = pos.y + 1; y >= pos.y - 1; y--) {
+          heatMap.set(x, y, heatMap.get(x, y) - 10);
+        }
       }
     }
   }

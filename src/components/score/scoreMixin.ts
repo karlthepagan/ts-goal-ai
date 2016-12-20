@@ -47,7 +47,7 @@ export default class ScoreMixin<T extends State<any>> {
           Debug.always("unscored " + valueFunction.name);
           return 0;
         }
-        this.timeoutScore(valueFunction.name); // prevents infinite recursion
+        this.timeoutScore(valueFunction.name);
         this._setScore(valueFunction.name, computed);
         this._updateTime(valueFunction.name, timeFunctionRef);
         return computed;
