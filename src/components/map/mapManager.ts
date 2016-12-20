@@ -4,6 +4,7 @@ type MapMatrices = { [room: string]: CostMatrix };
  * heat range is initialized at 0x80 + original cost * 8
  *
  * swamps > 208
+ * plain > 136
  */
 function heatRange(n: number) {
   return 0x80 + 8 * n;

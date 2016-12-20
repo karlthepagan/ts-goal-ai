@@ -1,3 +1,4 @@
+import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import State from "./abstractState";
 import {log} from "../support/log";
 import {botMemory} from "../../config/config";
@@ -6,7 +7,6 @@ import SourceState from "./sourceState";
 import MineralState from "./mineralState";
 import CreepState from "./creepState";
 import * as F from "../functions";
-import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import StructureState from "./structureState";
 import FlagState from "./flagState";
 import ConstructionState from "./constructionState";
@@ -92,7 +92,7 @@ export default class GlobalState extends State<Game> {
    * reaper procedure - iterates thru creeps we think are alive
    */
   public bodies(): LoDashExplicitArrayWrapper<CreepState> {
-    return _.chain(this.memory.index.creeps).values().map(CreepState.vright);
+    return _.chain(this.memory.index.creeps).keys().map(CreepState.vright);
   }
 
   public rooms(): LoDashExplicitArrayWrapper<RoomState> {
@@ -101,17 +101,17 @@ export default class GlobalState extends State<Game> {
   }
 
   public remoteRooms(): LoDashExplicitArrayWrapper<RoomState> {
-    return _.chain(this.memory.index.rooms).map(RoomState.vright);
+    return _.chain(this.memory.index.rooms).keys().map(RoomState.vright);
   }
 
   public sources(): LoDashExplicitArrayWrapper<SourceState> {
     // return this.sources<SourceState>(F.identity<SourceState>());
-    return _.chain(this.memory.index.sources).map(SourceState.vright);
+    return _.chain(this.memory.index.sources).keys().map(SourceState.vright);
   }
 
-  public minerals(): MineralState[] {
+  public minerals(): LoDashExplicitArrayWrapper<MineralState> {
     // return this.minerals<MineralState>(F.identity<MineralState>());
-    return _.values(this.memory.index.minerals).map(MineralState.vright);
+    return _.chain(this.memory.index.minerals).keys().map(MineralState.vright);
   }
 
   public getChanges(): string[] {
@@ -141,7 +141,7 @@ export default class GlobalState extends State<Game> {
    * reaper procedure - iterates thru structures which we think are alive
    */
   public ruins(): LoDashExplicitArrayWrapper<StructureState<any>> {
-    return _.chain(this.memory.index.structures).values().map(StructureState.vright);
+    return _.chain(this.memory.index.structures).keys().map(StructureState.vright);
   }
 
   public gcl(): number {
@@ -168,12 +168,21 @@ export default class GlobalState extends State<Game> {
     }
 
     if (super.init(rootMemory, callback)) {
-      this.memory = _.defaults(this.memory, {
+      // sites don't touch
+      delete this.memory.touch;
+
+      if (this.memory.index) {
+        return false;
+      }
+
+      this.memory = _.defaults(this.memory, { // TODO SOON these should be GUID -> parent structures
+        config: {} as Options, // Options are also bootstrapped outside GlobalState
+        envirome: {},
         index: {
           creeps: {},
-          rooms: [],
-          sources: [],
-          minerals: [],
+          rooms: {},
+          sources: {},
+          minerals: {},
           structures: {},
         },
       });

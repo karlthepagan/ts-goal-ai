@@ -49,6 +49,9 @@ export default class DropState extends State<Resource> {
       //   const subject = this.subject();
       // }
 
+      // drops don't touch
+      delete this.memory.touch;
+
       // TODO distance to all sources? value calculations?
 
       if (callback !== undefined) {

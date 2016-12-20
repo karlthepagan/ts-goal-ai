@@ -7,11 +7,11 @@ import * as F from "../../functions";
 import {botMemory} from "../../../config/config";
 import ScheduleSpec from "./scheduledSpec";
 import Named from "../../named";
-import {interceptorService} from "../behaviorContext";
 import InterceptorSpec from "./interceptorSpec";
 import {OnBuildTarget} from "../api/index";
 import Retry from "./retry";
 import * as Debug from "../../util/debug";
+import {interceptorService} from "../../singletons";
 
 type ClassSpec<T extends EventSpec<any, any>> = { [methodName: string]: T[] };
 export type SpecMap<T extends EventSpec<any, any>> = { [className: string]: ClassSpec<T> };
@@ -125,7 +125,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
   public dispatch(jp: Joinpoint<any, any>): any {
     if (!jp.isReturned()) {
-      Debug.always(); // jp not captured before call
+      Debug.always("jp not captured before dispatch"); // jp not captured before call
     }
     const interceptors = this.getInterceptors(jp, EventSpec.AFTER_CALL);
     if (interceptors === undefined || interceptors.length === 0) {
@@ -225,7 +225,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
   protected beforeCall(jp: Joinpoint<any, any>): Function {
     if (!jp.isCaptured()) {
-      Debug.always(); // jp not captured before call
+      Debug.always("jp not captured before pre-advice"); // jp not captured before call
     }
     // : BeforeCallback<any> = (className, objectId, func, result, args) => {
     const interceptors = this.getInterceptors(jp, EventSpec.BEFORE_CALL);
@@ -248,7 +248,7 @@ export default class InterceptorService implements ProxyHandler<State<any>>, Nam
 
   protected afterFail(jp: Joinpoint<any, any>): any {
     if (!jp.isFailed()) {
-      Debug.always(); // jp not captured before call
+      Debug.always("jp not captured before after-advice"); // jp not captured before call
     }
     jp.unresolve(); // TODO remove, should be safe with Object.create in stack
     const interceptors = this.getInterceptors(jp, EventSpec.AFTER_FAIL);

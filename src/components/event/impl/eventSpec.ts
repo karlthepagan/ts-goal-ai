@@ -64,7 +64,7 @@ class EventSpec<I, T> {
       into = new EventSpec<I, T>() as R;
     }
     if (this.definition === undefined) {
-      Debug.always(); // spec definition is undef
+      Debug.always("spec definition is undef"); // spec definition is undef
     }
     into.definition = this.definition.clone(); // TODO deep prototype
     into.targetConstructor = this.targetConstructor;

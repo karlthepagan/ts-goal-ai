@@ -3,13 +3,11 @@ import { log } from "./components/support/log";
 import GlobalState from "./components/state/globalState";
 import {bootstrap} from "./components/bootstrap";
 import {grind} from "./components/grind";
-import {importManager} from "./components/import/importSingleton";
 import {throttle} from "./components/util/throttle";
 import monkeypatch from "./monkeypatch";
 import {dispatchTick, detectChanges} from "./components/event/behaviorContext";
-import {scoreManager} from "./components/score/scoreSingleton";
-import maps from "./components/map/mapsSingleton";
 import {botMemory} from "./config/config";
+import {importManager, scoreManager, maps} from "./components/singletons";
 
 // Any code written outside the `loop()` method is executed only when the
 // Screeps system reloads your script.

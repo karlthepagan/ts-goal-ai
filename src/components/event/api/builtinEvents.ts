@@ -1,4 +1,4 @@
-import {globalLifecycle, interceptorService} from "../behaviorContext";
+import {globalLifecycle} from "../behaviorContext";
 import StructureState from "../../state/structureState";
 import * as F from "../../functions";
 import {EventRegistry} from "./index";
@@ -9,6 +9,7 @@ import AnonCache from "../impl/anonCache";
 import {log} from "../../support/log";
 import Retry from "../impl/retry";
 import * as Debug from "../../util/debug";
+import {interceptorService} from "../../singletons";
 
 export function birthday(spawn: StructureState<Spawn>, body: string[], concievedTicks?: number) {
   return spawn.resolve(globalLifecycle)
@@ -22,7 +23,7 @@ export function defineEvents(em: EventRegistry) {
   em.intercept(StructureState).after((i: Spawn) => i.createCreep).filter(function(jp: Joinpoint<StructureState<Spawn>, string>) {
     const okReturn = typeof jp.returnValue === "string";
     if (!okReturn) {
-      Debug.always(); // spawn failed, filtering this event
+      Debug.always("spawn failed, ignoring"); // spawn failed, filtering this event
     }
     return okReturn;
   }).wait(1).advice(function(jp: Joinpoint<StructureState<Spawn>, string>) {

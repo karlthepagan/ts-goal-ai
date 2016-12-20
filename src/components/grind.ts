@@ -1,10 +1,3 @@
-import * as F from "./functions";
-import GlobalState from "./state/globalState";
-import {log} from "./support/log";
-import CreepState from "./state/creepState";
-import SourceState from "./state/sourceState";
-import {throttle} from "./util/throttle";
-import {scoreManager} from "./score/scoreSingleton";
 import State from "./state/abstractState";
 import {DISTANCE_WEIGHT, ENERGY_WORK_WEIGHT} from "./impl/stateScoreProvider";
 import MemoIterator = _.MemoIterator;
@@ -15,8 +8,13 @@ import {isReal} from "./functions";
 import StructureState from "./state/structureState";
 import {globalLifecycle} from "./event/behaviorContext";
 import ListIterator = _.ListIterator;
-import maps from "./map/mapsSingleton";
 import * as Debug from "./util/debug";
+import {scoreManager, maps} from "./singletons";
+import GlobalState from "./state/globalState";
+import {log} from "./support/log";
+import CreepState from "./state/creepState";
+import * as F from "./functions";
+import SourceState from "./state/sourceState";
 
 const cachedIdleActions: { [id: string]: FindCallback<any> } = {};
 
@@ -32,14 +30,15 @@ export function grind(state: GlobalState) {
     delete commands.shuffle;
   }
 
-  const th = throttle();
+  // const th = throttle();
 
   if (opts.respawn || opts.suicide) {
     // stop aggressive scanning unless cpu bucket is over 85% full
     let scan = Game.cpu.bucket > 8500;
     doScans(state, true, scan, scan); // always roomscan to pickup new enemies
   } else {
-    doScans(state, th.isRoomscanTime(), th.isRescoreTime(), th.isRemoteRoomScanTime());
+    log.debug("stop scoring");
+    // doScans(state, th.isRoomscanTime(), th.isRescoreTime(), th.isRemoteRoomScanTime());
   }
 
   const creeps = _.values<Creep|null>(Game.creeps).filter(i => !(i === null || i.ticksToLive === undefined));
@@ -274,9 +273,9 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
       }
       if (c.resolve(globalLifecycle)) {
         if (api(creep).withdraw(c.subject(), RESOURCE_ENERGY) !== 0) {
-          Debug.always(); // failed to withdraw
+          Debug.always("failed to withdraw"); // failed to withdraw
         } else {
-          Debug.always(); // TODO observe
+          Debug.always("energy push ok!"); // TODO observe
           api(creep).say("💱", false);
           transferred = true;
         }
@@ -291,7 +290,7 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
           log.debug("attempted empty transfer from ", c);
         } else {
           api(c).say("👋", false);
-          c.copyScore("denergy", "venergy");
+          c.score.copyScore("energyDelta", "energyVel");
           transferred = true;
         }
         // scoreManager.rescore(c, c.getScoreMemory(), "tenergy", Game.time, 1000);
@@ -309,7 +308,7 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
           log.debug("attempted empty transfer from ", c);
         } else {
           api(c).say("👋", false);
-          c.copyScore("denergy", "venergy");
+          c.score.copyScore("energyDelta", "energyVel");
           transferred = true;
         }
         // scoreManager.rescore(c, c.getScoreMemory(), "tenergy", Game.time, 1000);
@@ -498,7 +497,7 @@ function doHarvest(state: GlobalState,
     for (let site = workers.length - 1; site >= 0; site--) {
       const worker = workers[site];
       if (worker) {
-        Debug.always(); // garbage collect a worker
+        Debug.always("gcing a worker"); // garbage collect a worker
         freeSite(source, site);
         delete workers[site];
       }
@@ -528,7 +527,7 @@ function doHarvest(state: GlobalState,
           if (tryHarvest(creep, source, pos, site, tasked, failed)) {
             // log.debug("mined", site, "next site for", source);
             creeps[creeps.indexOf(creep.subject())] = null;
-            scoredSource.score = scoredSource.score - creep.getScore("maxvenergy"); // deduct creep's mining capability from the energy score
+            scoredSource.score = scoredSource.score - creep.score.energyVelNorm(); // deduct creep's mining capability from the energy score
           } else {
             // TODO clean up assignment codes
             delete workers[site];
@@ -610,7 +609,7 @@ function doHarvest(state: GlobalState,
 
         creep.lock();
         if (creep.getSourceMined() !== undefined) {
-          Debug.always(); // creep assigned to mine
+          Debug.always("reallocating creep"); // creep assigned to mine
           // was assigned!
           // free current source
           freeCreep(creep);
@@ -625,7 +624,7 @@ function doHarvest(state: GlobalState,
 
         creeps[creeps.indexOf(creep.subject())] = null;
         // MUTATING!
-        scoredSource.score = scoredSource.score - creep.getScore("maxvenergy");
+        scoredSource.score = scoredSource.score - creep.score.energyVelNorm();
 
         return true;
       }).value();
@@ -725,7 +724,6 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>,
       }
 
       if (spawn.spawning && spawn.spawning.remainingTime > 0) { // spawn.spawning.remainingTime > 0
-        // Debug.always(); // you should have been building extensions a while ago, but let's make a nest now
         return;
       }
 
@@ -755,7 +753,7 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>,
         }
         api(structureState).createCreep(body);
       } else if (idleSites > 0) {
-        Debug.always(); // TODO spawn builders
+        Debug.always("need to spawn builders"); // TODO spawn builders
         log.debug("i want to spawn builders");
       }
   }

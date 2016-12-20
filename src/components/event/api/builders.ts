@@ -1,9 +1,9 @@
 import {AnyEvent} from "../impl/eventSpec";
-import {interceptorService} from "../behaviorContext";
 import {OnIntercept, OnBuildTarget, InterceptFilter} from "./index";
 import ScheduleSpec from "../impl/scheduledSpec";
 import AnonCache from "../impl/anonCache";
 import * as Debug from "../../util/debug";
+import {interceptorService} from "../../singletons";
 
 export const EMITTING_CALLS = {
   advice: 2,

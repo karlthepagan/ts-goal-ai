@@ -1,4 +1,3 @@
-import InterceptorService from "./impl/interceptorService";
 import State from "../state/abstractState";
 import * as F from "../functions";
 import {botMemory} from "../../config/config";
@@ -7,8 +6,7 @@ import ScheduleSpec from "./impl/scheduledSpec";
 import GlobalState from "../state/globalState";
 import ScoreManager from "../score/scoreManager";
 import * as Debug from "../util/debug";
-
-export const interceptorService = new InterceptorService();
+import {interceptorService} from "../singletons";
 
 export function globalLifecycle(state: State<any>, lifecycle: number) {
   switch (lifecycle) {
@@ -53,12 +51,12 @@ export function detectChanges(state: GlobalState, score: ScoreManager<GlobalStat
         state.flags().value(); // TODO lifecycle?
         // TODO temp?
         state.sources().map(function(s) {
-          Debug.always(); // rescoring all states
+          Debug.always("flag added"); // rescoring all states
           return s.getOrRescore(undefined, Game.time);
         }).value();
         break;
       case GlobalState.CHANGED_SITES:
-        Debug.always(); // sites changed
+        Debug.always("something built"); // sites changed
         state.sites().value();
         break;
       case GlobalState.CHANGED_CREEPS:

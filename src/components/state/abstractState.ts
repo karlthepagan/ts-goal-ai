@@ -9,6 +9,7 @@ import ScoreManager from "../score/scoreManager";
 import GlobalState from "./globalState";
 import * as Debug from "../util/debug";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
+import ScoreMixin from "../score/scoreMixin";
 
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
@@ -42,16 +43,24 @@ function _register(state: any, rootMemory: any): boolean {
     return false;
   }
 
-  // TODO SOON
-  let memory = F.expand(state._indexAddress(), rootMemory, []) as string[];
+  let memory = F.expand(state._indexAddress(), rootMemory, {});
 
-  memory.push(state._id);
+  if (memory[state._id]) {
+    return false;
+  }
+
+  memory[state._id] = true; // TODO SOON, parent guid?
 
   return true;
 }
 
 function _access(state: any, rootMemory: any, writeValue?: any): any {
   // log.debug(state, "addressing", ... state._accessAddress()); // TODO NOW spread bad es6 perf
+  const addr = state._accessAddress();
+
+  if (!addr) {
+    return undefined;
+  }
 
   let memory = F.expand(state._accessAddress(), rootMemory);
 
@@ -59,7 +68,7 @@ function _access(state: any, rootMemory: any, writeValue?: any): any {
     return memory;
   }
 
-  if (writeValue !== undefined && writeValue != null) {
+  if (writeValue) {
     return memory[state._id] = writeValue;
   }
 
@@ -103,6 +112,7 @@ abstract class State<T> implements Named {
   protected static scores: ScoreManager<GlobalState>;
 
   public memory: any;
+  public score: any;
   /**
    * describes flywight handedness for debugging
    */
@@ -131,6 +141,8 @@ abstract class State<T> implements Named {
     this._subject = subject;
 
     this.memory = _access(this, memory);
+
+    this.score = new ScoreMixin(this);
 
     // TODO NOW immediately init???
     this.init(memory, callback);
@@ -172,14 +184,6 @@ abstract class State<T> implements Named {
     return this._id;
   }
 
-  // public memory(key?: string, array?: boolean): any {
-  //   if (key === undefined) {
-  //     return this._memory;
-  //   }
-  //
-  //   return F.expand(key.split("."), this._memory, array ? [] : {});
-  // }
-
   public isRemote(reason?: string): boolean {
     const virtual = this._subject === undefined;
     if (virtual && reason !== undefined) {
@@ -211,13 +215,13 @@ abstract class State<T> implements Named {
       if (lifeCallback !== undefined) {
         lifeCallback(this, State.LIFECYCLE_FREE);
       } else {
-        Debug.always(); // tell someone!
+        Debug.always("something died"); // tell someone!
       }
     } else {
       if (lifeCallback !== undefined) {
         lifeCallback(this, State.LIFECYCLE_HIDDEN);
       } else {
-        Debug.always(); // tell someone!
+        Debug.always("something is hidden"); // tell someone!
       }
     }
 
@@ -234,7 +238,7 @@ abstract class State<T> implements Named {
 
   public rescan(callback?: LifecycleCallback<State<T>>) {
     if (callback !== undefined) {
-      Debug.always(); // TODO is callback a Joinpoint?
+      Debug.always("rescan callback is undefined"); // TODO is callback a Joinpoint?
     }
     this.init(botMemory(), callback);
   }
@@ -285,36 +289,36 @@ abstract class State<T> implements Named {
     return this.memory.score;
   }
 
-  public getScore(metric: string): number {
-    const mem = this.getScoreMemory();
-    let calculated = State.scores.getScore(mem, metric, undefined);
-    if (calculated === undefined) {
-      calculated = State.scores.rescore(this, mem, metric, Game.time);
-      if (calculated === undefined) {
-        Debug.always(); // can't score
-        log.debug("can't score", metric);
-        return 0;
-      }
-    }
-    return calculated;
-  }
-
-  public getOrRescore(metric?: string, time?: number): number {
-    return State.scores.getOrRescore(this, this.getScoreMemory(), metric, time);
-  }
-
-  public rescore(metric?: string, time?: number) {
-    return State.scores.rescore(this, this.getScoreMemory(), metric, time);
-  }
-
-  public setScore(metric: string, value: number) {
-    State.scores.rescore(this, this.getScoreMemory(), metric, Game.time, value);
-  }
-
-  public copyScore(dstMetric: string, srcMetric: string) {
-    const value = this.getScore(srcMetric);
-    this.setScore(dstMetric, value);
-  }
+  // public getScore(metric: string): number {
+  //   const mem = this.getScoreMemory();
+  //   let calculated = State.scores.getScore(mem, metric, undefined);
+  //   if (calculated === undefined) {
+  //     calculated = State.scores.rescore(this, mem, metric, Game.time);
+  //     if (calculated === undefined) {
+  //       Debug.always("can't score"); // can't score
+  //       log.debug("can't score", metric);
+  //       return 0;
+  //     }
+  //   }
+  //   return calculated;
+  // }
+  //
+  // public getOrRescore(metric?: string, time?: number): number {
+  //   return State.scores.getOrRescore(this, this.getScoreMemory(), metric, time);
+  // }
+  //
+  // public rescore(metric?: string, time?: number) {
+  //   return State.scores.rescore(this, this.getScoreMemory(), metric, time);
+  // }
+  //
+  // public setScore(metric: string, value: number) {
+  //   State.scores.rescore(this, this.getScoreMemory(), metric, Game.time, value);
+  // }
+  //
+  // public copyScore(dstMetric: string, srcMetric: string) {
+  //   const value = this.getScore(srcMetric);
+  //   this.setScore(dstMetric, value);
+  // }
 
   protected abstract _accessAddress(): string[];
   protected abstract _indexAddress(): string[]|undefined;
@@ -323,29 +327,31 @@ abstract class State<T> implements Named {
     return false;
   }
 
+  // TODO later - add inherited defaults to suppress "touch" and "score"
   protected init(rootMemory: any, callback?: LifecycleCallback<State<T>>): boolean {
     callback = callback; // utilized by implementers
+    if (!this.memory || typeof this.memory !== "object") {
+      return false;
+    }
 
     if (!_register(this, rootMemory)) {
       return false;
     }
 
-    this.memory = _.defaults(this.memory, {
-      config: {} as Options,
+    if (this.memory.score) {
+      return false;
+    }
+
+    this.memory = _.defaultsDeep(this.memory, _.cloneDeep({
       score: {},
-      envirome: {},
       touch: {
         creep: [] as string[],
         energy: [] as string[],
         types: [] as string[],
         dir: [] as number[],
       },
-    });
-    // const guid = Config.MEMORY_GUID ? (1 + Math.random()) : 1;
-    // this._memory.seen = guid;
-    // if (Config.MEMORY_GUID) {
-    //   log.debug(this, "initializing");
-    // }
+    }));
+
     this.updatePosition(this._subject);
 
     return true;

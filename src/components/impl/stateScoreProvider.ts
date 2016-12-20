@@ -1,4 +1,3 @@
-import {scoreManager} from "../score/scoreSingleton";
 import CreepState from "../state/creepState";
 import GlobalState from "../state/globalState";
 import MineralState from "../state/mineralState";
@@ -25,14 +24,14 @@ export const ROAD_WEIGHT = 3; // cost to maintain roads
 export const SWAMP_WEIGHT = 1; // cost to route around swamps
 export const COMBAT_DANGER = 10; // TODO implement risk
 
-export default function registerStateScoreProvider() {
-  scoreManager.addHandler(new CreepState("proto").className(), impl.creepState);
-  scoreManager.addHandler(new EnemyCreepState("proto").className(), impl.enemyCreep);
-  scoreManager.addHandler(new GlobalState("proto").className(), impl.globalState);
-  scoreManager.addHandler(new MineralState("proto").className(), impl.mineralState);
-  scoreManager.addHandler(new RoomState("proto").className(), impl.roomState);
-  scoreManager.addHandler(new SourceState("proto").className(), impl.sourceState);
-  scoreManager.addHandler(new StructureState<any>("proto").className(), impl.structureState);
+export default function registerStateScoreProvider(scores: ScoreManager<any>) {
+  scores.addHandler(new CreepState("proto").className(), impl.creepState);
+  scores.addHandler(new EnemyCreepState("proto").className(), impl.enemyCreep);
+  scores.addHandler(new GlobalState("proto").className(), impl.globalState);
+  scores.addHandler(new MineralState("proto").className(), impl.mineralState);
+  scores.addHandler(new RoomState("proto").className(), impl.roomState);
+  scores.addHandler(new SourceState("proto").className(), impl.sourceState);
+  scores.addHandler(new StructureState<any>("proto").className(), impl.structureState);
 }
 
 function scoreMove(state: CreepState, score: ScoreManager<GlobalState>, time: number): number {
@@ -146,7 +145,7 @@ const impl = {
     }) as ScoreHandler<GlobalState, GlobalState>,
     minerals: ((state: GlobalState, score: ScoreManager<GlobalState>, time: number) => {
       score = score;
-      return _.sum(state.minerals(), source => {
+      return state.minerals().sum(source => {
         let rval = 0;
         // TODO weights per mineral type
         // TODO mineral access bonus
@@ -157,7 +156,7 @@ const impl = {
         // military risk is folded into the MineralState's raw score
         // also the score delta between global.energy and sum of sources? TODO consider
         return rval;
-      });
+      }).value();
     }) as ScoreHandler<GlobalState, GlobalState>,
   } as StateScoreImpl<GlobalState>,
 

@@ -48,6 +48,9 @@ export default class ConstructionState extends State<ConstructionSite> {
 
     if (super.init(rootMemory, callback)) {
 
+      // sites don't touch
+      delete this.memory.touch;
+
       // TODO if callback, post immediately
 
       if (callback !== undefined) {

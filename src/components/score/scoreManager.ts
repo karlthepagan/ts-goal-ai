@@ -67,7 +67,7 @@ export default class ScoreManager<C> {
       value = this.rescore(object, memory, metric, time);
     }
     if (value === undefined) {
-      Debug.always(); // no stored or derived score
+      Debug.always("no stored or derived score"); // no stored or derived score
       return 0;
     }
     return value;

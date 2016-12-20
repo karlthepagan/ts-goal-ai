@@ -8,6 +8,8 @@ import Joinpoint from "../event/api/joinpoint";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import {globalLifecycle} from "../event/behaviorContext";
 import * as Debug from "../util/debug";
+import StandardCreep from "../score/impl/standardCreep";
+import {CreepScore} from "../score/api/creepScore";
 // const BiMap = require("bimap"); // TODO BiMap
 
 export const REL = {
@@ -218,6 +220,8 @@ export default class CreepState extends State<Creep> {
   protected static _right: CreepState = new CreepState("CreepStateRight");
   protected static _vleft: CreepState = new CreepState("CreepStateVirtualLeft");
   protected static _vright: CreepState = new CreepState("CreepStateVirtualRight");
+
+  public score: CreepScore;
 
   public className() {
     return "CreepState";
@@ -498,6 +502,9 @@ export default class CreepState extends State<Creep> {
 
   protected init(rootMemory: any, callback?: LifecycleCallback<CreepState>): boolean {
     if (super.init(rootMemory, callback)) {
+      // TODO calculate entity posture before assigning score prototype
+      Object.setPrototypeOf(this.score, StandardCreep.prototype);
+
       this.memory = _.defaults(this.memory, {
         move: [],
         armor: 0,

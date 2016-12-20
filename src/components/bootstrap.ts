@@ -1,10 +1,8 @@
 import {log} from "./support/log";
-import {importManager} from "./import/importSingleton";
 import registerStateScoreProvider from "./impl/stateScoreProvider";
 import GlobalState from "./state/globalState";
 import TooAngelMemory from "./import/tooAngelMemory";
 import State from "./state/abstractState";
-import {eventManager} from "./event/eventSingleton";
 import ScreepsOsMemory from "./import/screepsOsMemory";
 import CreepState from "./state/creepState";
 import EnemyCreepState from "./state/enemyCreepState";
@@ -20,8 +18,8 @@ import DropState from "./state/dropState";
 import FlagState from "./state/flagState";
 import StructureState from "./state/structureState";
 import {defineEvents} from "./event/api/builtinEvents";
-import {scoreManager} from "./score/scoreSingleton";
 import * as Debug from "./util/debug";
+import {scoreManager, eventManager, importManager} from "./singletons";
 
 export const bootstrap: (() => void)[] = [];
 
@@ -56,7 +54,7 @@ bootstrap.push(() => {
 
 bootstrap.push(() => {
   // log.debug("registering score functions");
-  registerStateScoreProvider();
+  registerStateScoreProvider(scoreManager);
   State.setScoreManager(scoreManager);
 });
 

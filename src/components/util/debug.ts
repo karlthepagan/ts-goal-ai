@@ -25,7 +25,8 @@ export function throwing<T>(throwing: T): T {
   return throwing;
 }
 
-export function always() {
+export function always(why: string) {
+  why = why;
   debugger; // Debug.always
 }
 

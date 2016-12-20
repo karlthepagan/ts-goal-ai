@@ -46,8 +46,6 @@ export default class FlagState extends State<Flag> {
   protected init(rootMemory: any, callback?: LifecycleCallback<FlagState>): boolean {
     if (super.init(rootMemory, callback)) {
       // TODO distance to all sources? value calculations?
-      this.subject().color;
-
       if (callback !== undefined) {
         callback(this, State.LIFECYCLE_NEW);
       }

@@ -82,6 +82,9 @@ export default class RoomState extends State<Room> {
 
   protected init(rootMemory: any, callback?: LifecycleCallback<RoomState>): boolean {
     if (super.init(rootMemory, callback)) {
+      // rooms don't touch
+      delete this.memory.touch;
+
       this.memory = _.defaults(this.memory, {
         sources: {},
         minerals: {},

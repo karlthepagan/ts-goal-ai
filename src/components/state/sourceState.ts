@@ -1,7 +1,7 @@
 import State from "./abstractState";
-import {log} from "../support/log";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
+import StandardSource from "../score/impl/standardSource";
 
 const REL = {
   SOURCE: {
@@ -40,14 +40,6 @@ export default class SourceState extends State<Source> {
     return "SourceState";
   }
 
-  public delete() {
-    super.delete();
-
-    delete this.memory.nodes;
-
-    log.debug("delete", this);
-  }
-
   public nodeDirs(): number[] {
     return this.memory.nodes as number[];
   }
@@ -57,7 +49,7 @@ export default class SourceState extends State<Source> {
   }
 
   public clearWorkers() {
-    delete this.memory[REL.SOURCE.CREEPS_MINING];
+    this.memory[REL.SOURCE.CREEPS_MINING] = [];
   }
 
   public getHaulers(): any { // TODO Map<string>
@@ -78,8 +70,13 @@ export default class SourceState extends State<Source> {
 
   protected init(rootMemory: any, callback?: LifecycleCallback<SourceState>): boolean {
     if (super.init(rootMemory, callback)) {
+      // TODO calculate entity posture before assigning score prototype
+      Object.setPrototypeOf(this.score, StandardSource.prototype);
+
       this.memory = _.defaults(this.memory, {
         nodes: [],
+        workers: [],
+        haulers: [],
       });
 
       if (!this.isRemote()) {
