@@ -8,7 +8,7 @@ import {isReal} from "./functions";
 import StructureState from "./state/structureState";
 import {globalLifecycle} from "./event/behaviorContext";
 import * as Debug from "./util/debug";
-import {scoreManager, maps} from "./singletons";
+import {maps} from "./singletons";
 import GlobalState from "./state/globalState";
 import {log} from "./support/log";
 import CreepState from "./state/creepState";
@@ -37,9 +37,9 @@ export function grind(state: GlobalState) {
     // stop aggressive scanning unless cpu bucket is over 85% full
     let scan = Game.cpu.bucket > 8500;
     doScans(state, true, scan, scan); // always roomscan to pickup new enemies
-  } else {
-    log.debug("stop scoring");
-    // doScans(state, th.isRoomscanTime(), th.isRescoreTime(), th.isRemoteRoomScanTime());
+  // } else {
+  //   log.debug("stop scoring");
+  //   // doScans(state, th.isRoomscanTime(), th.isRescoreTime(), th.isRemoteRoomScanTime());
   }
 
   const creeps = _.values<Creep|null>(Game.creeps).filter(i => !(i === null || i.ticksToLive === undefined));
@@ -216,16 +216,15 @@ export function doIdle(state: GlobalState, opts: Options, creeps: (Creep|null)[]
 /**
  * transform State -> memory -> extract score -> decorate score using State
  */
-function byScore<T extends State<any>>(metric?: string, decorator?: MemoIterator<any, number> ): ScoreFunc<T> {
+function byScore<T extends State<any>>(maybeMetric?: string, decorator?: MemoIterator<any, number> ): ScoreFunc<T> {
 
-  const scorer = metric === undefined ? scoreManager.byScore() : scoreManager.byScore(metric);
+  const metric = F.elvis(maybeMetric, "score");
 
   // DRY is a nontrivial cost
   if (decorator === undefined) {
     return function(value: T) {
       // log.info("byScore input", s);
-      const mem = value.getScoreMemory();
-      const score = scorer(mem);
+      const score = value.score.getScore(metric);
       // log.info("byScore result", score);
       return {value, score};
     };
@@ -239,8 +238,7 @@ function byScore<T extends State<any>>(metric?: string, decorator?: MemoIterator
    */
   return function(value: T) {
     // log.info("byScore input", s);
-    const mem = value.getScoreMemory();
-    let score = scorer(mem);
+    let score = value.score.getScore(metric);
     // log.info("byScore middle", score);
     score = decorator(score, value);
     // log.info("byScore result", decorated);
@@ -650,7 +648,8 @@ function doScans(state: GlobalState, roomScan: boolean, rescore: boolean, remote
     Debug.on("debugScore");
 
     log.debug("rescoring game state");
-    scoreManager.rescore(state, state.getScoreMemory(), undefined, Game.time);
+
+    // scoreManager.rescore(state, state.getScoreMemory(), undefined, Game.time);
   }
 
   if (remoteRoomScan) {

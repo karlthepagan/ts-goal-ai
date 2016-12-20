@@ -1,5 +1,6 @@
 import State from "./abstractState";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
+import {DropScore} from "../score/api/dropScore";
 
 export default class DropState extends State<Resource> {
   public static apiType() {
@@ -26,6 +27,8 @@ export default class DropState extends State<Resource> {
   private static _right: DropState = new DropState("DropStateRight");
   private static _vleft: DropState = new DropState("DropStateVirtualLeft");
   private static _vright: DropState = new DropState("DropStateVirtualRight");
+
+  public score: DropScore;
 
   public className() {
     return "DropState";

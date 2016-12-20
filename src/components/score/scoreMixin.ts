@@ -1,7 +1,28 @@
 import State from "../state/abstractState";
 import * as Debug from "../util/debug";
 
+class GetDefaultProxy<T extends State<any>> implements ProxyHandler<ScoreMixin<T>> {
+  public get(target: ScoreMixin<T>, p: PropertyKey): any {
+    const existing = (target as any)[p];
+    if (existing) {
+      return existing;
+    }
+
+    const value = target.getScore(p as string);
+
+    return function() {
+      return value;
+    };
+  }
+}
+
+const GET_DEFAULT_PROXY = new GetDefaultProxy<any>();
+
 export default class ScoreMixin<T extends State<any>> {
+  public static withDefaults<X extends State<any>>(state: X): ScoreMixin<X> {
+    return new Proxy(new ScoreMixin<X>(state), GET_DEFAULT_PROXY);
+  }
+
   protected _state: T;
   private _timeFunctions?: { [stat: string]: string };
 
@@ -59,8 +80,12 @@ export default class ScoreMixin<T extends State<any>> {
     return false;
   }
 
-  public getScore(name: string) {
-    return this._getScore(name);
+  public getScore(name: string): number {
+    const value = this._getScore(name);
+    if (value === undefined) {
+      return 0;
+    }
+    return value;
   }
 
   public setScore(name: string, value: number) {

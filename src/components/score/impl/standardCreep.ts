@@ -4,13 +4,10 @@ import * as F from "../../functions";
 import {CreepScore} from "../api/creepScore";
 import {TERRAIN_PLAIN} from "../../constants";
 
-export default class StandardCreep extends ScoreMixin<CreepState> implements CreepScore {
-  public risk: () => number = super.cached(function risk() {
-    return undefined;
-  });
-
-  public energyDelta: () => number = super.timed("energyTime", function energyDelta() {
-    return undefined;
+abstract class StandardCreep extends ScoreMixin<CreepState> implements CreepScore {
+  public energyVel = super.timed("energyTime", function energyVel() {
+    // TODO is our source non-empty?
+    return this._state.getSourceMined() ? this.energyVelNorm() : 0;
   });
 
   public transportVel(): number {
@@ -29,13 +26,11 @@ export default class StandardCreep extends ScoreMixin<CreepState> implements Cre
     return 2 * this._state.subject().getActiveBodyparts(WORK);
   }
 
-  public energyVel() {
-    // TODO is our source non-empty?
-    return this._state.getSourceMined() ? this.energyVelNorm() : 0;
-  }
-
   public energyTime() {
     // energy space remaining / ticks to fill
     return (this.energyNorm() - this.energy()) / this.energyVel(); // TODO cache in memory segment?
   }
+
+  public abstract risk(): number;
 }
+export default StandardCreep;

@@ -1,5 +1,6 @@
 import State from "./abstractState";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
+import {ConstructionScore} from "../score/api/constructionScore";
 
 export default class ConstructionState extends State<ConstructionSite> {
   public static apiType() {
@@ -30,6 +31,8 @@ export default class ConstructionState extends State<ConstructionSite> {
   private static _right: ConstructionState = new ConstructionState("ConstructionStateRight");
   private static _vleft: ConstructionState = new ConstructionState("ConstructionStateVirtualLeft");
   private static _vright: ConstructionState = new ConstructionState("ConstructionStateVirtualRight");
+
+  public score: ConstructionScore;
 
   public className() {
     return "ConstructionState";

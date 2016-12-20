@@ -7,6 +7,7 @@ import RoomIterator from "../util/roomIterator";
 import * as F from "../functions";
 import StructureState from "./structureState";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
+import {Score} from "../score/api/score";
 
 /**
  * TODO BSP this mofo? https://www.npmjs.com/package/bsp-tree
@@ -36,6 +37,8 @@ export default class RoomState extends State<Room> {
   private static _right: RoomState = new RoomState("RoomStateRight");
   private static _vleft: RoomState = new RoomState("RoomStateVirtualLeft");
   private static _vright: RoomState = new RoomState("RoomStateVirtualRight");
+
+  public score: Score;
 
   public className() {
     return "RoomState";

@@ -2,21 +2,10 @@ import ScoreMixin from "../scoreMixin";
 import SourceState from "../../state/sourceState";
 import {SourceScore} from "../api/sourceScore";
 
-export default class StandardSource extends ScoreMixin<SourceState> implements SourceScore {
-  public risk: () => number = super.cached(function risk() {
-    return undefined;
-  });
-
-  public energyDelta: () => number = super.timed("energyTime", function energyDelta() {
-    return undefined;
-  });
-
+abstract class StandardSource extends ScoreMixin<SourceState> implements SourceScore {
   public energy() {
     return this._state.subject().energy;
   }
-// ** xe: it => it.energyCapacity / 300;
-// ** ve: it => it.energy / it.ticksToRegeneration;
-// ** de: it => undefined
 
   public energyNorm() { // TODO cache if non-zero risk
     return this._state.subject().energyCapacity;
@@ -34,4 +23,7 @@ export default class StandardSource extends ScoreMixin<SourceState> implements S
     // remaining ticks until reset
     return this._state.subject().ticksToRegeneration;
   }
+
+  public abstract risk(): number;
 }
+export default StandardSource;

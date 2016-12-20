@@ -1,5 +1,6 @@
 import State from "./abstractState";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
+import {Score} from "../score/api/score";
 
 export default class FlagState extends State<Flag> {
   public static apiType() {
@@ -26,6 +27,8 @@ export default class FlagState extends State<Flag> {
   private static _right: FlagState = new FlagState("FlagStateRight");
   private static _vleft: FlagState = new FlagState("FlagStateVirtualLeft");
   private static _vright: FlagState = new FlagState("FlagStateVirtualRight");
+
+  public score: Score;
 
   public className() {
     return "FlagState";

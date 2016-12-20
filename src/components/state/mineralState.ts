@@ -2,6 +2,7 @@ import State from "./abstractState";
 import {log} from "../support/log";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
+import {Score} from "../score/api/score";
 
 export default class MineralState extends State<Mineral> {
   public static apiType() {
@@ -28,6 +29,8 @@ export default class MineralState extends State<Mineral> {
   private static _right: MineralState = new MineralState("MineralStateRight");
   private static _vleft: MineralState = new MineralState("MineralStateVirtualLeft");
   private static _vright: MineralState = new MineralState("MineralStateVirtualRight");
+
+  public score: Score;
 
   public className() {
     return "MineralState";

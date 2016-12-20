@@ -10,6 +10,7 @@ import * as F from "../functions";
 import StructureState from "./structureState";
 import FlagState from "./flagState";
 import ConstructionState from "./constructionState";
+import {Score} from "../score/api/score";
 
 export default class GlobalState extends State<Game> {
   public static readonly CHANGED_FLAGS = "flags";
@@ -57,6 +58,8 @@ export default class GlobalState extends State<Game> {
   protected static _deleteHandler: { [key: string]: (memory: any) => void } = {};
 
   private static _game: GlobalState;
+
+  public score: Score;
 
   public className() {
     return "GlobalState";
