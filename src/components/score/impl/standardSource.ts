@@ -3,6 +3,10 @@ import SourceState from "../../state/sourceState";
 import {SourceScore} from "../api/sourceScore";
 
 export default class StandardSource extends ScoreMixin<SourceState> implements SourceScore {
+  public risk: () => number = super.cached(function risk() {
+    return undefined;
+  });
+
   public energyDelta: () => number = super.timed("energyTime", function energyDelta() {
     return undefined;
   });

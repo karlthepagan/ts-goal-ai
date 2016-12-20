@@ -1,5 +1,4 @@
 import {log} from "./support/log";
-import registerStateScoreProvider from "./impl/stateScoreProvider";
 import GlobalState from "./state/globalState";
 import TooAngelMemory from "./import/tooAngelMemory";
 import State from "./state/abstractState";
@@ -54,7 +53,6 @@ bootstrap.push(() => {
 
 bootstrap.push(() => {
   // log.debug("registering score functions");
-  registerStateScoreProvider(scoreManager);
   State.setScoreManager(scoreManager);
 });
 

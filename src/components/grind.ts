@@ -1,13 +1,12 @@
-import State from "./state/abstractState";
-import {DISTANCE_WEIGHT, ENERGY_WORK_WEIGHT} from "./impl/stateScoreProvider";
 import MemoIterator = _.MemoIterator;
+import ListIterator = _.ListIterator;
+import State from "./state/abstractState";
 import LookForIterator from "./util/lookForIterator";
 import {FindCallback} from "./util/lookForIterator";
 import api from "./event/behaviorContext";
 import {isReal} from "./functions";
 import StructureState from "./state/structureState";
 import {globalLifecycle} from "./event/behaviorContext";
-import ListIterator = _.ListIterator;
 import * as Debug from "./util/debug";
 import {scoreManager, maps} from "./singletons";
 import GlobalState from "./state/globalState";
@@ -16,6 +15,8 @@ import CreepState from "./state/creepState";
 import * as F from "./functions";
 import SourceState from "./state/sourceState";
 
+const DISTANCE_WEIGHT = 10;
+const ENERGY_WORK_WEIGHT = 2;
 const cachedIdleActions: { [id: string]: FindCallback<any> } = {};
 
 export function grind(state: GlobalState) {
@@ -467,10 +468,10 @@ function hasBucketBrigade(source: SourceState): boolean {
 function workerVenergyFitness(source: SourceState): Scored<SourceState> {
   const workers = source.getWorkers();
   let score = _.chain(workers).compact().map(CreepState.vright).sum(function(creep: CreepState) {
-    return creep.getScore("maxvenergy");
+    return creep.score.energyVelNorm();
   }).value(); // TODO assuming workers are 100% effective, this will change in fluxing sources
 
-  score = score + source.getScore("risk");
+  score = score + source.score.risk();
 
   const value = source;
   return {value, score};
@@ -478,7 +479,7 @@ function workerVenergyFitness(source: SourceState): Scored<SourceState> {
 
 function haulerTenergyFitness(creep: CreepState): Scored<CreepState> {
   const value = creep;
-  const score = creep.getScore("tenergy");
+  const score = creep.score.transportVel();
   return {value, score};
 }
 
@@ -509,7 +510,7 @@ function doHarvest(state: GlobalState,
     // this is called an election!
     .map(function(scoredSource) {
       const source: SourceState = scoredSource.value;
-      scoredSource.score = source.getScore("maxvenergy");
+      scoredSource.score = source.score.energyVelNorm();
       let failed: any = {};
 
       const dirToPosition = F.dirToPositionCall(source.pos());
@@ -696,7 +697,7 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>,
   switch (creepCount) {
     case 0:
       if (spawn.room.energyAvailable < 200) {
-        structureState.setScore("venergy", -22); // TODO fix goal and set real venergy
+        structureState.score.setScore("energyVal", -22); // TODO fix goal and set real venergy
         return;
       }
       api(structureState).createCreep([CARRY, WORK, MOVE]);
@@ -706,7 +707,7 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>,
     case 2:
       if (spawn.room.energyAvailable < 300) {
         Debug.on("debugTransfers");
-        structureState.setScore("venergy", -25); // TODO fix goal and set real venergy
+        structureState.score.setScore("energyVel", -25); // TODO fix goal and set real venergy
         doQuickTransfers(structureState, {}, F.True);
         return;
       }
@@ -718,7 +719,7 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>,
       // TODO transporters: 1 * WORK, 2n * CARRY, n+1 MOVE
       if (spawn.room.energyAvailable < spawn.room.energyCapacityAvailable) {
         Debug.on("debugTransfers");
-        structureState.setScore("venergy", -25); // TODO fix goal and set real venergy
+        structureState.score.setScore("energyVel", -25); // TODO fix goal and set real venergy
         doQuickTransfers(structureState, {}, F.True);
         return;
       }
@@ -730,7 +731,7 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>,
       if (idleSources.length > 0) {
         // spawn miners
         const targetSource = idleSources[0].value; // TODO sort.first!
-        let venergy = targetSource.getScore("maxvenergy");
+        let venergy = targetSource.score.energyVelNorm();
         let budget = spawn.room.energyCapacityAvailable - movePartCost - carryPartCost;
         const body: string[] = [CARRY, MOVE];
         // TODO budget >= 0 assertion!
@@ -778,7 +779,7 @@ function tryHaul(state: GlobalState, creepState: CreepState, sourceState: Source
     } else {
       Debug.on("debugTransfers");
       const transferred = doQuickTransfers(creepState, {}, function(s: State<any>) {
-        return !(s.getScore("venergy") < 1);
+        return !(s.score.energyVel() < 1);
       });
 
       // TODO determine pickup location(s)
@@ -811,7 +812,7 @@ function tryHarvest(creepState: CreepState, sourceState: SourceState,
         if (mineResult !== 0) {
           log.debug("harvest failed", sourceState, "moveTo=", mineResult, creepState);
         } else {
-          creepState.copyScore("venergy", "maxvenergy");
+          creepState.score.copyScore("energyVel", "energyVelNorm");
         }
         break;
 

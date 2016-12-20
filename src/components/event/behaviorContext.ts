@@ -52,7 +52,7 @@ export function detectChanges(state: GlobalState, score: ScoreManager<GlobalStat
         // TODO temp?
         state.sources().map(function(s) {
           Debug.always("flag added"); // rescoring all states
-          return s.getOrRescore(undefined, Game.time);
+          s.score.timeout("risk");
         }).value();
         break;
       case GlobalState.CHANGED_SITES:

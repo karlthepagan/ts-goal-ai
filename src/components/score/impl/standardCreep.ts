@@ -2,11 +2,20 @@ import ScoreMixin from "../scoreMixin";
 import CreepState from "../../state/creepState";
 import * as F from "../../functions";
 import {CreepScore} from "../api/creepScore";
+import {TERRAIN_PLAIN} from "../../constants";
 
 export default class StandardCreep extends ScoreMixin<CreepState> implements CreepScore {
+  public risk: () => number = super.cached(function risk() {
+    return undefined;
+  });
+
   public energyDelta: () => number = super.timed("energyTime", function energyDelta() {
     return undefined;
   });
+
+  public transportVel(): number {
+    return this.energyNorm() / this._state.maxMoveFatigue(TERRAIN_PLAIN);
+  }
 
   public energy() {
     return F.elvis(this._state.subject().carry.energy, 0);

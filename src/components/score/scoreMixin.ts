@@ -39,9 +39,12 @@ export default class ScoreMixin<T extends State<any>> {
     };
   }
 
-  public cached(valueFunction: () => number): () => number {
+  public cached(valueFunction: () => number|undefined): () => number {
     return () => {
       const computed = valueFunction();
+      if (computed === undefined) {
+        return 0;
+      }
       this._setScore(valueFunction.name, computed);
       return computed;
     };
@@ -70,6 +73,10 @@ export default class ScoreMixin<T extends State<any>> {
     }
   }
 
+  public timeout(name: string) {
+    this._clearTime(name);
+  }
+
   protected _updateTime(name: string, timeFunctionRef: string) {
     const timeFunction = (this as any)[timeFunctionRef] as () => number;
 
@@ -82,6 +89,10 @@ export default class ScoreMixin<T extends State<any>> {
 
   protected _setTime(name: string, value: number) {
     this._state.memory.score_time[name] = value;
+  }
+
+  protected _clearTime(name: string, ) {
+    delete this._state.memory.score_time[name];
   }
 
   protected _getScore(name: string): number|undefined {

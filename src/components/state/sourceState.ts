@@ -2,6 +2,7 @@ import State from "./abstractState";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 import StandardSource from "../score/impl/standardSource";
+import {SourceScore} from "../score/api/sourceScore";
 
 const REL = {
   SOURCE: {
@@ -35,6 +36,8 @@ export default class SourceState extends State<Source> {
   private static _right: SourceState = new SourceState("SourceStateRight");
   private static _vleft: SourceState = new SourceState("SourceStateVirtualLeft");
   private static _vright: SourceState = new SourceState("SourceStateVirtualRight");
+
+  public score: SourceScore;
 
   public className() {
     return "SourceState";

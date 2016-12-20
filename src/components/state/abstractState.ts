@@ -10,6 +10,7 @@ import GlobalState from "./globalState";
 import * as Debug from "../util/debug";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import ScoreMixin from "../score/scoreMixin";
+import {EnergyScore} from "../score/api/energyScore";
 
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
@@ -112,7 +113,7 @@ abstract class State<T> implements Named {
   protected static scores: ScoreManager<GlobalState>;
 
   public memory: any;
-  public score: any;
+  public score: EnergyScore; // most states have energy score
   /**
    * describes flywight handedness for debugging
    */
@@ -142,7 +143,7 @@ abstract class State<T> implements Named {
 
     this.memory = _access(this, memory);
 
-    this.score = new ScoreMixin(this);
+    this.score = new ScoreMixin(this) as any; // Object.setPrototype required!
 
     // TODO NOW immediately init???
     this.init(memory, callback);
