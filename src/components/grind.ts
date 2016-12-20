@@ -76,7 +76,7 @@ export function grind(state: GlobalState) {
     const idleHaulSites = doHaulEnergy(state, creeps, tasked);
 
     if (idleHaulSites.length > 0) {
-      log.info("idle sites", idleHaulSites.length);
+      log.debug("filling sites", idleSources.length - idleHaulSites.length);
     }
 
     // TODO venergy per site
@@ -224,7 +224,7 @@ function byScore<T extends State<any>>(maybeMetric?: string, decorator?: MemoIte
   if (decorator === undefined) {
     return function(value: T) {
       // log.info("byScore input", s);
-      const score = value.score.getScore(metric);
+      const score = (value.score as any)[metric]();
       // log.info("byScore result", score);
       return {value, score};
     };
@@ -238,7 +238,7 @@ function byScore<T extends State<any>>(maybeMetric?: string, decorator?: MemoIte
    */
   return function(value: T) {
     // log.info("byScore input", s);
-    let score = value.score.getScore(metric);
+    let score = (value.score as any)[metric]();
     // log.info("byScore middle", score);
     score = decorator(score, value);
     // log.info("byScore result", decorated);

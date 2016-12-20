@@ -223,6 +223,13 @@ export default class CreepState extends State<Creep> {
 
   public score: CreepScore;
 
+  constructor(name: string) {
+    super(name);
+
+    // TODO calculate entity posture before assigning score prototype
+    Object.setPrototypeOf(this.score, StandardCreep.prototype);
+  }
+
   public className() {
     return "CreepState";
   }
@@ -255,6 +262,7 @@ export default class CreepState extends State<Creep> {
   }
 
   public getWeight(): number {
+    // TODO carrying
     return this.isRemote() ? 25 : this.subject().body.length;
   }
 
@@ -502,9 +510,6 @@ export default class CreepState extends State<Creep> {
 
   protected init(rootMemory: any, callback?: LifecycleCallback<CreepState>): boolean {
     if (super.init(rootMemory, callback)) {
-      // TODO calculate entity posture before assigning score prototype
-      Object.setPrototypeOf(this.score, StandardCreep.prototype);
-
       this.memory = _.defaults(this.memory, {
         move: [],
         armor: 0,

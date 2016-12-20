@@ -39,6 +39,13 @@ export default class SourceState extends State<Source> {
 
   public score: SourceScore;
 
+  constructor(name: string) {
+    super(name);
+
+    // TODO calculate entity posture before assigning score prototype
+    Object.setPrototypeOf(this.score, StandardSource.prototype);
+  }
+
   public className() {
     return "SourceState";
   }
@@ -73,9 +80,6 @@ export default class SourceState extends State<Source> {
 
   protected init(rootMemory: any, callback?: LifecycleCallback<SourceState>): boolean {
     if (super.init(rootMemory, callback)) {
-      // TODO calculate entity posture before assigning score prototype
-      Object.setPrototypeOf(this.score, StandardSource.prototype);
-
       this.memory = _.defaults(this.memory, {
         nodes: [],
         workers: [],

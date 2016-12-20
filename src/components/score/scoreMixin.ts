@@ -48,7 +48,7 @@ export default class ScoreMixin<T extends State<any>> {
       if (value !== undefined && expiration !== undefined && expiration <= Game.time) { // TODO Game.time
         return value;
       } else {
-        const computed = valueFunction();
+        const computed = valueFunction.apply(this);
         if (computed === undefined) {
           Debug.always("unscored " + valueFunction.name);
           return 0;
@@ -60,15 +60,18 @@ export default class ScoreMixin<T extends State<any>> {
     };
   }
 
-  public cached(valueFunction: () => number|undefined): () => number {
+  public memoized(valueFunction: () => number|undefined): () => number {
     return () => {
-      const computed = valueFunction();
-      if (computed === undefined) {
-        return 0;
+      const saved = this._getScore(valueFunction.name);
+      if (saved !== undefined) {
+        return saved;
       }
-      this._setScore(valueFunction.name, computed);
-      return computed;
+      return this._computeAndSave(valueFunction);
     };
+  }
+
+  public saved(valueFunction: () => number|undefined): () => number {
+    return () => this._computeAndSave(valueFunction);
   }
 
   public copyScore(dstMetric: string, srcMetric: string): boolean {
@@ -98,8 +101,21 @@ export default class ScoreMixin<T extends State<any>> {
     }
   }
 
-  public timeout(name: string) {
-    this._clearTime(name);
+  public clearScore(name: string) {
+    delete this._state.memory.score[name];
+  }
+
+  public timeoutScore(name: string) {
+    delete this._state.memory.score_time[name];
+  }
+
+  protected _computeAndSave(valueFunction: () => number|undefined): number {
+    const computed = valueFunction.apply(this);
+    if (computed === undefined) {
+      return 0;
+    }
+    this._setScore(valueFunction.name, computed);
+    return computed;
   }
 
   protected _updateTime(name: string, timeFunctionRef: string) {
@@ -114,10 +130,6 @@ export default class ScoreMixin<T extends State<any>> {
 
   protected _setTime(name: string, value: number) {
     this._state.memory.score_time[name] = value;
-  }
-
-  protected _clearTime(name: string, ) {
-    delete this._state.memory.score_time[name];
   }
 
   protected _getScore(name: string): number|undefined {
