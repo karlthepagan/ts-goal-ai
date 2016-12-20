@@ -40,7 +40,7 @@ export function scheduleExec(name: string, spec: ScheduleSpec<any, any>) {
   interceptorService.scheduleExec(spec);
 }
 
-export function detectChanges(state: GlobalState, score: ScoreManager<GlobalState>) {
+export function detectChanges(state: GlobalState, score: ScoreManager) {
   score = score;
   // TODO call this after dispatchTick? or as a scheduled tick (but low pirority)
 

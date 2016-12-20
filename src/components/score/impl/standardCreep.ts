@@ -14,10 +14,10 @@ export const SWAMP_WEIGHT = 1; // cost to route around swamps
 export const COMBAT_DANGER = 10; // TODO implement risk
 
 abstract class StandardCreep extends ScoreMixin<CreepState> implements CreepScore {
-  public energyVel = super.timed("energyTime", function energyVel() {
+  public energyVel() {
     // TODO is our source non-empty?
     return this._state.getSourceMined() ? this.energyVelNorm() : 0;
-  });
+  }
 
   public score() {
     return this.energyVelNorm() + this.transportVel();
@@ -70,4 +70,5 @@ abstract class StandardCreep extends ScoreMixin<CreepState> implements CreepScor
 
   public abstract risk(): number;
 }
+StandardCreep.prototype.energyVel = ScoreMixin.timed(StandardCreep.prototype, "energyTime", StandardCreep.prototype.energyVel);
 export default StandardCreep;

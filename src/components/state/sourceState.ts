@@ -1,7 +1,6 @@
 import State from "./abstractState";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
-import StandardSource from "../score/impl/standardSource";
 import {SourceScore} from "../score/api/sourceScore";
 
 const REL = {
@@ -41,9 +40,6 @@ export default class SourceState extends State<Source> {
 
   constructor(name: string) {
     super(name);
-
-    // TODO calculate entity posture before assigning score prototype
-    Object.setPrototypeOf(this.score, StandardSource.prototype);
   }
 
   public className() {

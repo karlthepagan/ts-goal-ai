@@ -19,6 +19,8 @@ import StructureState from "./state/structureState";
 import {defineEvents} from "./event/api/builtinEvents";
 import * as Debug from "./util/debug";
 import {scoreManager, eventManager, importManager} from "./singletons";
+import StandardCreep from "./score/impl/standardCreep";
+import StandardSource from "./score/impl/standardSource";
 
 export const bootstrap: (() => void)[] = [];
 
@@ -54,6 +56,9 @@ bootstrap.push(() => {
 bootstrap.push(() => {
   // log.debug("registering score functions");
   State.setScoreManager(scoreManager);
+
+  scoreManager.registerStrategy(CreepState, StandardCreep);
+  scoreManager.registerStrategy(SourceState, StandardSource);
 });
 
 bootstrap.push(() => {

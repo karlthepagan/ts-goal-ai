@@ -63,8 +63,6 @@ export function loop() {
       imported = true;
     }
 
-    scoreManager.setContext(state);
-
     maps.load(botMemory().maps);
 
     dispatchTick(Game.time);

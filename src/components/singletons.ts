@@ -8,4 +8,4 @@ export const interceptorService = new InterceptorService();
 export const eventManager = new EventManager();
 export const importManager = new ImportManager();
 export const maps = new MapManager();
-export const scoreManager = new ScoreManager<any>();
+export const scoreManager = new ScoreManager();

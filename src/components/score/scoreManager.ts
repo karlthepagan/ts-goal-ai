@@ -1,176 +1,29 @@
-import * as F from "../functions";
-import ScoreHandler from "./scoreHandler";
-import Named from "../named";
-import {log} from "../support/log";
-import {SCORE_KEY} from "../constants";
-import * as Debug from "../util/debug";
+import State from "../state/abstractState";
+import ScoreMixin from "./scoreMixin";
 
-export const TIME_KEY = "time";
+export default class ScoreManager {
+  private _registry: { [stateType: string]: Constructor<ScoreMixin<any>> } = {};
 
-function defaultScore(state: any, score: ScoreManager<any>, time: number) {
-  const memory = state.memory.score; // TODO leaky abstraction
-  return _.sum(score.getMetricKeys(state), function(key) {
-    return score.getOrRescore(state, memory, key, time);
-  });
-}
-
-export default class ScoreManager<C> {
-  private _metricKeys: { [key: string]: string[] } = {};
-  private _metrics: { [key: string]: { [className: string]: ScoreHandler<Named, C> } } = {};
-
-  private _context: C;
-
-  public addMetric(name: string, metric: string) {
-    if (metric !== SCORE_KEY) {
-      F.expand([ name ], this._metricKeys, []).push(metric);
-    }
-    if (metric === TIME_KEY) {
-      throw new Error("illegal argument");
-    }
-    if (this._metrics[metric] === undefined) {
-      this._metrics[metric] = {};
-    }
+  public registerStrategy<T extends State<any>>(stateType: Constructor<T>, type: any) {
+    this._registry[stateType.name] = type;
   }
 
-  public addHandler<T extends Named>(name: string, handlers: { [key: string]: ScoreHandler<T, C> }) {
-    for (const key in handlers) {
-      this.addMetric(name, key);
-
-      this._metrics[key][name] = handlers[key];
+  public startStrategy<T extends State<any>>(state: T, type: any) { // Constructor<ScoreMixin<T>>) { https://github.com/Microsoft/TypeScript/issues/5843
+    if (!type) {
+      Object.setPrototypeOf(state.score, ScoreMixin.prototype);
+      return;
     }
+
+    const proto = type.prototype; // as ScoreMixin<T>;
+    if (proto._timeFunctions) { // TODO SOON - private!
+      state.memory = _.defaultsDeep(state.memory, _.cloneDeep({
+        score_time: {},
+      }));
+    }
+    Object.setPrototypeOf(state.score, proto);
   }
 
-  public getHandler(metric: string, className: string): ScoreHandler<Named, C>|undefined {
-    if (metric === SCORE_KEY) {
-      return defaultScore;
-    }
-
-    const metricHandlers = this._metrics[metric];
-    if (metricHandlers === undefined) {
-      return undefined;
-    }
-
-    return metricHandlers[className];
-  }
-
-  public setContext(context: C) {
-    this._context = context;
-  }
-
-  public getContext(): C {
-    return this._context;
-  }
-
-  public getOrRescore(object: Named, memory: any, metric?: string, time?: number): number {
-    let value = this.getScore(memory, metric, time); // TODO time should always be undefined?
-    if (value === undefined || value === null) {
-      value = this.rescore(object, memory, metric, time);
-    }
-    if (value === undefined) {
-      Debug.always("no stored or derived score"); // no stored or derived score
-      return 0;
-    }
-    return value;
-  }
-
-  // TODO higher order sum? call like: return score.sum("venergy", state.eachSource, s => s.getScore());
-  // public sum<T extends Named>(time: number, metric: string,
-  // visitor: (callback: (o: T) => any) => any[], mem: (o: T) => any): number {
-  //   return _(visitor(object => {
-  //     return this.getOrRescore(object, mem(object), time, metric);
-  //   })).sum();
-  // }
-
-  /**
-   * @param time - if undefined or < 0 always retrieve, otherwise return undefined (indicating update needed)
-   *    when time strictly greater than stored value
-   * @return {number} if the stored value is present for the given tick
-   */
-  public getScore(memory: any, metric: string|undefined, time: number|undefined): number|undefined {
-    if (metric === undefined) {
-      metric = SCORE_KEY;
-    }
-    if (time === undefined || time < 0) {
-      return memory[metric];
-    }
-    const memTime = memory[TIME_KEY] as number;
-    if (memTime === undefined || time > memTime) {
-      return undefined;
-    }
-    return memory[metric];
-  }
-
-  public getMetricKeys(object: Named): string[] {
-    return this._metricKeys[object.className()];
-  }
-
-  /**
-   * @param object - metric source, sent to handlers
-   * @param memory - where to store data
-   * @param time - memory time updated to abs(time)
-   *    if undefined results will not be not stored
-   * @param metric - what to score and return, if undefined re-score all registered metrics, return their sum
-   * @param value - if undefined set the given metric to this value
-   * @return {number}
-   */
-  public rescore(object: Named, memory: any, metric: string|undefined, time: number|undefined, value?: number): number|undefined {
-
-    let metrics: string[];
-
-    if (metric === undefined) {
-      metric = SCORE_KEY;
-      metrics = this.getMetricKeys(object).concat(SCORE_KEY);
-    } else {
-      metrics = [ metric ];
-    }
-
-    if (value === null) {
-      log.debug("null value", metric, object);
-      throw new Error("null value");
-    }
-
-    if (value === undefined) {
-
-      value = 0;
-
-      for (const submetric of metrics) {
-        const handler = this.getHandler(submetric, object.className());
-
-        if (handler === undefined) {
-          log.debug("no scoring handler", submetric, object);
-        } else {
-          const rval = handler(object, this, time);
-          if (rval === null || rval === undefined) {
-            log.debug("no result", submetric, object);
-            return undefined;
-          }
-          value = rval;
-          if (time !== undefined) {
-            memory[submetric] = rval;
-          }
-        }
-      }
-
-      if (time !== undefined) {
-        memory[TIME_KEY] = Math.abs(time);
-      }
-
-      return value;
-    }
-
-    if (time !== undefined) {
-      memory[metric] = value;
-      memory[TIME_KEY] = Math.abs(time);
-    }
-
-    return value;
-  }
-
-  public byScore<T extends Named>(metric?: string, time?: number|undefined): (object: T) => number {
-    return (mem: any) => { // captures THIS
-      const score = this.getScore(mem, metric, time);
-      // log.info("got", metric, "score", score);
-      return F.elvis(score, -1);
-    };
+  public pickStrategy<T extends State<any>>(state: T) {
+    this.startStrategy(state, this._registry[state.constructor.name]);
   }
 }

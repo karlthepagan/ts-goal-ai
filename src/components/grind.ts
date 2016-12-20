@@ -75,10 +75,6 @@ export function grind(state: GlobalState) {
     // TODO NOW tenergy per source
     const idleHaulSites = doHaulEnergy(state, creeps, tasked);
 
-    if (idleHaulSites.length > 0) {
-      log.debug("filling sites", idleSources.length - idleHaulSites.length);
-    }
-
     // TODO venergy per site
     let idleSites = doBuildStuff(state, creeps, tasked).length;
 
@@ -926,7 +922,7 @@ const byTotalScore = byScore<SourceState>();
 
 // creep/venergy + rangeScore
 function distanceEnergyFitness(pos: RoomPosition): ScoreFunc<CreepState> {
-  return byScore<CreepState>("maxvenergy", function(score, s) {
+  return byScore<CreepState>("energyVelNorm", function(score, s) {
     // do not give maxvenergy: 0 creeps any distance score
     if (score === 0) {
       return 0;

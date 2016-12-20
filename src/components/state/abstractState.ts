@@ -6,7 +6,6 @@ import EventRegistry from "../event/api/index";
 import CreepState from "./creepState";
 import getConstructor from "../types";
 import ScoreManager from "../score/scoreManager";
-import GlobalState from "./globalState";
 import * as Debug from "../util/debug";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import ScoreMixin from "../score/scoreMixin";
@@ -100,7 +99,7 @@ abstract class State<T> implements Named {
     State.events = events;
   }
 
-  public static setScoreManager(scores: ScoreManager<GlobalState>) {
+  public static setScoreManager(scores: ScoreManager) {
     State.scores = scores;
   }
 
@@ -110,7 +109,7 @@ abstract class State<T> implements Named {
   }
 
   protected static events: EventRegistry;
-  protected static scores: ScoreManager<GlobalState>;
+  protected static scores: ScoreManager;
 
   public memory: any;
   public abstract score: Score; // most states have energy score
@@ -147,6 +146,8 @@ abstract class State<T> implements Named {
     // TODO NOW immediately init???
     this.init(memory, callback);
 
+    State.scores.pickStrategy(this);
+
     return this;
   }
 
@@ -164,6 +165,8 @@ abstract class State<T> implements Named {
 
     // TODO NOW defer init???????
     this.init(memory, callback);
+
+    State.scores.pickStrategy(this);
 
     return this;
   }

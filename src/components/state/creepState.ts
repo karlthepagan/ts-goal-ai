@@ -8,7 +8,6 @@ import Joinpoint from "../event/api/joinpoint";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import {globalLifecycle} from "../event/behaviorContext";
 import * as Debug from "../util/debug";
-import StandardCreep from "../score/impl/standardCreep";
 import {CreepScore} from "../score/api/creepScore";
 // const BiMap = require("bimap"); // TODO BiMap
 
@@ -225,9 +224,6 @@ export default class CreepState extends State<Creep> {
 
   constructor(name: string) {
     super(name);
-
-    // TODO calculate entity posture before assigning score prototype
-    Object.setPrototypeOf(this.score, StandardCreep.prototype);
   }
 
   public className() {

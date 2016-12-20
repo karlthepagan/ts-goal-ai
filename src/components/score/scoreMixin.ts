@@ -2,8 +2,9 @@ import State from "../state/abstractState";
 import * as Debug from "../util/debug";
 
 class GetDefaultProxy<T extends State<any>> implements ProxyHandler<ScoreMixin<T>> {
-  public get(target: ScoreMixin<T>, p: PropertyKey): any {
-    const existing = (target as any)[p];
+  public get(target: ScoreMixin<T>, p: PropertyKey, receiver: any): any {
+    receiver = receiver;
+    const existing = (target as any)[p] as Function;
     if (existing) {
       return existing;
     }
@@ -23,29 +24,22 @@ export default class ScoreMixin<T extends State<any>> {
     return new Proxy(new ScoreMixin<X>(state), GET_DEFAULT_PROXY);
   }
 
-  protected _state: T;
-  private _timeFunctions?: { [stat: string]: string };
-
-  constructor(state: T) {
-    this._state = state;
-  }
-
   /**
    * cache a set or computed value until the scheduled time
+   * @param mixin the decorating class
    * @param timeFunctionRef name of this mixin's relative time function
    * @param valueFunction
    * @returns {()=>number}
    */
-  public timed(timeFunctionRef: string, valueFunction: () => number|undefined): () => number {
-    if (!this._timeFunctions) {
-      this._timeFunctions = {};
+  public static timed(proto: ScoreMixin<any>, timeFunctionRef: string, valueFunction: () => number|undefined): () => number {
+    if (!proto._timeFunctions) {
+      proto._timeFunctions = {};
     }
-    this._timeFunctions[valueFunction.name] = timeFunctionRef;
-    return () => { // binding this
-      Debug.always("observe function wrapping");
+    proto._timeFunctions[valueFunction.name] = timeFunctionRef;
+    return function() {
       const expiration = this._getTime(valueFunction.name);
       const value = this._getScore(valueFunction.name); // TODO this function name!
-      if (value !== undefined && expiration !== undefined && expiration <= Game.time) { // TODO Game.time
+      if (value !== undefined && !(expiration > Game.time)) { // TODO Game.time
         return value;
       } else {
         const computed = valueFunction.apply(this);
@@ -53,6 +47,7 @@ export default class ScoreMixin<T extends State<any>> {
           Debug.always("unscored " + valueFunction.name);
           return 0;
         }
+        this.timeoutScore(valueFunction.name); // prevents infinite recursion
         this._setScore(valueFunction.name, computed);
         this._updateTime(valueFunction.name, timeFunctionRef);
         return computed;
@@ -60,8 +55,8 @@ export default class ScoreMixin<T extends State<any>> {
     };
   }
 
-  public memoized(valueFunction: () => number|undefined): () => number {
-    return () => {
+  public static memoized(valueFunction: () => number|undefined): () => number {
+    return function() {
       const saved = this._getScore(valueFunction.name);
       if (saved !== undefined) {
         return saved;
@@ -70,8 +65,17 @@ export default class ScoreMixin<T extends State<any>> {
     };
   }
 
+  protected _state: T;
+  private _timeFunctions?: { [stat: string]: string };
+
+  constructor(state: T) {
+    this._state = state;
+  }
+
   public saved(valueFunction: () => number|undefined): () => number {
-    return () => this._computeAndSave(valueFunction);
+    return function() {
+      return this._computeAndSave(valueFunction);
+    };
   }
 
   public copyScore(dstMetric: string, srcMetric: string): boolean {
@@ -121,7 +125,7 @@ export default class ScoreMixin<T extends State<any>> {
   protected _updateTime(name: string, timeFunctionRef: string) {
     const timeFunction = (this as any)[timeFunctionRef] as () => number;
 
-    this._setTime(name, Game.time + timeFunction()); // TODO Game.time
+    this._setTime(name, Game.time + timeFunction.apply(this)); // TODO Game.time
   }
 
   protected _getTime(name: string): number|undefined {
