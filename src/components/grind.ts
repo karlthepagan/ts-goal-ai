@@ -247,6 +247,7 @@ function byScore<T extends State<any>>(maybeMetric?: string, decorator?: MemoIte
  * @param ignore don't steal from these id's
  */
 export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIterator<State<any>, boolean>): boolean {
+  // TODO NOW - search network for needed amount and only move if it is available or the flux exceeds
   ignore[state.getId()] = true;
   let transferred = false;
   if (state.isEnergyMover()) {
@@ -552,6 +553,11 @@ function doHarvest(state: GlobalState,
         }
         return true;
       }).map(CreepState.build).filter(function(cs: CreepState) {
+        const fatigue = cs.minMoveFatigue(2);
+        if (fatigue > 2) {
+          Debug.always("observe fatigue " + fatigue);
+          return false;
+        }
         const working = cs.getSourceMined();
         if (working !== undefined && working !== source.getId()) {
           // log.debug("already working", creep.name);
@@ -689,6 +695,7 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>,
   const spawn = structureState.subject();
 
   const creepCount = state.creeps().value().length;
+  let needed = 0;
   switch (creepCount) {
     case 0:
       if (spawn.room.energyAvailable < 200) {
@@ -700,7 +707,8 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>,
 
     case 1:
     case 2:
-      if (spawn.room.energyAvailable < 300) {
+      needed = 300 - spawn.room.energyAvailable;
+      if (needed > 0) {
         Debug.on("debugTransfers");
         structureState.score.setScore("energyVel", -25); // TODO fix goal and set real venergy
         doQuickTransfers(structureState, {}, F.True);
@@ -712,7 +720,8 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>,
     default:
       // TODO workers: 5 * WORK, 1 * CARRY, 5 * MOVE
       // TODO transporters: 1 * WORK, 2n * CARRY, n+1 MOVE
-      if (spawn.room.energyAvailable < spawn.room.energyCapacityAvailable) {
+      needed = spawn.room.energyCapacityAvailable - spawn.room.energyAvailable;
+      if (needed > 0) {
         Debug.on("debugTransfers");
         structureState.score.setScore("energyVel", -25); // TODO fix goal and set real venergy
         doQuickTransfers(structureState, {}, F.True);

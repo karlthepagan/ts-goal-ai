@@ -16,11 +16,13 @@ export const COMBAT_DANGER = 10; // TODO implement risk
 abstract class StandardCreep extends ScoreMixin<CreepState> implements CreepScore {
   public energyVel() {
     // TODO is our source non-empty?
-    return this._state.getSourceMined() ? this.energyVelNorm() : 0;
+    const value = this._state.getSourceMined() ? this.energyVelNorm() : 0;
+    return value;
   }
 
   public score() {
-    return this.energyVelNorm() + this.transportVel();
+    const value = this.energyVelNorm() + this.transportVel();
+    return value;
   }
 
   // public road() {
@@ -41,31 +43,37 @@ abstract class StandardCreep extends ScoreMixin<CreepState> implements CreepScor
   // }
 
   public move() {
-    return -this._state.maxMoveFatigue(TERRAIN_PLAIN);
+    const value = this._state.maxMoveFatigue(TERRAIN_PLAIN);
+    return value;
   }
 
   public transportVel() {
-    return this.energyNorm() / this.move();
+    const value = this.energyNorm() / this.move();
+    return value;
   }
 
   public energy() {
     this._state.resolve(globalLifecycle);
-    return F.elvis(this._state.subject().carry.energy, 0);
+    const value = F.elvis(this._state.subject().carry.energy, 0);
+    return value;
   }
 
   public energyNorm() {
     this._state.resolve(globalLifecycle);
-    return this._state.subject().carryCapacity;
+    const value = this._state.subject().carryCapacity;
+    return value;
   }
 
   public energyVelNorm() {
     this._state.resolve(globalLifecycle);
-    return 2 * this._state.subject().getActiveBodyparts(WORK);
+    const value = 2 * this._state.subject().getActiveBodyparts(WORK);
+    return value;
   }
 
   public energyTime() {
     // energy space remaining / ticks to fill
-    return (this.energyNorm() - this.energy()) / this.energyVel(); // TODO cache in memory segment?
+    const value = (this.energyNorm() - this.energy()) / this.energyVel(); // TODO cache in memory segment?
+    return value;
   }
 
   public abstract risk(): number;

@@ -9,7 +9,7 @@ export default class ScoreManager {
   }
 
   public startStrategy<T extends State<any>>(state: T, type: any) { // Constructor<ScoreMixin<T>>) { https://github.com/Microsoft/TypeScript/issues/5843
-    if (!type) {
+    if (type === undefined) {
       Object.setPrototypeOf(state.score, ScoreMixin.prototype);
       return;
     }

@@ -460,7 +460,7 @@ export default class CreepState extends State<Creep> {
   }
 
   public touchedDrops(type: string): LoDashExplicitArrayWrapper<Resource> {
-    const drops = this.memory.touch.drops;
+    const drops = F.elvis(this.memory.touch.drops, {});
     return _.chain(F.elvis(drops[type], [])).compact<string>().map(Game.getObjectById).compact();
   }
 

@@ -18,12 +18,16 @@ export default class MapManager {
   private _loaded?: boolean;
 
   public load(mem: any) {
-    if (this._loaded || !mem) {
+    if (this._loaded) {
       return;
     }
 
     this.energySink = {} as MapMatrices;
     this.energySource = {} as MapMatrices;
+
+    if (!mem) {
+      return;
+    }
 
     const names = Object.getOwnPropertyNames(mem);
     for (let i = names.length - 1; i >= 0; i--) {
@@ -91,7 +95,12 @@ export default class MapManager {
   }
 
   public init(roomName: string) {
-    const costs = this.makePathfindingGrid2(Game.rooms[roomName], {
+    const room = Game.rooms[roomName];
+    if (!room) {
+      return undefined;
+    }
+
+    const costs = this.makePathfindingGrid2(room, {
       ignoreCreeps: true,
       ignoreDestructibleStructures: true,
       ignoreRoads: true,
