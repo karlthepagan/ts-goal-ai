@@ -46,6 +46,10 @@ export default class SourceState extends State<Source> {
     return "SourceState";
   }
 
+  public isFull(): boolean {
+    return this.subject().energy === this.subject().energyCapacity;
+  }
+
   public nodeDirs(): number[] {
     return this.memory.nodes as number[];
   }

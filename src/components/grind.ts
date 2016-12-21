@@ -246,19 +246,28 @@ function byScore<T extends State<any>>(maybeMetric?: string, decorator?: MemoIte
  * @param state wants more energy! go get it
  * @param ignore don't steal from these id's
  */
-export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIterator<State<any>, boolean>): boolean {
+export function doQuickTransfers(state: State<any>, ignore: any, amount: number, filter: ListIterator<State<any>, boolean>): number {
   // TODO NOW - search network for needed amount and only move if it is available or the flux exceeds
   ignore[state.getId()] = true;
-  let transferred = false;
+  let transferred = 0;
   if (state.isEnergyMover()) {
     const creep = state as CreepState;
     // creeps can pickup
     creep.touchedDrops(RESOURCE_ENERGY).reject(F.onKeys(ignore)).map(function(d) {
-      if (api(creep).pickup(d) !== 0) {
+      let available = d.amount;
+      let transferAmount = amount;
+      if (amount < 0) {
+        // source is full or request for all available
+        transferAmount = Math.min(available, creep.subject().carryCapacity - creep.getCarrying());
+      } else if (available < Math.abs(amount)) {
+        return;
+      }
+
+      if (api(creep).pickup(d) !== 0) { // TODO partial pickup / accounting
         log.debug("failed to pickup (this is fine)");
       } else {
         api(creep).say("🔆", false);
-        transferred = true;
+        transferred = transferred + transferAmount;
       }
     }).value();
     // creeps can withdraw
@@ -268,30 +277,64 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
         return;
       }
       if (c.resolve(globalLifecycle)) {
-        if (api(creep).withdraw(c.subject(), RESOURCE_ENERGY) !== 0) {
+        let available = c.score.energy();
+        if (amount < 0) {
+          transferred = transferred + doQuickTransfers(c, ignore, amount, filter);
+          available = c.score.energy();
+        }
+        const full = c.isFull();
+        let transferAmount = amount;
+        if (full || amount < 0) {
+          // source is full or request for all available
+          transferAmount = Math.min(available, creep.subject().carryCapacity - creep.getCarrying());
+        } else if (available < Math.abs(amount)) {
+          return;
+        }
+
+        if (api(creep).withdraw(c.subject(), RESOURCE_ENERGY, transferAmount) !== 0) {
           Debug.always("failed to withdraw"); // failed to withdraw
+          transferAmount = 0;
         } else {
           Debug.always("energy push ok!"); // TODO observe
           api(creep).say("💱", false);
-          transferred = true;
+          transferred = transferred + transferAmount;
         }
-        doQuickTransfers(c, ignore, filter);
+        if (amount > 0) {
+          amount = amount - transferAmount;
+          transferred = transferred + doQuickTransfers(c, ignore, amount, filter);
+        }
       } else {
         Debug.error("structure destroyed", c.getId());
       }
     }).value();
     creep.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).filter(filter).map(function(c) {
       if (c.resolve(globalLifecycle)) {
-        if (api(c).transfer(state.subject(), RESOURCE_ENERGY) !== 0) {
+        let available = c.score.energy();
+        if (amount < 0 || amount > available) {
+          transferred = transferred + doQuickTransfers(c, ignore, amount, filter);
+          available = c.score.energy();
+        }
+        const full = c.isFull();
+        let transferAmount = amount;
+        if (full || amount < 0) {
+          // source is full or request all available
+          transferAmount = Math.min(available, creep.subject().carryCapacity - creep.getCarrying());
+        } else if (available < Math.abs(amount)) {
+          return;
+        }
+
+        if (api(c).transfer(creep.subject(), RESOURCE_ENERGY, transferAmount) !== 0) {
           log.debug("attempted empty transfer from ", c);
+          transferAmount = 0;
         } else {
           api(c).say("👋", false);
           c.score.copyScore("energyDelta", "energyVel");
-          transferred = true;
+          transferred = transferred + transferAmount;
         }
-        // scoreManager.rescore(c, c.getScoreMemory(), "tenergy", Game.time, 1000);
-        // TODO don't ignore unless full?
-        doQuickTransfers(c, ignore, filter);
+        if (amount > 0) {
+          amount = amount - transferAmount;
+          transferred = transferred + doQuickTransfers(c, ignore, amount, filter);
+        }
       } else {
         Debug.error("creep died", c.getId());
       }
@@ -300,16 +343,32 @@ export function doQuickTransfers(state: State<any>, ignore: any, filter: ListIte
     // structures have to find creep neighbors
     state.touchedCreepIds().reject(F.onKeys(ignore)).map(CreepState.vright).filter(filter).map(function(c) {
       if (c.resolve(globalLifecycle)) {
-        if (api(c).transfer(state.subject(), RESOURCE_ENERGY) !== 0) {
+        let available = c.score.energy();
+        if (amount < 0 || amount > available) {
+          transferred = transferred + doQuickTransfers(c, ignore, amount, filter);
+          available = c.score.energy();
+        }
+        const full = c.isFull();
+        let transferAmount = amount;
+        if (full || amount < 0) {
+          // source is full or request all available
+          transferAmount = Math.min(available, state.subject().energyCapacity - state.subject().energy);
+        } else if (available < Math.abs(amount)) {
+          return;
+        }
+
+        if (api(c).transfer(state.subject(), RESOURCE_ENERGY, transferAmount) !== 0) {
           log.debug("attempted empty transfer from ", c);
+          transferAmount = 0;
         } else {
           api(c).say("👋", false);
           c.score.copyScore("energyDelta", "energyVel");
-          transferred = true;
+          transferred = transferred + transferAmount;
         }
-        // scoreManager.rescore(c, c.getScoreMemory(), "tenergy", Game.time, 1000);
-        // TODO don't ignore unless full?
-        doQuickTransfers(c, ignore, filter);
+        if (amount > 0) {
+          amount = amount - transferAmount;
+          transferred = transferred + doQuickTransfers(c, ignore, amount, filter);
+        }
       } else {
         Debug.error("creep died", c.getId());
       }
@@ -696,6 +755,7 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>,
 
   const creepCount = state.creeps().value().length;
   let needed = 0;
+  let transfered = 0;
   switch (creepCount) {
     case 0:
       if (spawn.room.energyAvailable < 200) {
@@ -711,7 +771,7 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>,
       if (needed > 0) {
         Debug.on("debugTransfers");
         structureState.score.setScore("energyVel", -25); // TODO fix goal and set real venergy
-        doQuickTransfers(structureState, {}, F.True);
+        transfered = doQuickTransfers(structureState, {}, needed - 1, F.True);
         return;
       }
       api(structureState).createCreep([CARRY, WORK, WORK, MOVE]);
@@ -724,7 +784,7 @@ function spawnCreeps(state: GlobalState, structureState: StructureState<Spawn>,
       if (needed > 0) {
         Debug.on("debugTransfers");
         structureState.score.setScore("energyVel", -25); // TODO fix goal and set real venergy
-        doQuickTransfers(structureState, {}, F.True);
+        transfered = doQuickTransfers(structureState, {}, needed, F.True);
         return;
       }
 
@@ -782,12 +842,12 @@ function tryHaul(state: GlobalState, creepState: CreepState, sourceState: Source
       // TODO NOW give away energy to every building on the way
     } else {
       Debug.on("debugTransfers");
-      const transferred = doQuickTransfers(creepState, {}, function(s: State<any>) {
+      const transferred = doQuickTransfers(creepState, {}, -25, function(s: State<any>) {
         return !(s.score.energyVel() < 1);
       });
 
       // TODO determine pickup location(s)
-      if (api(creepState).moveTo(sourceState.pos(), {ignoreCreeps: true}) !== 0 && !transferred) {
+      if (api(creepState).moveTo(sourceState.pos(), {ignoreCreeps: true}) !== 0 && transferred === 0) {
         api(creepState).move(1 + Math.floor(Math.random() * 8));
       }
     }

@@ -4,6 +4,11 @@ interface Constructor<T> {
   name: string;
 }
 
+interface OwnedEnergy {
+  energy: number;
+  energyCapacity: number;
+}
+
 interface Memory {
   uuid: number;
   log: any;

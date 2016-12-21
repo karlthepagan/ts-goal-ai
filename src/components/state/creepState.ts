@@ -9,6 +9,7 @@ import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import {globalLifecycle} from "../event/behaviorContext";
 import * as Debug from "../util/debug";
 import {CreepScore} from "../score/api/creepScore";
+import StructureState from "./structureState";
 // const BiMap = require("bimap"); // TODO BiMap
 
 export const REL = {
@@ -230,6 +231,12 @@ export default class CreepState extends State<Creep> {
     return "CreepState";
   }
 
+  public isFull(): boolean {
+    const room =  this.subject().carryCapacity - this.getCarrying();
+    const produced = this.subject().getActiveBodyparts(WORK) * 2;
+    return produced > room;
+  }
+
   public delete() {
     super.delete();
 
@@ -254,7 +261,7 @@ export default class CreepState extends State<Creep> {
 
   public isCarrying(): boolean {
     // TODO put # of carry parts in memory
-    return _.chain(this.subject().carry).values().all(i => i === 0).value();
+    return _.chain(this.subject().carry).values().all(i => i !== 0).value();
   }
 
   public getWeight(): number {
@@ -464,10 +471,10 @@ export default class CreepState extends State<Creep> {
     return _.chain(F.elvis(drops[type], [])).compact<string>().map(Game.getObjectById).compact();
   }
 
-  public touchedStorage(): LoDashExplicitArrayWrapper<State<any>> {
+  public touchedStorage(): LoDashExplicitArrayWrapper<StructureState<any>> { // TODO type?
     const types = this.memory.touch.types;
     return _.chain(this.memory.touch.energy as string[]) // don't compact, order matters
-      .map((s, i) => (s ? State.vright(types[i], s) : null) as State<any>).compact();
+      .map((s, i) => (s ? State.vright(types[i], s) : null) as StructureState<any>).compact();
   }
 
   public getSourceMined(): string {

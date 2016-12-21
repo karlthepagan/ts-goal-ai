@@ -128,6 +128,10 @@ abstract class State<T> implements Named {
 
   public abstract className(): string;
 
+  public isFull(): boolean {
+    return false;
+  }
+
   public wrap(subject: T, memory: any, callback?: LifecycleCallback<State<T>>): State<T> {
     if (this._locked) {
       const s = subject as any;

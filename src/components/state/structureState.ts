@@ -1,6 +1,6 @@
 import State from "./abstractState";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
-import {Score} from "../score/api/score";
+import {EnergyScore} from "../score/api/energyScore";
 
 export default class StructureState<T extends OwnedStructure> extends State<T> {
   public static apiType() {
@@ -28,10 +28,15 @@ export default class StructureState<T extends OwnedStructure> extends State<T> {
   private static _vleft: StructureState<any> = new StructureState<any>("StructureStateVirtualLeft");
   private static _vright: StructureState<any> = new StructureState<any>("StructureStateVirtualRight");
 
-  public score: Score;
+  public score: EnergyScore;
 
   public className() {
     return "StructureState";
+  }
+
+  public isFull(): boolean {
+    const c: Container = this._subject as any;
+    return _.chain(c.store).values().sum().value() === c.storeCapacity;
   }
 
   protected _accessAddress() {
