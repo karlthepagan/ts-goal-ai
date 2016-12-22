@@ -1,5 +1,5 @@
-import * as Debug from "../util/debug";
-type MapMatrices = { [room: string]: CostMatrix };
+// import * as Debug from "../util/debug";
+export type MapMatrices = { [room: string]: CostMatrix };
 
 export default class MapManager {
   public energySource: MapMatrices;
@@ -59,7 +59,6 @@ export default class MapManager {
   }
 
   public makePathfindingGrid2(room: Room, opts?: FindPathOpts) {
-    Debug.always("make pathfinding grid");
     let saveMatrix = {} as CostMatrix;
     opts = opts ? Object.create(opts) : {} as FindPathOpts;
     opts.costCallback = function (name: string, matrix: CostMatrix) {
@@ -74,6 +73,7 @@ export default class MapManager {
       const pos = new RoomPosition(x, y, room.name);
       x = x + (Math.random() < 0.5 ? -1 : 1);
       y = y + (Math.random() < 0.5 ? -1 : 1);
+      // TODO SOON - elide a search operation
       path = room.findPath(pos, new RoomPosition(x, pos.y + y, room.name), opts);
     } while (path === undefined);
     return path ? saveMatrix : undefined;
@@ -93,7 +93,7 @@ export default class MapManager {
     }
   }
 
-  public init(roomName: string, transform: (n: number) => number) {
+  public init(roomName: string, transform?: (n: number) => number) {
     const room = Game.rooms[roomName];
     if (!room) {
       return undefined;

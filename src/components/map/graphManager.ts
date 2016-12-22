@@ -2,15 +2,18 @@ import * as Debug from "../util/debug";
 import * as F from "../functions";
 import XYIterator from "../util/xyIterator";
 import PositionIterable from "../util/positionIterable";
+import {MapMatrices} from "./mapManager";
+import {maps} from "../singletons";
 
-interface CachedObject {
+export interface CachedObject {
   id: string;
   type: string;
 }
 
-interface CachedObjectPos extends CachedObject {
+export interface CachedObjectPos extends CachedObject {
   range: number;
   pos: RoomPosition;
+  cost?: number;
 }
 
 interface CachedLocationMatrix {
@@ -56,6 +59,16 @@ function exclude(objs: CachedObjectPos[], excluded?: F.XY[]) {
 // simulator monkeypatch!
 const createObj = Game.cpu.limit === undefined ? createObjSim : createObjNormal;
 
+const terrainCache: MapMatrices = {};
+
+export function cacheTerrainMatrix(roomName: string) {
+  if (terrainCache[roomName]) {
+    return terrainCache[roomName];
+  }
+
+  return terrainCache[roomName] = maps.init(roomName) as CostMatrix;
+}
+
 export default class GraphManager {
   private static TYPES = _.chain(CONSTRUCTION_COST).keys()
     .concat(STRUCTURE_PORTAL, STRUCTURE_CONTROLLER, STRUCTURE_POWER_BANK, LOOK_SOURCES, LOOK_MINERALS)
@@ -92,15 +105,23 @@ export default class GraphManager {
       excluded = [pos];
     }
     const cached = this.getObjectsInRoom(target.roomName, excluded);
-    const ret = PathFinder.search(target, cached as any) as any; // , { algorithm: "dijkstra"} as any) as any;
+    const ret = PathFinder.search(target, cached as any, {
+      roomCallback: cacheTerrainMatrix,
+      maxRooms: 4,
+      algorithm: "dijkstra",
+    } as any) as any;
     if (ret.incomplete) {
       return undefined;
     }
+    let obj: CachedObjectPos;
     if (ret.cost === 0) {
-      // TODO NOW special case - neighbor
+      // special case - neighbor
+      obj = this.getObject(pos);
       return undefined;
     }
-    return this.getObject(ret.path[ret.path.length - 1]);
+    const obj = this.getObject(ret.path[ret.path.length - 1]);
+    obj.cost = ret.cost;
+    return obj;
   }
 
   public getObject(pos: RoomPosition) {
