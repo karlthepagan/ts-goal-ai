@@ -94,7 +94,6 @@ export default class GraphManager {
 
   public findNeighbor(pos: RoomPosition, excluded?: F.XY[]) {
     PathFinder.use(true);
-    Debug.always("find neighbor");
     const target = this.findWalkable(pos);
     if (!target) {
       return undefined;
@@ -113,13 +112,24 @@ export default class GraphManager {
     if (ret.incomplete) {
       return undefined;
     }
-    let obj: CachedObjectPos;
+    let obj: CachedObjectPos | undefined;
     if (ret.cost === 0) {
       // special case - neighbor
-      obj = this.getObject(pos);
+      obj = this.getObject(target);
+      if (!obj) {
+        Debug.error("neighbor failed");
+        return undefined;
+      }
+      obj.cost = 0;
+      return obj;
+    // } else if (ret.cost < 3) {
+    //   // TODO later find neighbor with touching cases?
+    }
+    obj = this.getObject(ret.path[ret.path.length - 1]);
+    if (!obj) {
+      Debug.error("pathfind failed?");
       return undefined;
     }
-    const obj = this.getObject(ret.path[ret.path.length - 1]);
     obj.cost = ret.cost;
     return obj;
   }

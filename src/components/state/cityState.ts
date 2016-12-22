@@ -62,8 +62,6 @@ export default class CityState extends State<any> {
         callback(this, State.LIFECYCLE_NEW);
       }
 
-      graphs.findNeighbor(this.pos());
-
       return true;
     }
 

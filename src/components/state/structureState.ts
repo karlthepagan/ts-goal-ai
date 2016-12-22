@@ -1,6 +1,7 @@
 import State from "./abstractState";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 import {EnergyScore} from "../score/api/energyScore";
+import {graphs} from "../singletons";
 
 export default class StructureState<T extends OwnedStructure> extends State<T> {
   public static apiType() {
@@ -63,6 +64,8 @@ export default class StructureState<T extends OwnedStructure> extends State<T> {
       if (callback !== undefined) {
         callback(this, State.LIFECYCLE_NEW);
       }
+
+      graphs.findNeighbor(this.pos());
 
       return true;
     }
