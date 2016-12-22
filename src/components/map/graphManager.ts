@@ -41,18 +41,15 @@ export function createObjSim(obj: any, type: {type: string, range: number}) {
   } as CachedObjectPos;
 }
 
-function exclude(objs: CachedObjectPos[], excluded?: F.XY[]) {
+export function exclude(objs: CachedObjectPos[], excluded?: F.XY[]) {
   if (!excluded) {
     return objs;
   }
 
   return _.chain(objs).reject(function(o) {
-    for (let i = excluded.length - 1; i >= 0; i--) {
-      if (excluded[i].x === o.pos.x && excluded[i].y === o.pos.y) {
-        return true;
-      }
-    }
-    return false;
+    return _.any(excluded, function(e) {
+      return F.xyEq(e, o.pos);
+    });
   }).value();
 }
 
@@ -92,7 +89,7 @@ export default class GraphManager {
     return undefined;
   }
 
-  public findNeighbor(pos: RoomPosition, excluded?: F.XY[]) {
+  public findNeighbor(pos: RoomPosition, excluded?: RoomPosition[]) {
     PathFinder.use(true);
     const target = this.findWalkable(pos);
     if (!target) {
@@ -103,7 +100,8 @@ export default class GraphManager {
     } else {
       excluded = [pos];
     }
-    const cached = this.getObjectsInRoom(target.roomName, excluded);
+    const cached = this.getNearbyObjects(pos, excluded);
+    // const cached = this.getObjectsInRoom(target.roomName, excluded);
     const ret = PathFinder.search(target, cached as any, {
       roomCallback: cacheTerrainMatrix,
       maxRooms: 4,
@@ -152,9 +150,38 @@ export default class GraphManager {
     }
   }
 
-  protected getObjectsInRoom(name: string, excluded?: F.XY[]): CachedObject[]|undefined {
+  protected getNearbyObjects(pos: RoomPosition, maxPerDir: number, excluded?: RoomPosition[]): CachedObjectPos[]|undefined {
+    const posRoomXY = F.parseRoomName(pos.roomName);
+    const result: CachedObjectPos[] = [];
+    const directions = [[], [], [], []] as { [dir: number]: CachedObjectPos[]};
+
+    let candidates = this.getObjectsInRoom(pos.roomName);
+    if (!candidates) {
+      return undefined;
+    }
+    for (let dir = 0; dir < 8; dir++) {
+      for (let i = candidates.length - 1; i >= 0; i--) {
+        const c = candidates[i];
+        if (excluded && _.any(excluded, function(e) { return F.xyEq(c.pos, e); })) {
+          continue;
+        }
+
+        const xy = F.relativeToRoom(pos, posRoomXY, c.pos);
+
+        const cDir = F.cardinalDirTo(pos, xy);
+
+        const dirBucket = directions[cDir];
+
+        const insertAt = _.sortedIndex(dirBucket, {pos: xy} as any, function (d) {
+          return pos.getRangeTo(d);
+        });
+      }
+    }
+  }
+
+  protected getObjectsInRoom(name: string): CachedObjectPos[]|undefined {
     if (this._targetCache[name]) {
-      return exclude(this._targetCache[name], excluded);
+      return this._targetCache[name];
     }
 
     const room: Room = Game.rooms[name];
@@ -199,7 +226,7 @@ export default class GraphManager {
       this.addObject(obj);
     }
 
-    return exclude(cache, excluded);
+    return cache;
   }
 }
 /*

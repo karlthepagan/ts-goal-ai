@@ -438,6 +438,48 @@ export function getType(instance: any) {
   return name;
 }
 
+export function xyEq(a: XY, b: XY) {
+  return a.x === b.x && a.y === b.y;
+}
+
+export function posEq(a: RoomPosition, b: RoomPosition, bRoom?: string) {
+  return a.x === b.x && a.y === b.y && (a.roomName === b.roomName || b.roomName === bRoom);
+}
+
+export function relativeToRoom(pos: RoomPosition, posRoomXY: XY, dst: RoomPosition) {
+  if (pos.roomName === dst.roomName) {
+    return dst;
+  }
+
+  const dstRoomXY = parseRoomName(dst.roomName);
+
+  const x = dst.x + 50 * (dstRoomXY.x - posRoomXY.x);
+  const y = dst.y + 50 * (dstRoomXY.y - posRoomXY.y);
+  const roomName = pos.roomName;
+
+  return {x, y, roomName} as RoomPosition;
+}
+
+export function cardinalDirTo(src: XY, dst: XY) {
+  const dx = dst.x - src.x;
+  const dy = dst.y - src.y;
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    // direction 3 or 7
+    return dx > 0 ? 3 : 7;
+  } else if (Math.abs(dx) === Math.abs(dy)) {
+    // tie breaker! clockwise bias
+    if (dx === dy) {
+      return dy > 0 ? 5 : 1;
+    } else {
+      return dx > 0 ? 3 : 7;
+    }
+  } else {
+    // direction 1 or 5
+    return dy > 0 ? 5 : 1;
+  }
+}
+
 export function dummy() {
   log.debug("don't warn me about unused imports");
 }

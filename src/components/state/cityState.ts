@@ -1,5 +1,4 @@
 import State from "./abstractState";
-import {graphs} from "../singletons";
 import {FLYWEIGHTS, botMemory} from "../../config/config";
 import {EnergyScore} from "../score/api/energyScore";
 
