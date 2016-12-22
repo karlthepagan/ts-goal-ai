@@ -39,6 +39,7 @@ export default class StructureState<T extends OwnedStructure> extends State<T> {
     return _.chain(c.store).values().sum().value() === c.storeCapacity;
   }
 
+  // TODO SOON - structure logical memory is part of a city
   protected _accessAddress() {
     return ["structures"];
   }

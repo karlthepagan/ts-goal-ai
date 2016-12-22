@@ -93,7 +93,11 @@ export default class GraphManager {
     }
     const cached = this.getObjectsInRoom(target.roomName, excluded);
     const ret = PathFinder.search(target, cached as any) as any; // , { algorithm: "dijkstra"} as any) as any;
-    if (ret.incomplete || ret.path.length === 0) {
+    if (ret.incomplete) {
+      return undefined;
+    }
+    if (ret.cost === 0) {
+      // TODO NOW special case - neighbor
       return undefined;
     }
     return this.getObject(ret.path[ret.path.length - 1]);
