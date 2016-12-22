@@ -513,12 +513,12 @@ export default class CreepState extends State<Creep> {
 
   protected init(rootMemory: any, callback?: LifecycleCallback<CreepState>): boolean {
     if (super.init(rootMemory, callback)) {
-      this.memory = _.defaults(this.memory, {
+      this.memory = _.defaultsDeep(this.memory, _.cloneDeep({
         move: [],
         armor: 0,
         hull: 0,
         worker: "",
-      });
+      }));
 
       if (this.resolve()) {
         const creep = this.subject();

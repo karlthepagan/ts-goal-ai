@@ -2,6 +2,7 @@ import State from "./abstractState";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 import {SourceScore} from "../score/api/sourceScore";
+import {graphs} from "../singletons";
 
 const REL = {
   SOURCE: {
@@ -80,11 +81,11 @@ export default class SourceState extends State<Source> {
 
   protected init(rootMemory: any, callback?: LifecycleCallback<SourceState>): boolean {
     if (super.init(rootMemory, callback)) {
-      this.memory = _.defaults(this.memory, {
+      this.memory = _.defaultsDeep(this.memory, _.cloneDeep({
         nodes: [],
         workers: [],
         haulers: [],
-      });
+      }));
 
       if (!this.isRemote()) {
         const subject = this.subject();
@@ -95,6 +96,8 @@ export default class SourceState extends State<Source> {
       if (callback !== undefined) {
         callback(this, State.LIFECYCLE_NEW);
       }
+
+      graphs.findNeighbor(this.pos());
 
       return true;
     }

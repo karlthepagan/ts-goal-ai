@@ -178,7 +178,8 @@ export default class GlobalState extends State<Game> {
         return false;
       }
 
-      this.memory = _.defaults(this.memory, { // TODO SOON these should be GUID -> parent structures
+      // TODO SOON these should be GUID -> parent structures
+      this.memory = _.defaultsDeep(this.memory, _.cloneDeep({
         config: {} as Options, // Options are also bootstrapped outside GlobalState
         envirome: {},
         index: {
@@ -188,7 +189,7 @@ export default class GlobalState extends State<Game> {
           minerals: {},
           structures: {},
         },
-      });
+      }));
 
       if (!this.isRemote()) {
         // rooms

@@ -88,10 +88,16 @@ export default class RoomState extends State<Room> {
       // rooms don't touch
       delete this.memory.touch;
 
-      this.memory = _.defaults(this.memory, {
+      this.memory = _.defaultsDeep(this.memory, _.cloneDeep({
         sources: {},
         minerals: {},
-      });
+        flow: [
+          {},
+          {},
+          {},
+          {},
+        ],
+      }));
 
       if (!this.isRemote()) {
         // sources

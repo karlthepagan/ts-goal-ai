@@ -1,21 +1,20 @@
-import {log} from "../support/log";
 import * as Debug from "../util/debug";
 type MapMatrices = { [room: string]: CostMatrix };
-
-/**
- * heat range is initialized at 0x80 + original cost * 8
- *
- * swamps > 208
- * plain > 136
- */
-function heatRange(n: number) {
-  return 0x80 + 8 * n;
-}
 
 export default class MapManager {
   public energySource: MapMatrices;
   public energySink: MapMatrices;
   private _loaded?: boolean;
+
+  /**
+   * heat range is initialized at 0x80 + original cost * 8
+   *
+   * swamps > 208
+   * plain > 136
+   */
+  public heatRange(n: number) {
+    return 0x80 + 8 * n;
+  }
 
   public load(mem: any) {
     if (this._loaded) {
@@ -94,7 +93,7 @@ export default class MapManager {
     }
   }
 
-  public init(roomName: string) {
+  public init(roomName: string, transform: (n: number) => number) {
     const room = Game.rooms[roomName];
     if (!room) {
       return undefined;
@@ -105,10 +104,8 @@ export default class MapManager {
       ignoreDestructibleStructures: true,
       ignoreRoads: true,
     });
-    if (costs) {
-      this.transform(costs, heatRange);
-    } else {
-      log.warning("pathfinding grid failed");
+    if (costs && transform) {
+      this.transform(costs, transform);
     }
     return costs;
   }

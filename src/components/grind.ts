@@ -923,7 +923,7 @@ function assignCreep(source: SourceState, site: number, creep: Creep) {
     const room = source.pos().roomName;
     let heatMap: CostMatrix|undefined = maps.energySource[room];
     if (!heatMap) {
-      heatMap = maps.init(room);
+      heatMap = maps.init(room, maps.heatRange);
     }
 
     if (heatMap) {

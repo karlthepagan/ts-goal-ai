@@ -62,9 +62,9 @@ export default class MineralState extends State<Mineral> {
 
   protected init(rootMemory: any, callback?: LifecycleCallback<MineralState>): boolean {
     if (super.init(rootMemory, callback)) {
-      this.memory = _.defaults(this.memory, {
+      this.memory = _.defaultsDeep(this.memory, _.cloneDeep({
         nodes: [],
-      });
+      }));
 
       if (!this.isRemote()) {
         const subject = this.subject();
