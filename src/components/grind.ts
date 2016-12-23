@@ -14,6 +14,7 @@ import {log} from "./support/log";
 import CreepState from "./state/creepState";
 import * as F from "./functions";
 import SourceState from "./state/sourceState";
+import {ScoreFunc, Scored} from "./score/api/score";
 
 const DISTANCE_WEIGHT = 10;
 const ENERGY_WORK_WEIGHT = 2;
@@ -986,9 +987,6 @@ function energyFull(percent: number) {
 function energyEmpty(abs: number) {
   return (creep: Creep): boolean => energy(creep) < abs;
 }
-
-type ScoreFunc<T> = (value: T) => Scored<T>;
-type Scored<T> = { value: T, score: number };
 
 const byTotalScore = byScore<SourceState>();
 

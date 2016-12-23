@@ -65,7 +65,7 @@ export default class StructureState<T extends OwnedStructure> extends State<T> {
         callback(this, State.LIFECYCLE_NEW);
       }
 
-      graphs.findNeighbor(this.pos());
+      graphs.findNeighbors(this.pos());
 
       return true;
     }

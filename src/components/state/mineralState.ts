@@ -3,10 +3,9 @@ import State from "./abstractState";
 import {log} from "../support/log";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
-import {Score} from "../score/api/score";
-import {graphs} from "../singletons";
+import {Score, Scored} from "../score/api/score";
 import {CachedObject} from "../map/graphManager";
-import {getType} from "../functions";
+import StateGraphBuilder from "./stateGraphBuilder";
 
 export default class MineralState extends State<Mineral> {
   public static apiType() {
@@ -48,9 +47,12 @@ export default class MineralState extends State<Mineral> {
     log.debug("delete", this);
   }
 
-  public graph(): LoDashExplicitArrayWrapper<State<any>> {
+  public graph(): LoDashExplicitArrayWrapper<Scored<State<any>>> {
     return _.chain(this.memory.graph as CachedObject[]).map(function(s) {
-      return State.vright(s.type, s.id);
+      return {
+        value: State.vright(s.type, s.id),
+        score: s.cost,
+      };
     });
   }
 
@@ -86,7 +88,7 @@ export default class MineralState extends State<Mineral> {
         callback(this, State.LIFECYCLE_NEW);
       }
 
-      this.memory.graph = graphs.findNeighbors(this.pos());
+      this.memory.graph = StateGraphBuilder.buildGraph(this);
 
       return true;
     }

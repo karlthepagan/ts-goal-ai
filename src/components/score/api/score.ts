@@ -1,3 +1,6 @@
+export type ScoreFunc<T> = (value: T) => Scored<T>;
+export type Scored<T> = { value: T, score: number };
+
 export interface Score {
   setScore(name: string, value: number): void;
   getScore(name: string): number;

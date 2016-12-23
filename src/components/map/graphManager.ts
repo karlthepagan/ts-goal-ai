@@ -110,7 +110,7 @@ export default class GraphManager {
     return undefined;
   }
 
-  public findNeighbors(pos: RoomPosition, excluded?: RoomPosition[]): CachedObjectPos[]|undefined {
+  public findNeighbor(pos: RoomPosition, excluded?: RoomPosition[]): CachedObjectPos|undefined {
     PathFinder.use(true);
     const target = this.findWalkable(pos);
     if (!target) {
@@ -121,12 +121,12 @@ export default class GraphManager {
     } else {
       excluded = [pos];
     }
-    const cached = this.getNearbyObjects(pos, 4, excluded); // TODO NOW direction targets
+    const cached = _.chain(this.getNearbyObjects(pos, 4, excluded)).flatten().compact();
     // const cached = this.getObjectsInRoom(target.roomName, excluded);
     const ret = PathFinder.search(target, cached as any, {
       roomCallback: cacheTerrainMatrix,
       maxRooms: 4,
-      algorithm: "dijkstra",
+      // algorithm: "dijkstra",
     } as any) as any;
     if (ret.incomplete) {
       return undefined;
