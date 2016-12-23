@@ -1,8 +1,12 @@
+import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import State from "./abstractState";
 import {log} from "../support/log";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 import {Score} from "../score/api/score";
+import {graphs} from "../singletons";
+import {CachedObject} from "../map/graphManager";
+import {getType} from "../functions";
 
 export default class MineralState extends State<Mineral> {
   public static apiType() {
@@ -44,6 +48,12 @@ export default class MineralState extends State<Mineral> {
     log.debug("delete", this);
   }
 
+  public graph(): LoDashExplicitArrayWrapper<State<any>> {
+    return _.chain(this.memory.graph as CachedObject[]).map(function(s) {
+      return State.vright(s.type, s.id);
+    });
+  }
+
   public nodeDirs(): number[] {
     return this.memory.nodes as number[];
   }
@@ -75,6 +85,8 @@ export default class MineralState extends State<Mineral> {
       if (callback !== undefined) {
         callback(this, State.LIFECYCLE_NEW);
       }
+
+      this.memory.graph = graphs.findNeighbors(this.pos());
 
       return true;
     }

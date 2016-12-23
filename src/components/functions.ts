@@ -271,7 +271,7 @@ export function expand(address: (PropertyKey|undefined)[], memory: any, finalSte
   return buildFollow(memory, node, elvis(finalStep, {}));
 }
 
-export function parseRoomName(roomName: string): XY {
+function parseRoomNameNormal(roomName: string): XY {
   const match = ROOM_PATTERN.exec(roomName);
   if (match === null) {
     throw new Error(roomName);
@@ -281,6 +281,16 @@ export function parseRoomName(roomName: string): XY {
 
   return {x, y};
 }
+
+function parseRoomNameSim(roomName: string): XY {
+  if (roomName !== "sim") {
+    throw Debug.throwing(new Error("unparsable roomName=" + roomName));
+  }
+  return {x: 0, y: 0};
+}
+
+// simulator monkeypatch!
+export const parseRoomName = Game.cpu.limit === undefined ? parseRoomNameSim : parseRoomNameNormal;
 
 export function formatRoomName(pos: XY): string {
   if (pos.x < 0) {
@@ -452,6 +462,10 @@ export function relativeToRoom(pos: RoomPosition, posRoomXY: XY, dst: RoomPositi
   }
 
   const dstRoomXY = parseRoomName(dst.roomName);
+
+  if (dstRoomXY === undefined) {
+    throw Debug.throwing(new Error(dst.roomName + " is not a valid room"));
+  }
 
   const x = dst.x + 50 * (dstRoomXY.x - posRoomXY.x);
   const y = dst.y + 50 * (dstRoomXY.y - posRoomXY.y);

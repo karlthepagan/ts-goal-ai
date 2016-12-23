@@ -8,16 +8,37 @@ import {maps} from "../singletons";
 export interface CachedObject {
   id: string;
   type: string;
+  cost?: number;
 }
 
 export interface CachedObjectPos extends CachedObject {
   range: number;
   pos: RoomPosition;
-  cost?: number;
 }
 
 interface CachedLocationMatrix {
   [coord: number]: CachedLocationMatrix | CachedObjectPos;
+}
+
+function dirMerge(pos: RoomPosition, posRoomXY: F.XY, excluded: RoomPosition[]|undefined, directions: CachedObjectPos[][], candidates: CachedObjectPos[]) {
+  for (let i = candidates.length - 1; i >= 0; i--) {
+    const c = candidates[i];
+    if (excluded && _.any(excluded, function(e) { return F.xyEq(c.pos, e); })) {
+      continue;
+    }
+
+    const xy = F.relativeToRoom(pos, posRoomXY, c.pos);
+
+    const cDir = F.cardinalDirTo(pos, xy);
+
+    const dirBucket = directions[cDir];
+
+    const insertAt = _.sortedIndex(dirBucket, {pos: xy} as any, function (d) {
+      return pos.getRangeTo(d);
+    });
+
+    dirBucket.splice(insertAt, 0, c);
+  }
 }
 
 function createObjNormal(obj: any, type: {type: string, range: number}) {
@@ -89,7 +110,7 @@ export default class GraphManager {
     return undefined;
   }
 
-  public findNeighbor(pos: RoomPosition, excluded?: RoomPosition[]) {
+  public findNeighbors(pos: RoomPosition, excluded?: RoomPosition[]): CachedObjectPos[]|undefined {
     PathFinder.use(true);
     const target = this.findWalkable(pos);
     if (!target) {
@@ -100,7 +121,7 @@ export default class GraphManager {
     } else {
       excluded = [pos];
     }
-    const cached = this.getNearbyObjects(pos, excluded);
+    const cached = this.getNearbyObjects(pos, 4, excluded); // TODO NOW direction targets
     // const cached = this.getObjectsInRoom(target.roomName, excluded);
     const ret = PathFinder.search(target, cached as any, {
       roomCallback: cacheTerrainMatrix,
@@ -150,33 +171,35 @@ export default class GraphManager {
     }
   }
 
-  protected getNearbyObjects(pos: RoomPosition, maxPerDir: number, excluded?: RoomPosition[]): CachedObjectPos[]|undefined {
-    const posRoomXY = F.parseRoomName(pos.roomName);
-    const result: CachedObjectPos[] = [];
-    const directions = [[], [], [], []] as { [dir: number]: CachedObjectPos[]};
+  protected getNearbyObjects(pos: RoomPosition, maxPerDir: number, excluded?: RoomPosition[]): CachedObjectPos[][]|undefined {
+    const posRoomXY = F.parseRoomName(pos.roomName); // TODO assert defined
+    const directions = [null, [], null, [], null, [], null, []] as CachedObjectPos[][];
 
     let candidates = this.getObjectsInRoom(pos.roomName);
     if (!candidates) {
       return undefined;
     }
-    for (let dir = 0; dir < 8; dir++) {
-      for (let i = candidates.length - 1; i >= 0; i--) {
-        const c = candidates[i];
-        if (excluded && _.any(excluded, function(e) { return F.xyEq(c.pos, e); })) {
-          continue;
-        }
 
-        const xy = F.relativeToRoom(pos, posRoomXY, c.pos);
+    dirMerge(pos, posRoomXY, excluded, directions, candidates);
 
-        const cDir = F.cardinalDirTo(pos, xy);
-
-        const dirBucket = directions[cDir];
-
-        const insertAt = _.sortedIndex(dirBucket, {pos: xy} as any, function (d) {
-          return pos.getRangeTo(d);
-        });
+    for (let dir = 1; dir < 8; dir += 2) {
+      if (directions[dir].length >= maxPerDir) {
+        continue;
       }
+      const addRoomXY = F.dirTransform(Object.create(posRoomXY), dir);
+      const addRoom = F.formatRoomName(addRoomXY);
+      candidates = this.getObjectsInRoom(addRoom);
+      if (!candidates) {
+        // TODO later - opening up new rooms should re-evaluate buildings in neighboring rooms
+        continue;
+      }
+
+      dirMerge(pos, posRoomXY, excluded, directions, candidates);
+
+      directions[dir].splice(maxPerDir);
     }
+
+    return directions;
   }
 
   protected getObjectsInRoom(name: string): CachedObjectPos[]|undefined {
