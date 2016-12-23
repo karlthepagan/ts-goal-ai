@@ -1,8 +1,7 @@
 import State from "./abstractState";
-import {botMemory, FLYWEIGHTS} from "../../config/config";
+import {FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 import {SourceScore} from "../score/api/sourceScore";
-import StateGraphBuilder from "./stateGraphBuilder";
 
 const REL = {
   SOURCE: {
@@ -17,19 +16,19 @@ export default class SourceState extends State<Source> {
   }
 
   public static left(subject: Source) {
-    return (FLYWEIGHTS ? SourceState._left : new SourceState("SS") ).wrap(subject, botMemory()) as SourceState;
+    return (FLYWEIGHTS ? SourceState._left : new SourceState("SS") ).wrap(subject, State.rootMemory) as SourceState;
   }
 
   public static right(subject: Source) {
-    return (FLYWEIGHTS ? SourceState._right : new SourceState("SS") ).wrap(subject, botMemory()) as SourceState;
+    return (FLYWEIGHTS ? SourceState._right : new SourceState("SS") ).wrap(subject, State.rootMemory) as SourceState;
   }
 
   public static vleft(id: string) {
-    return (FLYWEIGHTS ? SourceState._vleft : new SourceState("SS") ).wrapRemote(id, botMemory()) as SourceState;
+    return (FLYWEIGHTS ? SourceState._vleft : new SourceState("SS") ).wrapRemote(id, State.rootMemory) as SourceState;
   }
 
   public static vright(id: string) {
-    return (FLYWEIGHTS ? SourceState._vright : new SourceState("SS") ).wrapRemote(id, botMemory()) as SourceState;
+    return (FLYWEIGHTS ? SourceState._vright : new SourceState("SS") ).wrapRemote(id, State.rootMemory) as SourceState;
   }
 
   private static _left: SourceState = new SourceState("SourceStateLeft");
@@ -97,7 +96,7 @@ export default class SourceState extends State<Source> {
         callback(this, State.LIFECYCLE_NEW);
       }
 
-      this.memory.graph = StateGraphBuilder.buildGraph(this);
+      this.memory.graph = State.graphs.buildGraph(this);
 
       return true;
     }

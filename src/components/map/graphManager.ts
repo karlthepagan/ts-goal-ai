@@ -96,9 +96,12 @@ export function cacheTerrainMatrix(roomName: string) {
 }
 
 export default class GraphManager {
-  private static TYPES = _.chain(CONSTRUCTION_COST).keys()
-    .concat(STRUCTURE_PORTAL, STRUCTURE_CONTROLLER, STRUCTURE_POWER_BANK, LOOK_SOURCES, LOOK_MINERALS)
+  public static ENTITY_ADDRESS = _.chain([LOOK_SOURCES, LOOK_MINERALS]).indexBy(_.identity).merge(
+    _.chain(CONSTRUCTION_COST).keys().concat(STRUCTURE_PORTAL, STRUCTURE_CONTROLLER, STRUCTURE_POWER_BANK)
+      .indexBy(_.constant(LOOK_STRUCTURES))).value() as { [type: string]: string };
+  public static TYPES = _.chain(GraphManager.ENTITY_ADDRESS).keys()
     .map(s => [s, {type: s, range: 1}]).zipObject().value() as { [type: string]: CachedObjectPos };
+
   // these are all TYPES, so they have range: 1
   private _targetCache: { [roomName: string]: CachedObjectPos[]} = {};
   private _positionCache: { [roomName: string]: CachedLocationMatrix} = {};

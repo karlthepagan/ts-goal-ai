@@ -1,7 +1,6 @@
 import State from "./abstractState";
-import {botMemory, FLYWEIGHTS} from "../../config/config";
+import {FLYWEIGHTS} from "../../config/config";
 import {EnergyScore} from "../score/api/energyScore";
-import StateGraphBuilder from "./stateGraphBuilder";
 
 export default class StructureState<T extends OwnedStructure> extends State<T> {
   public static apiType() {
@@ -9,19 +8,19 @@ export default class StructureState<T extends OwnedStructure> extends State<T> {
   }
 
   public static left<X extends OwnedStructure>(subject: X) {
-    return (FLYWEIGHTS ? StructureState._left : new StructureState<any>("sS") ).wrap(subject, botMemory()) as StructureState<X>;
+    return (FLYWEIGHTS ? StructureState._left : new StructureState<any>("sS") ).wrap(subject, State.rootMemory) as StructureState<X>;
   }
 
   public static right<X extends OwnedStructure>(subject: X) {
-    return (FLYWEIGHTS ? StructureState._right : new StructureState<any>("sS") ).wrap(subject, botMemory()) as StructureState<X>;
+    return (FLYWEIGHTS ? StructureState._right : new StructureState<any>("sS") ).wrap(subject, State.rootMemory) as StructureState<X>;
   }
 
   public static vleft(id: string) {
-    return (FLYWEIGHTS ? StructureState._vleft : new StructureState<any>("sS") ).wrapRemote(id, botMemory()) as StructureState<any>;
+    return (FLYWEIGHTS ? StructureState._vleft : new StructureState<any>("sS") ).wrapRemote(id, State.rootMemory) as StructureState<any>;
   }
 
   public static vright(id: string) {
-    return (FLYWEIGHTS ? StructureState._vright : new StructureState<any>("sS") ).wrapRemote(id, botMemory()) as StructureState<any>;
+    return (FLYWEIGHTS ? StructureState._vright : new StructureState<any>("sS") ).wrapRemote(id, State.rootMemory) as StructureState<any>;
   }
 
   private static _left: StructureState<any> = new StructureState<any>("StructureStateLeft");
@@ -42,11 +41,11 @@ export default class StructureState<T extends OwnedStructure> extends State<T> {
 
   // TODO SOON - structure logical memory is part of a city
   protected _accessAddress() {
-    return ["structures"];
+    return [LOOK_STRUCTURES];
   }
 
   protected _indexAddress() {
-    return ["index", "structures"];
+    return ["index", LOOK_STRUCTURES];
   }
 
   protected _visionSource() {
@@ -65,7 +64,7 @@ export default class StructureState<T extends OwnedStructure> extends State<T> {
         callback(this, State.LIFECYCLE_NEW);
       }
 
-      this.memory.graph = StateGraphBuilder.buildGraph(this);
+      this.memory.graph = State.graphs.buildGraph(this);
 
       return true;
     }

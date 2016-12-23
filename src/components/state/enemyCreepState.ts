@@ -1,5 +1,6 @@
 import CreepState from "./creepState";
-import {FLYWEIGHTS, botMemory} from "../../config/config";
+import {FLYWEIGHTS} from "../../config/config";
+import State from "./abstractState";
 
 export default class EnemyCreepState extends CreepState {
   public static apiType() {
@@ -8,22 +9,22 @@ export default class EnemyCreepState extends CreepState {
 
   public static left(subject: Creep) {
     return (FLYWEIGHTS ? EnemyCreepState._left : new EnemyCreepState("EC") )
-      .wrap(subject, botMemory()) as EnemyCreepState;
+      .wrap(subject, State.rootMemory) as EnemyCreepState;
   }
 
   public static right(subject: Creep) {
     return (FLYWEIGHTS ? EnemyCreepState._right : new EnemyCreepState("EC") )
-      .wrap(subject, botMemory()) as EnemyCreepState;
+      .wrap(subject, State.rootMemory) as EnemyCreepState;
   }
 
   public static vleft(id: string) {
     return (FLYWEIGHTS ? EnemyCreepState._vleft : new EnemyCreepState("EC") )
-      .wrapRemote(id, botMemory()) as EnemyCreepState;
+      .wrapRemote(id, State.rootMemory) as EnemyCreepState;
   }
 
   public static vright(id: string) {
     return (FLYWEIGHTS ? EnemyCreepState._vright : new EnemyCreepState("EC") )
-      .wrapRemote(id, botMemory()) as EnemyCreepState;
+      .wrapRemote(id, State.rootMemory) as EnemyCreepState;
   }
 
   protected static _left: EnemyCreepState = new EnemyCreepState("EnemyCreepStateLeft");

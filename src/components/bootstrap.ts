@@ -22,11 +22,13 @@ import {scoreManager, eventManager, importManager} from "./singletons";
 import StandardCreep from "./score/impl/standardCreep";
 import StandardSource from "./score/impl/standardSource";
 import StandardStructure from "./score/impl/standardStructure";
+import {botMemory} from "../config/config";
 
 export const bootstrap: (() => void)[] = [];
 
 bootstrap.push(() => {
   log.debug("bootstrap starting");
+  State.setRootMemory(botMemory());
   GlobalState.protectMemory("config");
 });
 

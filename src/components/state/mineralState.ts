@@ -1,11 +1,10 @@
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import State from "./abstractState";
 import {log} from "../support/log";
-import {botMemory, FLYWEIGHTS} from "../../config/config";
+import {FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 import {Score, Scored} from "../score/api/score";
 import {CachedObjectPos} from "../map/graphManager";
-import StateGraphBuilder from "./stateGraphBuilder";
 
 export default class MineralState extends State<Mineral> {
   public static apiType() {
@@ -13,19 +12,19 @@ export default class MineralState extends State<Mineral> {
   }
 
   public static left(subject: Mineral) {
-    return (FLYWEIGHTS ? MineralState._left : new MineralState("MS") ).wrap(subject, botMemory()) as MineralState;
+    return (FLYWEIGHTS ? MineralState._left : new MineralState("MS") ).wrap(subject, State.rootMemory) as MineralState;
   }
 
   public static right(subject: Mineral) {
-    return (FLYWEIGHTS ? MineralState._right : new MineralState("MS") ).wrap(subject, botMemory()) as MineralState;
+    return (FLYWEIGHTS ? MineralState._right : new MineralState("MS") ).wrap(subject, State.rootMemory) as MineralState;
   }
 
   public static vleft(id: string) {
-    return (FLYWEIGHTS ? MineralState._vleft : new MineralState("MS") ).wrapRemote(id, botMemory()) as MineralState;
+    return (FLYWEIGHTS ? MineralState._vleft : new MineralState("MS") ).wrapRemote(id, State.rootMemory) as MineralState;
   }
 
   public static vright(id: string) {
-    return (FLYWEIGHTS ? MineralState._vright : new MineralState("MS") ).wrapRemote(id, botMemory()) as MineralState;
+    return (FLYWEIGHTS ? MineralState._vright : new MineralState("MS") ).wrapRemote(id, State.rootMemory) as MineralState;
   }
 
   private static _left: MineralState = new MineralState("MineralStateLeft");
@@ -90,7 +89,7 @@ export default class MineralState extends State<Mineral> {
         callback(this, State.LIFECYCLE_NEW);
       }
 
-      this.memory.graph = StateGraphBuilder.buildGraph(this);
+      this.memory.graph = State.graphs.buildGraph(this);
 
       return true;
     }

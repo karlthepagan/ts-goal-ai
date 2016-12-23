@@ -1,7 +1,6 @@
 import State from "./abstractState";
-import {FLYWEIGHTS, botMemory} from "../../config/config";
+import {FLYWEIGHTS} from "../../config/config";
 import {EnergyScore} from "../score/api/energyScore";
-import StateGraphBuilder from "./stateGraphBuilder";
 
 /**
  * HAR HAR HAR
@@ -14,19 +13,19 @@ export default class CityState extends State<any> {
   }
 
   public static left(subject: OwnedStructure) {
-    return (FLYWEIGHTS ? CityState._left : new CityState("SS") ).wrap(subject, botMemory()) as CityState;
+    return (FLYWEIGHTS ? CityState._left : new CityState("SS") ).wrap(subject, State.rootMemory) as CityState;
   }
 
   public static right(subject: OwnedStructure) {
-    return (FLYWEIGHTS ? CityState._right : new CityState("SS") ).wrap(subject, botMemory()) as CityState;
+    return (FLYWEIGHTS ? CityState._right : new CityState("SS") ).wrap(subject, State.rootMemory) as CityState;
   }
 
   public static vleft(id: string) {
-    return (FLYWEIGHTS ? CityState._vleft : new CityState("SS") ).wrapRemote(id, botMemory()) as CityState;
+    return (FLYWEIGHTS ? CityState._vleft : new CityState("SS") ).wrapRemote(id, State.rootMemory) as CityState;
   }
 
   public static vright(id: string) {
-    return (FLYWEIGHTS ? CityState._vright : new CityState("SS") ).wrapRemote(id, botMemory()) as CityState;
+    return (FLYWEIGHTS ? CityState._vright : new CityState("SS") ).wrapRemote(id, State.rootMemory) as CityState;
   }
 
   private static _left: CityState = new CityState("CityStateLeft");
@@ -62,7 +61,7 @@ export default class CityState extends State<any> {
         callback(this, State.LIFECYCLE_NEW);
       }
 
-      this.memory.graph = StateGraphBuilder.buildGraph(this);
+      this.memory.graph = State.graphs.buildGraph(this);
 
       return true;
     }

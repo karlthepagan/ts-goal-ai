@@ -1,5 +1,5 @@
 import State from "./abstractState";
-import {botMemory, FLYWEIGHTS} from "../../config/config";
+import {FLYWEIGHTS} from "../../config/config";
 import {ConstructionScore} from "../score/api/constructionScore";
 
 export default class ConstructionState extends State<ConstructionSite> {
@@ -9,22 +9,22 @@ export default class ConstructionState extends State<ConstructionSite> {
 
   public static left(subject: ConstructionSite) {
     return (FLYWEIGHTS ? ConstructionState._left : new ConstructionState("TS") )
-      .wrap(subject, botMemory()) as ConstructionState;
+      .wrap(subject, State.rootMemory) as ConstructionState;
   }
 
   public static right(subject: ConstructionSite) {
     return (FLYWEIGHTS ? ConstructionState._right : new ConstructionState("TS") )
-      .wrap(subject, botMemory()) as ConstructionState;
+      .wrap(subject, State.rootMemory) as ConstructionState;
   }
 
   public static vleft(id: string) {
     return (FLYWEIGHTS ? ConstructionState._vleft : new ConstructionState("TS") )
-      .wrapRemote(id, botMemory()) as ConstructionState;
+      .wrapRemote(id, State.rootMemory) as ConstructionState;
   }
 
   public static vright(id: string) {
     return (FLYWEIGHTS ? ConstructionState._vright : new ConstructionState("TS") )
-      .wrapRemote(id, botMemory()) as ConstructionState;
+      .wrapRemote(id, State.rootMemory) as ConstructionState;
   }
 
   private static _left: ConstructionState = new ConstructionState("ConstructionStateLeft");

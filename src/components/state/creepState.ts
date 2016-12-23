@@ -1,6 +1,6 @@
 import State from "./abstractState";
 import {log} from "../support/log";
-import {botMemory, FLYWEIGHTS} from "../../config/config";
+import {FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 import {TERRAIN_ROAD, TERRAIN_PLAIN, TERRAIN_SWAMP} from "../constants";
 import LookForIterator from "../util/lookForIterator";
@@ -190,28 +190,28 @@ export default class CreepState extends State<Creep> {
   }
 
   public static left(subject: Creep): CreepState { // TODO as CreepState & Creep and use a proxy?
-    return (FLYWEIGHTS ? CreepState._left : new CreepState("CS") ).wrap(subject, botMemory()) as CreepState;
+    return (FLYWEIGHTS ? CreepState._left : new CreepState("CS") ).wrap(subject, State.rootMemory) as CreepState;
   }
 
   public static right(subject: Creep): CreepState {
-    return (FLYWEIGHTS ? CreepState._right : new CreepState("CS") ).wrap(subject, botMemory()) as CreepState;
+    return (FLYWEIGHTS ? CreepState._right : new CreepState("CS") ).wrap(subject, State.rootMemory) as CreepState;
   }
 
   public static vleft(id: string): CreepState {
-    return (FLYWEIGHTS ? CreepState._vleft : new CreepState("CS") ).wrapRemote(id, botMemory()) as CreepState;
+    return (FLYWEIGHTS ? CreepState._vleft : new CreepState("CS") ).wrapRemote(id, State.rootMemory) as CreepState;
   }
 
   public static vright(id: string): CreepState {
-    return (FLYWEIGHTS ? CreepState._vright : new CreepState("CS") ).wrapRemote(id, botMemory()) as CreepState;
+    return (FLYWEIGHTS ? CreepState._vright : new CreepState("CS") ).wrapRemote(id, State.rootMemory) as CreepState;
   }
 
   public static build(creep: Creep): CreepState {
-    return new CreepState("CS").wrap(creep, botMemory()) as CreepState;
+    return new CreepState("CS").wrap(creep, State.rootMemory) as CreepState;
   }
 
   public static copy(creep: CreepState): CreepState {
     if (creep.isRemote()) {
-      return new CreepState("CS").wrapRemote(creep.getId(), botMemory()) as CreepState;
+      return new CreepState("CS").wrapRemote(creep.getId(), State.rootMemory) as CreepState;
     }
     return CreepState.build(creep.subject());
   }

@@ -1,7 +1,6 @@
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import State from "./abstractState";
 import {log} from "../support/log";
-import {botMemory} from "../../config/config";
 import RoomState from "./roomState";
 import SourceState from "./sourceState";
 import MineralState from "./mineralState";
@@ -36,7 +35,7 @@ export default class GlobalState extends State<Game> {
     // score else?
 
   public static boot() {
-    return GlobalState._game = new GlobalState("GlobalState").wrap(Game, botMemory()) as GlobalState;
+    return GlobalState._game = new GlobalState("GlobalState").wrap(Game, State.rootMemory) as GlobalState;
   }
 
   public static game() {

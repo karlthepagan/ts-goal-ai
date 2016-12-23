@@ -1,8 +1,8 @@
 import {graphs} from "../singletons";
 import State from "./abstractState";
-import {CachedObjectPos} from "../map/graphManager";
+import {CachedObjectPos, default as GraphManager} from "../map/graphManager";
 
-type ObjectMap = { [id: string]: CachedObjectPos };
+export type ObjectMap = { [id: string]: CachedObjectPos };
 
 /**
  * iterating per node
@@ -16,14 +16,29 @@ type ObjectMap = { [id: string]: CachedObjectPos };
  *  c - if found in network, add to connected set and repeat 2.a
  */
 export default class StateGraphBuilder {
+  private _mem: any;
 
-  public static buildGraph(root: State<any>) {
-    const inNetwork = StateGraphBuilder.toArray(2, root.memory.graph as CachedObjectPos[]);
+  constructor(memory: any) {
+    this._mem = memory;
+  }
+
+  public getNodesFor(obj: CachedObjectPos): CachedObjectPos[]|undefined {
+    const group = GraphManager.ENTITY_ADDRESS[obj.type];
+    const nodes = this._mem[group];
+    const node = nodes[obj.id];
+    return node.graph;
+  }
+
+  public buildGraph(root: State<any>) {
+    // const inNetwork = this.toArray(2, root.memory.graph as CachedObjectPos[]);
     graphs.findNeighbor(root.pos());
   }
 
-  public static toArray(depth: number, objs: CachedObjectPos[]): CachedObjectPos[] {
-    _.chain(objs).map()
-    _.chain(objs).indexBy("id").merge
+  public toArray(depth: number, objs: CachedObjectPos[]): CachedObjectPos[] {
+    depth = depth;
+    objs = objs;
+    // _.chain(objs).map()
+    // _.chain(objs).indexBy("id").merge
+    return [];
   }
 }

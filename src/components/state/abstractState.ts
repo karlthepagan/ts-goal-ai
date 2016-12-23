@@ -1,7 +1,6 @@
 import {log} from "../support/log";
 import * as F from "../functions";
 import Named from "../named";
-import {botMemory} from "../../config/config";
 import EventRegistry from "../event/api/index";
 import CreepState from "./creepState";
 import getConstructor from "../types";
@@ -10,6 +9,7 @@ import * as Debug from "../util/debug";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import ScoreMixin from "../score/scoreMixin";
 import {Score} from "../score/api/score";
+import StateGraphBuilder from "./stateGraphBuilder";
 
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
@@ -103,13 +103,20 @@ abstract class State<T> implements Named {
     State.scores = scores;
   }
 
+  public static setRootMemory(mem: any) {
+    State.rootMemory = mem;
+    State.graphs = new StateGraphBuilder(mem);
+  }
+
   public static vright<I>(className: string, id: string): State<I>|undefined {
     const ctor = (getConstructor(className) as any);
     return ctor === undefined ? undefined : ctor.vright(id); // TODO startPool and transaction?
   }
 
+  protected static rootMemory: any;
   protected static events: EventRegistry;
   protected static scores: ScoreManager;
+  protected static graphs: StateGraphBuilder;
 
   public memory: any;
   public abstract score: Score; // most states have energy score
@@ -240,14 +247,14 @@ abstract class State<T> implements Named {
   }
 
   public setMemory(mem: any) {
-    this.memory = _access(this, botMemory(), mem);
+    this.memory = _access(this, State.rootMemory, mem);
   }
 
   public rescan(callback?: LifecycleCallback<State<T>>) {
     if (callback !== undefined) {
       Debug.always("rescan callback is undefined"); // TODO is callback a Joinpoint?
     }
-    this.init(botMemory(), callback);
+    this.init(State.rootMemory, callback);
   }
 
   public onPart(other: CreepState, direction: number) {

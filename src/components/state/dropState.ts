@@ -1,5 +1,5 @@
 import State from "./abstractState";
-import {botMemory, FLYWEIGHTS} from "../../config/config";
+import {FLYWEIGHTS} from "../../config/config";
 import {DropScore} from "../score/api/dropScore";
 
 export default class DropState extends State<Resource> {
@@ -8,19 +8,19 @@ export default class DropState extends State<Resource> {
   }
 
   public static left(subject: Resource) {
-    return (FLYWEIGHTS ? DropState._left : new DropState("sS") ).wrap(subject, botMemory()) as DropState;
+    return (FLYWEIGHTS ? DropState._left : new DropState("sS") ).wrap(subject, State.rootMemory) as DropState;
   }
 
   public static right(subject: Resource) {
-    return (FLYWEIGHTS ? DropState._right : new DropState("sS") ).wrap(subject, botMemory()) as DropState;
+    return (FLYWEIGHTS ? DropState._right : new DropState("sS") ).wrap(subject, State.rootMemory) as DropState;
   }
 
   public static vleft(id: string) {
-    return (FLYWEIGHTS ? DropState._vleft : new DropState("sS") ).wrapRemote(id, botMemory()) as DropState;
+    return (FLYWEIGHTS ? DropState._vleft : new DropState("sS") ).wrapRemote(id, State.rootMemory) as DropState;
   }
 
   public static vright(id: string) { // TODO polymorphic
-    return (FLYWEIGHTS ? DropState._vright : new DropState("sS") ).wrapRemote(id, botMemory()) as DropState;
+    return (FLYWEIGHTS ? DropState._vright : new DropState("sS") ).wrapRemote(id, State.rootMemory) as DropState;
   }
 
   private static _left: DropState = new DropState("DropStateLeft");

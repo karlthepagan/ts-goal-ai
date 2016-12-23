@@ -1,6 +1,6 @@
 import State from "./abstractState";
 import {log} from "../support/log";
-import {botMemory, FLYWEIGHTS} from "../../config/config";
+import {FLYWEIGHTS} from "../../config/config";
 import SourceState from "./sourceState";
 import MineralState from "./mineralState";
 import RoomIterator from "../util/roomIterator";
@@ -18,19 +18,19 @@ export default class RoomState extends State<Room> {
   }
 
   public static left(subject: Room) {
-    return (FLYWEIGHTS ? RoomState._left : new RoomState("RS") ).wrap(subject, botMemory()) as RoomState;
+    return (FLYWEIGHTS ? RoomState._left : new RoomState("RS") ).wrap(subject, State.rootMemory) as RoomState;
   }
 
   public static right(subject: Room) {
-    return (FLYWEIGHTS ? RoomState._right : new RoomState("RS") ).wrap(subject, botMemory()) as RoomState;
+    return (FLYWEIGHTS ? RoomState._right : new RoomState("RS") ).wrap(subject, State.rootMemory) as RoomState;
   }
 
   public static vleft(id: string) {
-    return (FLYWEIGHTS ? RoomState._vleft : new RoomState("RS") ).wrapRemote(id, botMemory()) as RoomState;
+    return (FLYWEIGHTS ? RoomState._vleft : new RoomState("RS") ).wrapRemote(id, State.rootMemory) as RoomState;
   }
 
   public static vright(id: string) {
-    return (FLYWEIGHTS ? RoomState._vright : new RoomState("RS") ).wrapRemote(id, botMemory()) as RoomState;
+    return (FLYWEIGHTS ? RoomState._vright : new RoomState("RS") ).wrapRemote(id, State.rootMemory) as RoomState;
   }
 
   private static _left: RoomState = new RoomState("RoomStateLeft");

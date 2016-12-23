@@ -1,5 +1,5 @@
 import State from "./abstractState";
-import {botMemory, FLYWEIGHTS} from "../../config/config";
+import {FLYWEIGHTS} from "../../config/config";
 import {Score} from "../score/api/score";
 
 export default class FlagState extends State<Flag> {
@@ -8,19 +8,19 @@ export default class FlagState extends State<Flag> {
   }
 
   public static left(subject: Flag) {
-    return (FLYWEIGHTS ? FlagState._left : new FlagState("FS") ).wrap(subject, botMemory()) as FlagState;
+    return (FLYWEIGHTS ? FlagState._left : new FlagState("FS") ).wrap(subject, State.rootMemory) as FlagState;
   }
 
   public static right(subject: Flag) {
-    return (FLYWEIGHTS ? FlagState._right : new FlagState("FS") ).wrap(subject, botMemory()) as FlagState;
+    return (FLYWEIGHTS ? FlagState._right : new FlagState("FS") ).wrap(subject, State.rootMemory) as FlagState;
   }
 
   public static vleft(id: string) {
-    return (FLYWEIGHTS ? FlagState._vleft : new FlagState("FS") ).wrapRemote(id, botMemory()) as FlagState;
+    return (FLYWEIGHTS ? FlagState._vleft : new FlagState("FS") ).wrapRemote(id, State.rootMemory) as FlagState;
   }
 
   public static vright(id: string) {
-    return (FLYWEIGHTS ? FlagState._vright : new FlagState("FS") ).wrapRemote(id, botMemory()) as FlagState;
+    return (FLYWEIGHTS ? FlagState._vright : new FlagState("FS") ).wrapRemote(id, State.rootMemory) as FlagState;
   }
 
   private static _left: FlagState = new FlagState("FlagStateLeft");
