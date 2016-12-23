@@ -4,7 +4,7 @@ import {log} from "../support/log";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 import {Score, Scored} from "../score/api/score";
-import {CachedObject} from "../map/graphManager";
+import {CachedObjectPos} from "../map/graphManager";
 import StateGraphBuilder from "./stateGraphBuilder";
 
 export default class MineralState extends State<Mineral> {
@@ -48,12 +48,14 @@ export default class MineralState extends State<Mineral> {
   }
 
   public graph(): LoDashExplicitArrayWrapper<Scored<State<any>>> {
-    return _.chain(this.memory.graph as CachedObject[]).map(function(s) {
-      return {
-        value: State.vright(s.type, s.id),
-        score: s.cost,
-      };
-    });
+    return _.chain(this.memory.graph as CachedObjectPos[]).map(function(s) {
+      const value = State.vright(s.type, s.id);
+      const score = F.elvis(s.range, 0);
+      if (!value) {
+        return undefined;
+      }
+      return {value, score} as Scored<State<any>>;
+    }).compact() as any;
   }
 
   public nodeDirs(): number[] {
@@ -65,11 +67,11 @@ export default class MineralState extends State<Mineral> {
   }
 
   protected _accessAddress() {
-    return ["minerals"];
+    return [LOOK_MINERALS];
   }
 
   protected _indexAddress() {
-    return ["index", "minerals"];
+    return ["index", LOOK_MINERALS];
   }
 
   protected init(rootMemory: any, callback?: LifecycleCallback<MineralState>): boolean {

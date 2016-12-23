@@ -2,7 +2,7 @@ import State from "./abstractState";
 import {botMemory, FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 import {SourceScore} from "../score/api/sourceScore";
-import {graphs} from "../singletons";
+import StateGraphBuilder from "./stateGraphBuilder";
 
 const REL = {
   SOURCE: {
@@ -72,11 +72,11 @@ export default class SourceState extends State<Source> {
   }
 
   protected _accessAddress() {
-    return ["sources"];
+    return [LOOK_SOURCES];
   }
 
   protected _indexAddress() {
-    return ["index", "sources"];
+    return ["index", LOOK_SOURCES];
   }
 
   protected init(rootMemory: any, callback?: LifecycleCallback<SourceState>): boolean {
@@ -97,7 +97,7 @@ export default class SourceState extends State<Source> {
         callback(this, State.LIFECYCLE_NEW);
       }
 
-      graphs.findNeighbor(this.pos());
+      this.memory.graph = StateGraphBuilder.buildGraph(this);
 
       return true;
     }

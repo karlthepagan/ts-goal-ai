@@ -6,6 +6,7 @@
     "forin": false,
     "interface-name": [false],
     "no-console": [false],
+    "no-namespace": false,
     "no-debugger": false,
     "no-var-requires": false,
     "object-literal-sort-keys": false,

@@ -1,6 +1,7 @@
 import State from "./abstractState";
 import {FLYWEIGHTS, botMemory} from "../../config/config";
 import {EnergyScore} from "../score/api/energyScore";
+import StateGraphBuilder from "./stateGraphBuilder";
 
 /**
  * HAR HAR HAR
@@ -60,6 +61,8 @@ export default class CityState extends State<any> {
       if (callback !== undefined) {
         callback(this, State.LIFECYCLE_NEW);
       }
+
+      this.memory.graph = StateGraphBuilder.buildGraph(this);
 
       return true;
     }

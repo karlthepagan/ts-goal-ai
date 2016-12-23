@@ -1,5 +1,8 @@
 import {graphs} from "../singletons";
 import State from "./abstractState";
+import {CachedObjectPos} from "../map/graphManager";
+
+type ObjectMap = { [id: string]: CachedObjectPos };
 
 /**
  * iterating per node
@@ -15,7 +18,12 @@ import State from "./abstractState";
 export default class StateGraphBuilder {
 
   public static buildGraph(root: State<any>) {
+    const inNetwork = StateGraphBuilder.toArray(2, root.memory.graph as CachedObjectPos[]);
     graphs.findNeighbor(root.pos());
   }
 
+  public static toArray(depth: number, objs: CachedObjectPos[]): CachedObjectPos[] {
+    _.chain(objs).map()
+    _.chain(objs).indexBy("id").merge
+  }
 }
