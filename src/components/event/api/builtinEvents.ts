@@ -78,7 +78,7 @@ export function defineEvents(em: EventRegistry) {
       return [ejp, pos]; // passed to the advice function
     }).advice(function(jp: Joinpoint<CreepState, number>, fromPos: RoomPosition) {
       if (jp.target.resolve(globalLifecycle)) {
-        jp.args[1] = F.posToDirection(fromPos)(jp.target.pos()); // TODO if 0?
+        jp.args[1] = F.posToDirection(fromPos, jp.target.pos()); // TODO if 0?
         interceptorService.triggerBehaviors(jp, "move");
 
         // interceptorService.scheduleExec() // TODO rested event

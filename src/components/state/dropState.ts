@@ -34,6 +34,10 @@ export default class DropState extends State<Resource> {
     return "DropState";
   }
 
+  public getType() {
+    return LOOK_RESOURCES;
+  }
+
   protected _accessAddress() {
     return ["drops"];
   }

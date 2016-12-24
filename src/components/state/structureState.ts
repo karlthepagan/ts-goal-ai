@@ -34,6 +34,10 @@ export default class StructureState<T extends OwnedStructure> extends State<T> {
     return "StructureState";
   }
 
+  public getType() {
+    return this.memory.type;
+  }
+
   public isFull(): boolean {
     const c: Container = this._subject as any;
     return _.chain(c.store).values().sum().value() === c.storeCapacity;
@@ -58,12 +62,13 @@ export default class StructureState<T extends OwnedStructure> extends State<T> {
       //   const subject = this.subject();
       // }
 
-      // TODO distance to all sources? value calculations?
+      this.memory.type = this.subject().structureType;
 
       if (callback !== undefined) {
         callback(this, State.LIFECYCLE_NEW);
       }
 
+      // TODO distance to all sources? value calculations?
       this.memory.graph = State.graphs.buildGraph(this);
 
       return true;

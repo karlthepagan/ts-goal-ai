@@ -4,7 +4,7 @@ import {log} from "../support/log";
 import {FLYWEIGHTS} from "../../config/config";
 import * as F from "../functions";
 import {Score, Scored} from "../score/api/score";
-import {CachedObjectPos} from "../map/graphManager";
+import {CachedObjectPos} from "./abstractState";
 
 export default class MineralState extends State<Mineral> {
   public static apiType() {
@@ -36,6 +36,10 @@ export default class MineralState extends State<Mineral> {
 
   public className() {
     return "MineralState";
+  }
+
+  public getType() {
+    return LOOK_MINERALS;
   }
 
   public delete() {
@@ -82,7 +86,7 @@ export default class MineralState extends State<Mineral> {
       if (!this.isRemote()) {
         const subject = this.subject();
         this.memory.nodes = F.findOpenPositions(subject.room, subject.pos, 1)
-          .map(F.posToDirection(subject.pos));
+          .map(F.posToDirectionCall(subject.pos));
       }
 
       if (callback !== undefined) {

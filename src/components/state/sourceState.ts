@@ -46,6 +46,10 @@ export default class SourceState extends State<Source> {
     return "SourceState";
   }
 
+  public getType() {
+    return LOOK_SOURCES;
+  }
+
   public isFull(): boolean {
     return this.subject().energy === this.subject().energyCapacity;
   }
@@ -89,7 +93,7 @@ export default class SourceState extends State<Source> {
       if (!this.isRemote()) {
         const subject = this.subject();
         this.memory.nodes = F.findOpenPositions(subject.room, subject.pos, 1)
-          .map(F.posToDirection(subject.pos));
+          .map(F.posToDirectionCall(subject.pos));
       }
 
       if (callback !== undefined) {

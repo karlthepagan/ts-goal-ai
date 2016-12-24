@@ -147,11 +147,15 @@ export function reverse(direction: number) {
   return (direction + 3) % 8 + 1;
 }
 
-export function posToDirection(origin: XY): (dst: XY) => number {
+export function posToDirectionCall(origin: XY): (dst: XY) => number {
   return function(dst) {
-    const dirRow = elvis(posToDirMap[1 + dst.y - origin.y], [] as number[]);
-    return dirRow[1 + dst.x - origin.x];
+    return posToDirection(origin, dst);
   };
+}
+
+export function posToDirection(src: XY, dst: XY) {
+  const dirRow = elvis(posToDirMap[1 + dst.y - src.y], [] as number[]);
+  return dirRow[1 + dst.x - src.x];
 }
 
 // preincrement voodoo! http://discuss.fogcreek.com/joelonsoftware/default.asp?cmd=show&ixPost=171881

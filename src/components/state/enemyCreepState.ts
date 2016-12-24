@@ -36,6 +36,10 @@ export default class EnemyCreepState extends CreepState {
     return "EnemyCreepState";
   }
 
+  public getType() {
+    return LOOK_CREEPS;
+  }
+
   protected _accessAddress() {
     return ["enemies"];
   }

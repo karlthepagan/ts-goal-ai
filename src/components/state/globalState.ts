@@ -64,6 +64,10 @@ export default class GlobalState extends State<Game> {
     return "GlobalState";
   }
 
+  public getType() {
+    return "";
+  }
+
   public delete() {
     super.delete();
 

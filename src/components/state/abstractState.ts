@@ -9,7 +9,6 @@ import * as Debug from "../util/debug";
 import LoDashExplicitArrayWrapper = _.LoDashExplicitArrayWrapper;
 import ScoreMixin from "../score/scoreMixin";
 import {Score} from "../score/api/score";
-import StateGraphBuilder from "./stateGraphBuilder";
 
 const POS_DIGITS = 2;
 const POS_DIGITS_X_2 = POS_DIGITS * 2;
@@ -79,6 +78,21 @@ function _access(state: any, rootMemory: any, writeValue?: any): any {
   return memory[state._id];
 }
 
+export interface CachedObject {
+  id: string;
+  type: string;
+}
+
+export interface CachedObjectPos extends CachedObject {
+  range: number;
+  pos: RoomPosition;
+  dir?: number;
+}
+
+export interface GraphBuilder {
+  buildGraph(root: State<any>): CachedObjectPos[];
+}
+
 /**
  * Flyweight objects which wrap memory and object to calculate state
  *
@@ -91,6 +105,12 @@ function _access(state: any, rootMemory: any, writeValue?: any): any {
  *  right - return from functions
  */
 abstract class State<T> implements Named {
+  public static ENTITY_ADDRESS = _.chain([LOOK_SOURCES, LOOK_MINERALS]).indexBy(_.identity).merge(
+    _.chain(CONSTRUCTION_COST).keys().concat(STRUCTURE_PORTAL, STRUCTURE_CONTROLLER, STRUCTURE_POWER_BANK)
+      .indexBy(_.constant(LOOK_STRUCTURES))).value() as { [type: string]: string };
+  public static TYPES = _.chain(State.ENTITY_ADDRESS).keys()
+    .map(s => [s, {type: s, range: 1}]).zipObject().value() as { [type: string]: CachedObjectPos };
+
   public static readonly LIFECYCLE_NEW = 0;
   public static readonly LIFECYCLE_FREE = 1;
   public static readonly LIFECYCLE_HIDDEN = 2;
@@ -103,9 +123,11 @@ abstract class State<T> implements Named {
     State.scores = scores;
   }
 
-  public static setRootMemory(mem: any) {
+  public static setRootMemory(mem: any, graphs?: GraphBuilder) {
     State.rootMemory = mem;
-    State.graphs = new StateGraphBuilder(mem);
+    if (graphs) {
+      State.graphs = graphs;
+    }
   }
 
   public static vright<I>(className: string, id: string): State<I>|undefined {
@@ -116,7 +138,7 @@ abstract class State<T> implements Named {
   protected static rootMemory: any;
   protected static events: EventRegistry;
   protected static scores: ScoreManager;
-  protected static graphs: StateGraphBuilder;
+  protected static graphs: GraphBuilder;
 
   public memory: any;
   public abstract score: Score; // most states have energy score
@@ -134,6 +156,7 @@ abstract class State<T> implements Named {
   }
 
   public abstract className(): string;
+  public abstract getType(): string;
 
   public isFull(): boolean {
     return false;

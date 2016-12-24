@@ -34,6 +34,10 @@ export default class FlagState extends State<Flag> {
     return "FlagState";
   }
 
+  public getType() {
+    return LOOK_FLAGS;
+  }
+
   protected _getId(subject: Flag): string|undefined {
     return subject.name;
   }

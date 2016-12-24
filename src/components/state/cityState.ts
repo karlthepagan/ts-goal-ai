@@ -39,6 +39,10 @@ export default class CityState extends State<any> {
     return "CityState";
   }
 
+  public getType() {
+    return "city";
+  }
+
   protected _accessAddress() {
     return ["cities"];
   }

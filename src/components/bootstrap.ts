@@ -28,7 +28,7 @@ export const bootstrap: (() => void)[] = [];
 
 bootstrap.push(() => {
   log.debug("bootstrap starting");
-  State.setRootMemory(botMemory());
+  State.setRootMemory(botMemory()); // new StateGraphBuilder(botMemory()));
   GlobalState.protectMemory("config");
 });
 

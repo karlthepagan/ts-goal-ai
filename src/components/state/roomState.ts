@@ -44,6 +44,10 @@ export default class RoomState extends State<Room> {
     return "RoomState";
   }
 
+  public getType() {
+    return "rooms";
+  }
+
   public delete() {
     super.delete();
 

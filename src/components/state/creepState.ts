@@ -231,6 +231,10 @@ export default class CreepState extends State<Creep> {
     return "CreepState";
   }
 
+  public getType() {
+    return LOOK_CREEPS;
+  }
+
   public isFull(): boolean {
     const room =  this.subject().carryCapacity - this.getCarrying();
     const produced = this.subject().getActiveBodyparts(WORK) * 2;
@@ -342,7 +346,7 @@ export default class CreepState extends State<Creep> {
     const newTypes: string[] = [];
     const newDrops: { [resource: string]: string[] } = {};
 
-    const posToDir = F.posToDirection(selfpos);
+    const posToDir = F.posToDirectionCall(selfpos);
     LookForIterator.search(selfpos, 1, this, [{
       key: LOOK_CREEPS, value: function(creep: Creep, range: number) {
         if (creep.spawning || creep.ticksToLive > 1495) {

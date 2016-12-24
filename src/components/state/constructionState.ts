@@ -38,6 +38,10 @@ export default class ConstructionState extends State<ConstructionSite> {
     return "ConstructionState";
   }
 
+  public getType() {
+    return LOOK_CONSTRUCTION_SITES;
+  }
+
   protected _accessAddress() {
     return ["sites"];
   }

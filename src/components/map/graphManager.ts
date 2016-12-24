@@ -4,16 +4,7 @@ import XYIterator from "../util/xyIterator";
 import PositionIterable from "../util/positionIterable";
 import {MapMatrices} from "./mapManager";
 import {maps} from "../singletons";
-
-export interface CachedObject {
-  id: string;
-  type: string;
-}
-
-export interface CachedObjectPos extends CachedObject {
-  range: number;
-  pos: RoomPosition;
-}
+import {CachedObjectPos, default as State} from "../state/abstractState";
 
 interface CachedLocationMatrix {
   [coord: number]: CachedLocationMatrix | CachedObjectPos;
@@ -96,12 +87,6 @@ export function cacheTerrainMatrix(roomName: string) {
 }
 
 export default class GraphManager {
-  public static ENTITY_ADDRESS = _.chain([LOOK_SOURCES, LOOK_MINERALS]).indexBy(_.identity).merge(
-    _.chain(CONSTRUCTION_COST).keys().concat(STRUCTURE_PORTAL, STRUCTURE_CONTROLLER, STRUCTURE_POWER_BANK)
-      .indexBy(_.constant(LOOK_STRUCTURES))).value() as { [type: string]: string };
-  public static TYPES = _.chain(GraphManager.ENTITY_ADDRESS).keys()
-    .map(s => [s, {type: s, range: 1}]).zipObject().value() as { [type: string]: CachedObjectPos };
-
   // these are all TYPES, so they have range: 1
   private _targetCache: { [roomName: string]: CachedObjectPos[]} = {};
   private _positionCache: { [roomName: string]: CachedLocationMatrix} = {};
@@ -132,12 +117,21 @@ export default class GraphManager {
     } else {
       excluded = [pos];
     }
-    const cached = _.chain(this.getNearbyObjects(pos, 4, excluded)).flatten().compact();
+    const dirs = _.compact(this.getNearbyObjects(pos, 4, excluded));
+    const cached = _.flatten(dirs);
     // const cached = this.getObjectsInRoom(target.roomName, excluded);
-    const ret = PathFinder.search(target, cached as any, {
+    return this.search(target, cached);
+  }
+
+  public search(walkable: RoomPosition, goals: {pos: RoomPosition, range: number}[], dijkstra?: boolean): CachedObjectPos|undefined {
+    if (!this._targetCache[walkable.roomName]) {
+      Debug.error("targetCache not ready for roomName=" + walkable.roomName);
+      return undefined;
+    }
+    const ret = PathFinder.search(walkable, goals, {
       roomCallback: cacheTerrainMatrix,
       maxRooms: 4,
-      // algorithm: "dijkstra",
+      algorithm: dijkstra ? "dijkstra" : undefined,
     } as any) as any;
     if (ret.incomplete) {
       return undefined;
@@ -145,7 +139,7 @@ export default class GraphManager {
     let obj: CachedObjectPos | undefined;
     if (ret.cost === 0) {
       // special case - neighbor
-      obj = this.getObject(target);
+      obj = this.getObject(walkable);
       if (!obj) {
         Debug.error("neighbor failed");
         return undefined;
@@ -164,11 +158,12 @@ export default class GraphManager {
     return obj;
   }
 
-  public getObject(pos: RoomPosition) {
+  public getObject(pos: RoomPosition, mergePos?: boolean) {
     const room = this._positionCache[pos.roomName];
     const y = room ? room[pos.y] as CachedLocationMatrix : undefined;
     const obj = y ? y[pos.x] as CachedObjectPos : undefined;
-    return !obj ? undefined : _.create(obj, {pos: pos}) as CachedObjectPos;
+    const dir = obj ? F.posToDirection(obj.pos, pos) : undefined;
+    return !obj ? undefined : _.create(obj, mergePos ? {pos, dir} : {dir}) as CachedObjectPos;
   }
 
   protected addObject(obj: CachedObjectPos) {
@@ -239,13 +234,13 @@ export default class GraphManager {
         },
       }) as Structure[];
     for (let i = structs.length - 1; i >= 0; i--) {
-      const obj = createObj(structs[i], GraphManager.TYPES[structs[i].structureType]);
+      const obj = createObj(structs[i], State.TYPES[structs[i].structureType]);
       cache.push(obj);
       this.addObject(obj);
     }
 
     const sources = room.find(FIND_SOURCES) as Source[];
-    const sourceType = GraphManager.TYPES[LOOK_SOURCES];
+    const sourceType = State.TYPES[LOOK_SOURCES];
     for (let i = sources.length - 1; i >= 0; i--) {
       const obj = createObj(sources[i], sourceType);
       cache.push(obj);
@@ -253,7 +248,7 @@ export default class GraphManager {
     }
 
     const minerals = room.find(FIND_MINERALS) as Mineral[];
-    const mineralType = GraphManager.TYPES[LOOK_MINERALS];
+    const mineralType = State.TYPES[LOOK_MINERALS];
     for (let i = minerals.length - 1; i >= 0; i--) {
       const obj = createObj(minerals[i], mineralType);
       cache.push(obj);
