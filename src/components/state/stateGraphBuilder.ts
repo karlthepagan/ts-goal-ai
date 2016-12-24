@@ -3,6 +3,8 @@ import State from "./abstractState";
 import * as Debug from "../util/debug";
 import {GraphBuilder} from "./abstractState";
 import {CachedObjectPos} from "./abstractState";
+import {expand} from "../functions";
+import {log} from "../support/log";
 
 export type ObjectMap = { [id: string]: CachedObjectPos };
 
@@ -24,52 +26,62 @@ export default class StateGraphBuilder implements GraphBuilder {
     this._mem = memory;
   }
 
-  public getNodesFor(obj: CachedObjectPos|undefined): CachedObjectPos[]|undefined {
+  public getNodesFor(obj: CachedObjectPos|undefined): CachedObjectPos[] {
     if (!obj) {
-      return undefined;
+      return [];
     }
     const group = State.ENTITY_ADDRESS[obj.type];
-    const nodes = this._mem[group];
-    const node = nodes[obj.id];
-    return node.graph;
+    return expand([group, obj.id, "graph"], this._mem, []);
   }
 
   public buildGraph(root: State<any>) {
+    log.debug(root.pos().roomName, "graph root", root.pos().x, root.pos().y);
     Debug.always("observe graph");
     const walkable = graphs.findWalkable(root.pos());
     if (!walkable) {
       // TODO later, warn isolated structure
       return [];
     }
+    // prep the first room call
+    graphs.initRoom(walkable.roomName);
+    const graphRoot = this.toCacheObj(root);
     const graph: CachedObjectPos[] = root.memory.graph || [];
     // const inNetwork = this.flattenGraph(2, root.memory.graph as CachedObjectPos[]);
     const inNetwork: ObjectMap = {};
-    inNetwork[root.getId()] = this.toCacheObj(root);
     let addedExclusions: CachedObjectPos[]|undefined = graph;
     do {
       this.flattenGraphInto(inNetwork, 2, addedExclusions);
-      addedExclusions = undefined;
+      addedExclusions = [];
       const closestInNetwork = graphs.search(walkable, _.values(inNetwork) as any, true);
       if (closestInNetwork) {
-        const pruned = this.graphMergeAndPrune(graph, closestInNetwork);
-        if (pruned) {
-          addedExclusions = this.getNodesFor(closestInNetwork);
+        log.debug("pruning", closestInNetwork.pos.x, closestInNetwork.pos.y);
+        addedExclusions = this.getNodesFor(closestInNetwork);
+        const pruned = this.graphMergeAndPrune(graphRoot, graph, closestInNetwork, addedExclusions);
+        if (!pruned) {
+          addedExclusions = [];
         }
       }
-    } while (addedExclusions);
+    } while (addedExclusions.length > 0);
 
+    inNetwork[graphRoot.id] = graphRoot;
     do {
       this.flattenGraphInto(inNetwork, 2, addedExclusions);
       const closestOutNetwork = graphs.findNeighbor(walkable, _.values(inNetwork) as any);
       addedExclusions = this.getNodesFor(closestOutNetwork);
-      if (addedExclusions) {
-        // TODO is merge and prune needed here?
-        this.graphMergeAndPrune(graph, closestOutNetwork);
+      if (addedExclusions.length > 0) {
+        const adding = closestOutNetwork as CachedObjectPos; // assert not null!
+        log.debug("joined", adding.pos.x, adding.pos.y);
+        inNetwork[adding.id] = adding;
+        // TODO is merge and prune return needed here?
+        this.graphMergeAndPrune(graphRoot, graph, closestOutNetwork, addedExclusions);
       } else if (closestOutNetwork) {
+        log.debug("+out", closestOutNetwork.pos.x, closestOutNetwork.pos.y);
         // prune is not needed because there are no node connections
-        graph.push(closestOutNetwork); // TODO add reciprocal?
+        inNetwork[closestOutNetwork.id] = closestOutNetwork;
+        this.addLink(graphRoot, graph, closestOutNetwork, addedExclusions);
+        addedExclusions = []; // hacky, don't loop!
       }
-    } while (addedExclusions);
+    } while (addedExclusions.length > 0);
 
     return graph;
   }
@@ -79,7 +91,7 @@ export default class StateGraphBuilder implements GraphBuilder {
       return;
     }
     depth--;
-    _.merge(map, _(objs).indexBy("id"));
+    map = _.chain(map).merge(_.indexBy(objs, "id")).value();
     if (depth >= 1) {
       for (let i = objs.length - 1; i >= 0; i--) {
         const o = objs[i];
@@ -90,13 +102,26 @@ export default class StateGraphBuilder implements GraphBuilder {
     }
   }
 
-  protected graphMergeAndPrune(graph: CachedObjectPos[], adding: CachedObjectPos|undefined): CachedObjectPos|undefined {
+  protected graphMergeAndPrune(source: CachedObjectPos, graph: CachedObjectPos[], adding: CachedObjectPos|undefined,
+                               addingGraph: CachedObjectPos[]): CachedObjectPos|undefined {
     if (!adding) {
       return undefined;
     }
-    graph.push(adding); // TODO add reciprocal?
+    // add neighbor
+    this.addLink(source, graph, adding, addingGraph);
+
+    // TODO NOW - add friend of friend if path is shorter
+
+    // TODO SOON - for each added link check for redundancies
+
+    // TODO log prune
 
     return undefined; // TODO graph prune to dst = adding, stop when budget exceeds adding.range
+  }
+
+  protected addLink(src: CachedObjectPos, srcGraph: CachedObjectPos[], dst: CachedObjectPos, dstGraph: CachedObjectPos[]) {
+    srcGraph.push(dst);
+    dstGraph.push(_.create(src, {range: dst.range})); // add reciprocal
   }
 
   protected toCacheObj(state: State<any>): CachedObjectPos {

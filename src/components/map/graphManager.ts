@@ -10,11 +10,11 @@ interface CachedLocationMatrix {
   [coord: number]: CachedLocationMatrix | CachedObjectPos;
 }
 
-function dirMerge(pos: RoomPosition, posRoomXY: F.XY, excluded: RoomPosition[]|undefined,
+function dirMerge(pos: RoomPosition, posRoomXY: F.XY, excluded: {pos: RoomPosition}[]|undefined,
                   directions: CachedObjectPos[][], candidates: CachedObjectPos[], maxPerDir?: number) {
   for (let i = candidates.length - 1; i >= 0; i--) {
     const c = candidates[i];
-    if (excluded && _.any(excluded, function(e) { return F.xyEq(c.pos, e); })) {
+    if (excluded && _.any(excluded, function(e) { return F.xyEq(c.pos, e.pos); })) {
       continue;
     }
 
@@ -28,9 +28,9 @@ function dirMerge(pos: RoomPosition, posRoomXY: F.XY, excluded: RoomPosition[]|u
       return pos.getRangeTo(d);
     });
 
-    if (maxPerDir) {
+    if (maxPerDir <= dirBucket.length) {
       Debug.always("observe maxdir merge");
-      if (insertAt < dirBucket.length) {
+      if (insertAt < maxPerDir) {
         dirBucket.pop();
         dirBucket.splice(insertAt, 0, c);
       }
@@ -106,16 +106,16 @@ export default class GraphManager {
     return undefined;
   }
 
-  public findNeighbor(pos: RoomPosition, excluded?: RoomPosition[]): CachedObjectPos|undefined {
+  public findNeighbor(pos: RoomPosition, excluded?: {pos: RoomPosition}[]): CachedObjectPos|undefined {
     PathFinder.use(true);
     const target = this.findWalkable(pos);
     if (!target) {
       return undefined;
     }
     if (excluded) {
-      excluded = excluded.concat(pos);
+      excluded = excluded.concat({pos: pos});
     } else {
-      excluded = [pos];
+      excluded = [{pos: pos}];
     }
     const dirs = _.compact(this.getNearbyObjects(pos, 4, excluded));
     const cached = _.flatten(dirs);
@@ -124,6 +124,9 @@ export default class GraphManager {
   }
 
   public search(walkable: RoomPosition, goals: {pos: RoomPosition, range: number}[], dijkstra?: boolean): CachedObjectPos|undefined {
+    if (goals.length === 0) {
+      return undefined;
+    }
     if (!this._targetCache[walkable.roomName]) {
       Debug.error("targetCache not ready for roomName=" + walkable.roomName);
       return undefined;
@@ -166,6 +169,10 @@ export default class GraphManager {
     return !obj ? undefined : _.create(obj, mergePos ? {pos, dir} : {dir}) as CachedObjectPos;
   }
 
+  public initRoom(roomName: string) {
+    this.getObjectsInRoom(roomName);
+  }
+
   protected addObject(obj: CachedObjectPos) {
     const iter = new XYIterator(obj.pos, 1);
     const minY = obj.pos.y - 1;
@@ -177,7 +184,7 @@ export default class GraphManager {
     }
   }
 
-  protected getNearbyObjects(pos: RoomPosition, maxPerDir: number, excluded?: RoomPosition[]): CachedObjectPos[][]|undefined {
+  protected getNearbyObjects(pos: RoomPosition, maxPerDir: number, excluded?: {pos: RoomPosition}[]): CachedObjectPos[][]|undefined {
     const posRoomXY = F.parseRoomName(pos.roomName); // TODO assert defined
     const directions = [null, [], null, [], null, [], null, []] as CachedObjectPos[][];
 

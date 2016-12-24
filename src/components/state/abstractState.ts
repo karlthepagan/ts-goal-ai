@@ -107,7 +107,7 @@ export interface GraphBuilder {
 abstract class State<T> implements Named {
   public static ENTITY_ADDRESS = _.chain([LOOK_SOURCES, LOOK_MINERALS]).indexBy(_.identity).merge(
     _.chain(CONSTRUCTION_COST).keys().concat(STRUCTURE_PORTAL, STRUCTURE_CONTROLLER, STRUCTURE_POWER_BANK)
-      .indexBy(_.constant(LOOK_STRUCTURES))).value() as { [type: string]: string };
+      .map(s => [s, LOOK_STRUCTURES]).object().value()).value() as { [type: string]: string };
   public static TYPES = _.chain(State.ENTITY_ADDRESS).keys()
     .map(s => [s, {type: s, range: 1}]).zipObject().value() as { [type: string]: CachedObjectPos };
 

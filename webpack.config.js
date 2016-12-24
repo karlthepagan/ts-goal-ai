@@ -1,7 +1,7 @@
 var bimap = require("bimap");
 
 module.exports = {
-  devtool: "source-map",
+  // devtool: "source-map",
   entry: "./src/main.ts",
   output: {
     filename: "./main.js",
