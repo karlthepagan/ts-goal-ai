@@ -7,7 +7,7 @@ import {maps} from "../singletons";
 import {CachedObjectPos, default as State} from "../state/abstractState";
 
 interface CachedLocationMatrix {
-  [coord: number]: CachedLocationMatrix | CachedObjectPos;
+  [coord: number]: CachedLocationMatrix | CachedObjectPos[];
 }
 
 function dirMerge(pos: RoomPosition, posRoomXY: F.XY, excluded: {pos: RoomPosition}[]|undefined,
@@ -142,7 +142,7 @@ export default class GraphManager {
     let obj: CachedObjectPos | undefined;
     if (ret.cost === 0) {
       // special case - neighbor
-      obj = this.getObject(walkable);
+      obj = this.getObject(walkable, false, goals);
       if (!obj) {
         Debug.error("neighbor failed");
         return undefined;
@@ -152,7 +152,7 @@ export default class GraphManager {
     // } else if (ret.cost < 3) {
     //   // TODO later find neighbor with touching cases?
     }
-    obj = this.getObject(ret.path[ret.path.length - 1]);
+    obj = this.getObject(ret.path[ret.path.length - 1], false, goals);
     if (!obj) {
       Debug.error("pathfind failed?");
       return undefined;
@@ -161,10 +161,25 @@ export default class GraphManager {
     return obj;
   }
 
-  public getObject(pos: RoomPosition, mergePos?: boolean) {
+  public getObject(pos: RoomPosition, mergePos?: boolean, goals?: {pos: RoomPosition}[]) {
     const room = this._positionCache[pos.roomName];
     const y = room ? room[pos.y] as CachedLocationMatrix : undefined;
-    const obj = y ? y[pos.x] as CachedObjectPos : undefined;
+    const objs = y ? y[pos.x] as CachedObjectPos[] : undefined;
+    if (!objs) {
+      return undefined;
+    }
+    let obj: CachedObjectPos|undefined;
+    if (objs.length === 1) {
+      obj = objs[0];
+    } else if (goals) {
+      // TODO NOW conflict resolution
+      obj = F.posIntersect(objs, goals);
+      if (!obj) {
+        throw Debug.throwing(new Error("position conflict resolution failed"));
+      }
+    } else {
+      throw Debug.throwing(new Error("goals require conflict resolution"));
+    }
     const dir = obj ? F.posToDirection(obj.pos, pos) : undefined;
     return !obj ? undefined : _.create(obj, mergePos ? {pos, dir} : {dir}) as CachedObjectPos;
   }
@@ -178,8 +193,8 @@ export default class GraphManager {
     const minY = obj.pos.y - 1;
     let p = iter.next();
     while (p.value.y >= minY) {
-      const y = F.expand([obj.pos.roomName, p.value.y], this._positionCache);
-      y[p.value.x] = obj;
+      const pos = F.expand([obj.pos.roomName, p.value.y, p.value.x], this._positionCache, []) as CachedObjectPos[];
+      pos.push(obj);
       p = iter.next();
     }
   }

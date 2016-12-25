@@ -12,10 +12,10 @@ import ConstructionState from "./constructionState";
 import {Score} from "../score/api/score";
 
 export default class GlobalState extends State<Game> {
-  public static readonly CHANGED_FLAGS = "flags";
-  public static readonly CHANGED_CREEPS = "creeps";
-  public static readonly CHANGED_SITES = "constructionSites";
-  public static readonly CHANGED_STRUCTURES = "structures";
+  public static readonly CHANGED_FLAGS = LOOK_FLAGS;
+  public static readonly CHANGED_CREEPS = LOOK_CREEPS;
+  public static readonly CHANGED_SITES = LOOK_CONSTRUCTION_SITES;
+  public static readonly CHANGED_STRUCTURES = LOOK_STRUCTURES;
 
   public static apiType() {
     return undefined;
@@ -98,7 +98,7 @@ export default class GlobalState extends State<Game> {
    * reaper procedure - iterates thru creeps we think are alive
    */
   public bodies(): LoDashExplicitArrayWrapper<CreepState> {
-    return _.chain(this.memory.index.creeps).keys().map(CreepState.vright);
+    return _.chain(this.memory.index[LOOK_CREEPS]).keys().map(CreepState.vright);
   }
 
   public rooms(): LoDashExplicitArrayWrapper<RoomState> {
@@ -112,12 +112,12 @@ export default class GlobalState extends State<Game> {
 
   public sources(): LoDashExplicitArrayWrapper<SourceState> {
     // return this.sources<SourceState>(F.identity<SourceState>());
-    return _.chain(this.memory.index.sources).keys().map(SourceState.vright);
+    return _.chain(this.memory.index[LOOK_SOURCES]).keys().map(SourceState.vright);
   }
 
   public minerals(): LoDashExplicitArrayWrapper<MineralState> {
     // return this.minerals<MineralState>(F.identity<MineralState>());
-    return _.chain(this.memory.index.minerals).keys().map(MineralState.vright);
+    return _.chain(this.memory.index[LOOK_MINERALS]).keys().map(MineralState.vright);
   }
 
   public getChanges(): string[] {
@@ -147,7 +147,7 @@ export default class GlobalState extends State<Game> {
    * reaper procedure - iterates thru structures which we think are alive
    */
   public ruins(): LoDashExplicitArrayWrapper<StructureState<any>> {
-    return _.chain(this.memory.index.structures).keys().map(StructureState.vright);
+    return _.chain(this.memory.index[LOOK_STRUCTURES]).keys().map(StructureState.vright);
   }
 
   public gcl(): number {
@@ -186,11 +186,11 @@ export default class GlobalState extends State<Game> {
         config: {} as Options, // Options are also bootstrapped outside GlobalState
         envirome: {},
         index: {
-          creeps: {},
+          [LOOK_CREEPS]: {},
           rooms: {},
-          sources: {},
-          minerals: {},
-          structures: {},
+          [LOOK_SOURCES]: {},
+          [LOOK_MINERALS]: {},
+          [LOOK_STRUCTURES]: {},
         },
       }));
 

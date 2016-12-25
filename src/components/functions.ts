@@ -498,6 +498,17 @@ export function cardinalDirTo(src: XY, dst: XY) {
   }
 }
 
+export function posIntersect<T extends {pos: RoomPosition}>(targets: T[], goals: {pos: RoomPosition}[]) {
+  for (const o of targets) {
+    for (let i = goals.length - 1; i >= 0; i--) {
+      if (o.pos.x === goals[i].pos.x && o.pos.y === goals[i].pos.y) {
+        return o;
+      }
+    }
+  }
+  return undefined;
+}
+
 export function dummy() {
   log.debug("don't warn me about unused imports");
 }
