@@ -24,8 +24,6 @@ export function grind(state: GlobalState) {
   const commands = state.memory as Commands;
   const opts = state.memory.config as Options;
 
-  Debug.on("debug", true);
-
   if (commands.shuffle || commands.last === undefined
       || (Game.time - commands.last) > F.elvis(opts.failedTicksToShuffle, 5)) { // TODO integrate into event manager
     resetAssignments(state, commands.shuffle);

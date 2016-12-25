@@ -1,4 +1,5 @@
 import * as Config from "./config/config";
+import * as Debug from "./components/util/debug";
 import { log } from "./components/support/log";
 import GlobalState from "./components/state/globalState";
 import {bootstrap} from "./components/bootstrap";
@@ -44,6 +45,8 @@ let imported = false;
  * @export
  */
 export function loop() {
+  Debug.on("debug");
+
   // Check memory for null or out of bounds custom objects
   if (!Memory.uuid || Memory.uuid > 100) {
     Memory.uuid = 0;
