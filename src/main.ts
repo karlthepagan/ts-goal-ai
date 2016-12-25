@@ -75,22 +75,6 @@ export function loop() {
     log.trace(err);
   }
 
-  for (let i in Game.rooms) {
-    let room: Room = Game.rooms[i];
-
-    // Clears any non-existing creep memory.
-    for (let name in Memory.creeps) {
-      let creep: any = Memory.creeps[name];
-
-      if (creep.room === room.name) {
-        if (!Game.creeps[name]) {
-          log.info("Clearing non-existing creep memory:", name);
-          delete Memory.creeps[name];
-        }
-      }
-    }
-  }
-
   botMemory().maps = maps.store();
 
   if (Game.cpu.bucket !== undefined) {

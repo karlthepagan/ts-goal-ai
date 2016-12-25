@@ -114,6 +114,10 @@ abstract class State<T> implements Named {
   public static readonly LIFECYCLE_NEW = 0;
   public static readonly LIFECYCLE_FREE = 1;
   public static readonly LIFECYCLE_HIDDEN = 2;
+  public static rootMemory: any;
+  public static events: EventRegistry;
+  public static scores: ScoreManager;
+  public static graphs: GraphBuilder;
 
   public static setEventRegistry(events: EventRegistry) {
     State.events = events;
@@ -134,11 +138,6 @@ abstract class State<T> implements Named {
     const ctor = (getConstructor(className) as any);
     return ctor === undefined ? undefined : ctor.vright(id); // TODO startPool and transaction?
   }
-
-  protected static rootMemory: any;
-  protected static events: EventRegistry;
-  protected static scores: ScoreManager;
-  protected static graphs: GraphBuilder;
 
   public memory: any;
   public abstract score: Score; // most states have energy score
@@ -283,14 +282,14 @@ abstract class State<T> implements Named {
   public onPart(other: CreepState, direction: number) {
     other = other;
     Debug.on("debugTouch");
-    this.memory.touch.creep[direction] = null;
+    this.memory.touch[LOOK_CREEPS][direction] = null;
     this.memory.touch.types[direction] = null;
     F.remove(this.memory.touch.dir, direction);
   }
 
   public onMeet(other: CreepState, direction: number) {
     Debug.on("debugTouch");
-    this.memory.touch.creep[direction] = other.getId();
+    this.memory.touch[LOOK_CREEPS][direction] = other.getId();
     this.memory.touch.types[direction] = "CreepState";
     const dirs = this.memory.touch.dir as number[];
     F.add(dirs, direction);
@@ -299,7 +298,7 @@ abstract class State<T> implements Named {
   public onSlide(other: CreepState, newDirection: number) {
     Debug.on("debugTouch");
 
-    const creeps = this.memory.touch.creep;
+    const creeps = this.memory.touch[LOOK_CREEPS];
     creeps[newDirection] = other.getId();
     // remove the old direction
     F.arrayUniq(creeps, other.getId(), newDirection);
@@ -311,7 +310,7 @@ abstract class State<T> implements Named {
   }
 
   public touchedCreepIds(): LoDashExplicitArrayWrapper<string> {
-    return _.chain(this.memory.touch.creep).compact<string>();
+    return _.chain(this.memory.touch[LOOK_CREEPS]).compact<string>();
   }
 
   public isEnergyMover() {

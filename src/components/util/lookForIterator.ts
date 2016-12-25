@@ -26,7 +26,6 @@ export default class LookForIterator<T> implements Iterable<boolean>, Iterator<b
 
   private _start: RoomPosition;
   private _itr: PositionIterable;
-  private _minY: number;
   private _findCallbacks: FindCallback<T>[];
   private _thisArg: undefined|T;
   private _callbackFailure?: (found: any, callback?: FindCallback<T>, thisArg?: T) => boolean;
@@ -37,7 +36,6 @@ export default class LookForIterator<T> implements Iterable<boolean>, Iterator<b
               callbackFailure?: (found: any, callback?: FindCallback<T>) => boolean ) {
     this._start = pos;
     this._itr = new PositionIterable(pos, 1, maxDistance);
-    this._minY = pos.y - maxDistance;
     this._findCallbacks = findCallbacks;
     this._thisArg = thisArg;
     this._callbackFailure = callbackFailure;
@@ -55,10 +53,11 @@ export default class LookForIterator<T> implements Iterable<boolean>, Iterator<b
   public next(): IteratorResult<boolean> {
     let pos: RoomPosition;
     do {
-      pos = this._itr.next().value;
-      if (pos.y < this._minY) {
+      const n = this._itr.next();
+      if (n.done) {
         return {done: true} as IteratorResult<boolean>;
       }
+      pos = n.value;
     }
     while (pos.x < 0 || pos.x > 49 || pos.y < 0 || pos.y > 49);
 

@@ -227,7 +227,7 @@ function byScore<T extends State<any>>(maybeMetric?: string, decorator?: MemoIte
     };
   }
 
-  /* TODO functional? more expressive, why not just use comments? :P
+  /* TODO functional? vs more expressive, why not just use comments? :P
    _.flow(
    (s: T) => s.getScoreMemory(),
    scoreManager.byScore(score)

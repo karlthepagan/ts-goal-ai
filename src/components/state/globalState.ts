@@ -185,6 +185,11 @@ export default class GlobalState extends State<Game> {
       this.memory = _.defaultsDeep(this.memory, _.cloneDeep({
         config: {} as Options, // Options are also bootstrapped outside GlobalState
         envirome: {},
+        [LOOK_CREEPS]: {},
+        rooms: {},
+        [LOOK_SOURCES]: {},
+        [LOOK_MINERALS]: {},
+        [LOOK_STRUCTURES]: {},
         index: {
           [LOOK_CREEPS]: {},
           rooms: {},

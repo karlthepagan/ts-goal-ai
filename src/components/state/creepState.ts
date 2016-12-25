@@ -402,7 +402,7 @@ export default class CreepState extends State<Creep> {
     }]);
 
     // TODO transact touch directions
-    const oldCreeps = this.memory.touch.creep;
+    const oldCreeps = this.memory.touch[LOOK_CREEPS];
     const oldEnergy = this.memory.touch.energy;
     const oldTypes = this.memory.touch.types;
 
@@ -424,7 +424,7 @@ export default class CreepState extends State<Creep> {
     iterateNeighbors(creeps.added, () => "CreepState", "onMeet", argFunc);
     iterateNeighbors(creeps.slid, () => "CreepState", "onSlide", argFunc);
 
-    this.memory.touch.creep = newCreeps;
+    this.memory.touch[LOOK_CREEPS] = newCreeps;
     this.memory.touch.energy = newEnergy;
     this.memory.touch.types = newTypes;
     this.memory.touch.drops = newDrops;
@@ -502,11 +502,11 @@ export default class CreepState extends State<Creep> {
   }
 
   protected _accessAddress() {
-    return ["creeps"];
+    return [LOOK_CREEPS];
   }
 
   protected _indexAddress() {
-    return ["index", "creeps"];
+    return ["index", LOOK_CREEPS];
   }
 
   protected _visionSource() {

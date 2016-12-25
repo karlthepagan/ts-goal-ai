@@ -95,12 +95,6 @@ export default class RoomState extends State<Room> {
       this.memory = _.defaultsDeep(this.memory, _.cloneDeep({
         sources: {},
         minerals: {},
-        flow: [
-          {},
-          {},
-          {},
-          {},
-        ],
       }));
 
       if (!this.isRemote()) {
