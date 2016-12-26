@@ -9,6 +9,8 @@ import monkeypatch from "./monkeypatch";
 import {dispatchTick, detectChanges} from "./components/event/behaviorContext";
 import {botMemory} from "./config/config";
 import {importManager, scoreManager, maps} from "./components/singletons";
+import State from "./components/state/abstractState";
+import StateGraphBuilder from "./components/state/stateGraphBuilder";
 
 // Any code written outside the `loop()` method is executed only when the
 // Screeps system reloads your script.
@@ -46,6 +48,8 @@ let imported = false;
  */
 export function loop() {
   Debug.on("debug");
+
+  State.setRootMemory(botMemory(), new StateGraphBuilder(botMemory()));
 
   // Check memory for null or out of bounds custom objects
   if (!Memory.uuid || Memory.uuid > 100) {
