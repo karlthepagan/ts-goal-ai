@@ -43,11 +43,11 @@ export default class FlagState extends State<Flag> {
   }
 
   protected _accessAddress() {
-    return ["flags"];
+    return [LOOK_FLAGS];
   }
 
   protected _indexAddress() {
-    return ["index", "flags"];
+    return ["index", LOOK_FLAGS];
   }
 
   protected init(rootMemory: any, callback?: LifecycleCallback<FlagState>): boolean {

@@ -127,8 +127,11 @@ export default class GlobalState extends State<Game> {
       GlobalState.CHANGED_STRUCTURES].filter(n => this.isChanged(n));
   }
 
+  /**
+   * @param type one of the LOOK_* constants
+   */
   public isChanged(type: string) {
-    return _.size((Game as any)[type]) !== _.size(this.memory[type]);
+    return _.size((Game as any)[State.GAME_INDEX[type]]) !== _.size(this.memory[type]);
   }
 
   public flags(): LoDashExplicitArrayWrapper<FlagState> {

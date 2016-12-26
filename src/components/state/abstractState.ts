@@ -110,6 +110,12 @@ abstract class State<T> implements Named {
       .map(s => [s, LOOK_STRUCTURES]).object().value()).value() as { [type: string]: string };
   public static TYPES = _.chain(State.ENTITY_ADDRESS).keys()
     .map(s => [s, {type: s, range: 1}]).zipObject().value() as { [type: string]: CachedObjectPos };
+  public static GAME_INDEX = {
+    [LOOK_CREEPS]: "creeps",
+    [LOOK_STRUCTURES]: "structures",
+    [LOOK_CONSTRUCTION_SITES]: "constructionSites",
+    [LOOK_FLAGS]: "flags",
+  };
 
   public static readonly LIFECYCLE_NEW = 0;
   public static readonly LIFECYCLE_FREE = 1;
