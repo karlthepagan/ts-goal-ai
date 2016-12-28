@@ -61,18 +61,6 @@ export function createObjSim(obj: any, type: {type: string, range: number}) {
   } as CachedObjectPos;
 }
 
-export function exclude(objs: CachedObjectPos[], excluded?: F.XY[]) {
-  if (!excluded) {
-    return objs;
-  }
-
-  return _.chain(objs).reject(function(o) {
-    return _.any(excluded, function(e) {
-      return F.xyEq(e, o.pos);
-    });
-  }).value();
-}
-
 // simulator monkeypatch!
 const createObj = Game.cpu.limit === undefined ? createObjSim : createObjNormal;
 
@@ -112,9 +100,7 @@ export default class GraphManager {
     if (!target) {
       return undefined;
     }
-    if (excluded) {
-      excluded = excluded.concat({pos: pos});
-    } else {
+    if (!excluded) {
       excluded = [{pos: pos}];
     }
     const dirs = _.compact(this.getNearbyObjects(pos, 4, excluded));
