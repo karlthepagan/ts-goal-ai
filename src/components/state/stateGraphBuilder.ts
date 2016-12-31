@@ -14,13 +14,13 @@ const MERGE_NETWORK_DEPTH = 2;
 export type ObjectMap = Dictionary<CachedObjectPos>;
 
 interface Node {
-  obj: CachedObjectPos;
-  pos: RoomPosition;
-  graph: CachedObjectPos[];
-  graphMask: ObjectMap;
-  net: ObjectMap;
-  netValues: CachedObjectPos[];
-  outerValues: CachedObjectPos[];
+  obj: CachedObjectPos; // target
+  pos: RoomPosition; // walkable position
+  graph: CachedObjectPos[]; // neighbors (TODO sort)
+  graphMask: ObjectMap; // index of neighbors -- coreNet
+  net: ObjectMap; // total network
+  netValues: CachedObjectPos[]; // total net values -- allNoes// (TODO sort)
+  outerValues: CachedObjectPos[]; // total network minus graph -- shellNodes (TODO sort)
 }
 
 /**
@@ -32,7 +32,7 @@ interface Node {
  * 2 -
  *  a - keeping same depth 2 set
  *  b - find closest excluding connected nodes (a*)
- *  c - if found in network, add to connected set and repeat 2.a
+ *  c - if found in network, add to connected set by repeating 1.a onward
  */
 export default class StateGraphBuilder implements GraphBuilder {
   private _mem: any;
@@ -51,7 +51,6 @@ export default class StateGraphBuilder implements GraphBuilder {
 
   public buildGraph(root: State<any>) {
     log.debug(root.pos().roomName, "graph root", root.pos().x, root.pos().y);
-    Debug.on("debugGraph");
     Debug.always("observe graph " + root.pos().x + " " + root.pos().y);
     const srcWalkablePos = graphs.findWalkable(root.pos());
     if (!srcWalkablePos) {
@@ -62,6 +61,7 @@ export default class StateGraphBuilder implements GraphBuilder {
     graphs.initRoom(srcWalkablePos.roomName);
 
     const graph = expand(["graph"], root.memory, []) as CachedObjectPos[];
+
     // source network information
     const src = {
       type: root.getType(),
@@ -75,56 +75,72 @@ export default class StateGraphBuilder implements GraphBuilder {
     } as Node;
     src.graphMask[src.obj.id] = src.obj;
 
-    let dstGraph: CachedObjectPos[]|undefined = src.graph;
-    let dstCost = 0;
+    src.net[src.obj.id] = src.obj;
+    src.netValues.push(src.obj);
 
     this.addIntoNet(src.obj, 0, src);
-    this.flattenGraphInto(src, 1, src.graph, 0);
+    this.flattenGraphInto(src, MERGE_NETWORK_DEPTH, src.graph, 0);
 
-    this.innerPrune(src, src.obj);
+    let joined = false;
 
-    let merged = false;
     do {
-      const closestOutNetwork = graphs.findNeighbor(srcWalkablePos, src.netValues);
-      dstGraph = this.getNodesFor(closestOutNetwork);
-      if (dstGraph.length > 0) {
-        merged = this.innerPrune(src, closestOutNetwork as CachedObjectPos);
-      } else if (closestOutNetwork) {
-        dstCost = closestOutNetwork.range;
-        log.debug("+out", closestOutNetwork.pos.x, closestOutNetwork.pos.y, "cost", closestOutNetwork.range);
-        // prune is not needed because there are no node connections
-        this.addIntoNet(closestOutNetwork, 0, src);
-        this.addLink(src.obj, src.graph, closestOutNetwork, dstGraph);
-        merged = false;
+      const closestOuter = graphs.findNeighbor(src.pos, src.netValues);
+
+      if (closestOuter) {
+        joined = this.addOutsideLink(src, closestOuter); // TODO detect redundant link (close flybys)
+        // TODO prune something?
+      } else {
+        joined = false;
       }
-    } while (merged);
+    } while (joined);
+
+    do {
+      const closestShell = graphs.search(src.pos, src.outerValues, true);
+
+      if (closestShell) {
+        joined = this.addShellLink(src, closestShell);
+      } else {
+        joined = false;
+      }
+    } while (joined);
 
     this.printGraph(src.obj, {});
 
-    return src.graph;
+    return _.sortBy(src.graph, "id");
   }
 
-  protected innerPrune(src: Node, dst: CachedObjectPos): boolean {
-    let dstGraph = this.getNodesFor(dst);
-    let dstCost = dst.range;
+  protected addOutsideLink(src: Node, dst: CachedObjectPos) {
+    src.net[dst.id] = dst;
+    src.graphMask[dst.id] = dst;
+    const val = _.create(dst, {range: 1});
+    src.netValues.push(val);
+    const dstGraph = this.getNodesFor(dst);
+    // const joined = dstGraph.length > 0;
+    // TODO if dstCost < MERGE_PATH_SCALAR, add to src.graph?
+    const joined = this.flattenGraphInto(src, MERGE_NETWORK_DEPTH, dstGraph, dst.range - MERGE_PATH_SCALAR);
+    this.addLink(src.obj, src.graph, dst, dstGraph);
+    return joined;
+  }
 
-    let merged = false;
-    do {
-      this.flattenGraphInto(src, MERGE_NETWORK_DEPTH, dstGraph, dstCost);
-      dstGraph = [];
-      const closestInNetwork = graphs.search(src.pos, src.outerValues, true);
-      if (closestInNetwork) {
-        dstGraph = this.getNodesFor(closestInNetwork);
-        dstCost = closestInNetwork.range;
-        if (this.graphMergeAndPrune(src, closestInNetwork, dstGraph)) {
-          merged = true;
-        } else {
-          dstGraph = [];
-        }
-      }
-    } while (dstGraph.length > 0);
-
-    return merged;
+  protected addShellLink(src: Node, dst: CachedObjectPos) {
+    src.graphMask[dst.id] = dst;
+    const di = _.sortedIndex(src.outerValues, dst, "id");
+    if (src.outerValues[di].id === dst.id) {
+      // if (src.outerValues.length > 64) {
+      //   src.outerValues[di] = null; // TODO pick another value and copy to this index
+      // } else {
+      src.outerValues.splice(di, 1);
+      // }
+    }
+    const dstGraph = this.getNodesFor(dst);
+    // TODO check for cost delta
+    const joined = this.flattenGraphInto(src, MERGE_NETWORK_DEPTH, dstGraph, dst.range - MERGE_PATH_SCALAR);
+    const dstLong = src.net[dst.id];
+    if (!dstLong || dstLong.range > dst.range) {
+      Debug.always("avoid " + src.obj.pos.x + " " + src.obj.pos.y + "--" + dst.range + "->" + dst.pos.x + " " + dst.pos.y);
+      this.addLink(src.obj, src.graph, dst, dstGraph);
+    }
+    return joined;
   }
 
   protected addIntoNet(dst: CachedObjectPos, cost: number, src: Node) {
@@ -132,17 +148,18 @@ export default class StateGraphBuilder implements GraphBuilder {
     if (!src.net[dst.id]) {
       src.net[dst.id] = _.create(dst, {range: cost});
       const val = _.create(dst, {range: 1});
-      src.netValues.push(val);
+      src.netValues.push(val); // TODO sort
       if (!src.graphMask[dst.id]) {
-        src.outerValues.push(val);
+        src.outerValues.push(val); // TODO sort
       }
+      return true;
     } else {
       const replacing = src.net[dst.id];
       if (replacing.range > cost) {
         replacing.range = cost;
       }
+      return false;
     }
-    return true;
   }
 
   protected flattenGraphInto(src: Node, depth: number, dstGraph: CachedObjectPos[]|undefined, dstCost: number) {
@@ -158,7 +175,7 @@ export default class StateGraphBuilder implements GraphBuilder {
       for (let i = dstGraph.length - 1; i >= 0; i--) {
         const o = dstGraph[i];
         if (!src.net[o.id]) {
-          changed = this.flattenGraphInto(src, depth, this.getNodesFor(o), dstCost + o.range) || changed;
+          changed = this.flattenGraphInto(src, depth, this.getNodesFor(o), dstCost + o.range - MERGE_PATH_SCALAR) || changed;
         }
       }
     }
@@ -168,41 +185,6 @@ export default class StateGraphBuilder implements GraphBuilder {
   protected isLinkRedundant(present: CachedObjectPos, adding: CachedObjectPos, cost: number) {
     return present && adding && (present.range < (adding.range + cost) * MERGE_PATH_RATIO
       || present.range < adding.range + cost - MERGE_PATH_SCALAR);
-  }
-
-  protected graphMergeAndPrune(src: Node, dst: CachedObjectPos|undefined, dstGraph: CachedObjectPos[]): boolean {
-    if (!dst) {
-      return false;
-    }
-    // dst.range - this is the cost
-    // add neighbor or prune
-    let dstLong = src.net[dst.id];
-    if (this.isLinkRedundant(dstLong, dst, 0)) {
-      // not enough path savings, avoid new node
-      log.debug("avoid", dst.pos.x, dst.pos.y, dstLong.range, "<~", dst.range);
-      return false; // TODO we should sticky this decision?
-    }
-
-    log.debug("+", dst.pos.x, dst.pos.y, "cost", dst.range);
-    this.addIntoNet(dst, 0, src);
-
-    let changed = this.flattenGraphInto(src, MERGE_NETWORK_DEPTH - 1, dstGraph, dst.range);
-
-    // TODO later - add friend of friend if path is shorter?
-
-    // for each added link check for redundancies
-    for (let i = dstGraph.length - 1; i >= 0; i--) {
-      const neighbor = dstGraph[i];
-      const neighborLong = src.net[neighbor.id];
-      if (src.obj.id !== neighbor.id && this.isLinkRedundant(neighborLong, neighbor, dst.range)) {
-        // path to neighbor thru new dst is more expensive than network path, so remove it
-        log.debug("prune", neighbor.pos.x, neighbor.pos.y, neighborLong.range, "<~", neighbor.range + dst.range);
-        dstGraph.splice(i, 1);
-        changed = true;
-      }
-    }
-
-    return changed;
   }
 
   protected link(dst: CachedObjectPos) {

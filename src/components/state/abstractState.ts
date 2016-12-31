@@ -54,7 +54,6 @@ function _register(state: any, rootMemory: any): boolean {
 }
 
 function _access(state: any, rootMemory: any, writeValue?: any): any {
-  // log.debug(state, "addressing", ... state._accessAddress()); // TODO NOW spread bad es6 perf
   const addr = state._accessAddress();
 
   if (!addr) {

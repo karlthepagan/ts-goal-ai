@@ -11,14 +11,21 @@ interface CachedLocationMatrix {
 }
 
 function dirMerge(pos: RoomPosition, posRoomXY: F.XY, excluded: {pos: RoomPosition}[]|undefined,
-                  directions: CachedObjectPos[][], candidates: CachedObjectPos[], maxPerDir?: number) {
+                  directions: CachedObjectPos[][], candidates: CachedObjectPos[], maxPerDir?: number,
+                  maxDistance?: number) {
+
   for (let i = candidates.length - 1; i >= 0; i--) {
+    let maxRange = maxDistance;
     const c = candidates[i];
     if (excluded && _.any(excluded, function(e) { return F.xyEq(c.pos, e.pos); })) {
       continue;
     }
 
     const xy = F.relativeToRoom(pos, posRoomXY, c.pos);
+
+    if (pos.getRangeTo(xy) > maxRange) {
+      continue;
+    }
 
     const cDir = F.cardinalDirTo(pos, xy);
 
@@ -103,7 +110,7 @@ export default class GraphManager {
     if (!excluded) {
       excluded = [{pos: pos}];
     }
-    const dirs = _.compact(this.getNearbyObjects(pos, 4, excluded));
+    const dirs = _.compact(this.getNearbyObjects(pos, 4, 100, excluded));
     const cached = _.flatten(dirs);
     // const cached = this.getObjectsInRoom(target.roomName, excluded);
     return this.search(target, cached);
@@ -185,7 +192,7 @@ export default class GraphManager {
     }
   }
 
-  protected getNearbyObjects(pos: RoomPosition, maxPerDir: number, excluded?: {pos: RoomPosition}[]): CachedObjectPos[][]|undefined {
+  protected getNearbyObjects(pos: RoomPosition, maxPerDir: number, maxDistance: number, excluded?: {pos: RoomPosition}[]): CachedObjectPos[][]|undefined {
     const posRoomXY = F.parseRoomName(pos.roomName); // TODO assert defined
     const directions = [null, [], null, [], null, [], null, []] as CachedObjectPos[][];
 
@@ -194,7 +201,7 @@ export default class GraphManager {
       return undefined;
     }
 
-    dirMerge(pos, posRoomXY, excluded, directions, candidates, maxPerDir);
+    dirMerge(pos, posRoomXY, excluded, directions, candidates, maxPerDir, maxDistance);
 
     for (let dir = 1; dir < 8; dir += 2) {
       if (directions[dir].length >= maxPerDir) {
@@ -208,7 +215,7 @@ export default class GraphManager {
         continue;
       }
 
-      dirMerge(pos, posRoomXY, excluded, directions, candidates, maxPerDir);
+      dirMerge(pos, posRoomXY, excluded, directions, candidates, maxPerDir, maxDistance);
 
       directions[dir].splice(maxPerDir);
     }
