@@ -7,7 +7,6 @@ import {expand} from "../functions";
 import {log} from "../support/log";
 import Dictionary = _.Dictionary;
 
-const MERGE_PATH_RATIO = 0.9;
 const MERGE_PATH_SCALAR = 3;
 const MERGE_NETWORK_DEPTH = 2;
 
@@ -180,11 +179,6 @@ export default class StateGraphBuilder implements GraphBuilder {
       }
     }
     return changed;
-  }
-
-  protected isLinkRedundant(present: CachedObjectPos, adding: CachedObjectPos, cost: number) {
-    return present && adding && (present.range < (adding.range + cost) * MERGE_PATH_RATIO
-      || present.range < adding.range + cost - MERGE_PATH_SCALAR);
   }
 
   protected link(dst: CachedObjectPos) {
