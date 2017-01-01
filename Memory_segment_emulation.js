@@ -88,6 +88,6 @@ function log(theMessage, theCategory) {
     console.log("[" + theCategory + "] - " + theMessage);
 }
 
-function reportDuration(theOperationName, theUsedCpu); {
+function reportDuration(theOperationName, theUsedCpu) {
     log("Operation [" + theOperationName + "] took [" + theUsedCpu.toFixed(2) + "] CPU", "durationReport")
 }
