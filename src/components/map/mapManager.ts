@@ -16,6 +16,15 @@ export default class MapManager {
     return 0x80 + 8 * n;
   }
 
+  public noSwamp(n: number) {
+    switch (n) {
+      case 5:
+        return 2;
+      default:
+        return n;
+    }
+  }
+
   public load(mem: any) {
     if (this._loaded) {
       return;

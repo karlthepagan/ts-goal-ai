@@ -18,6 +18,8 @@ interface Memory {
 declare function require(path: string): any;
 
 interface Global {
+  ai: any;
+  $: any;
   log: any;
 }
 

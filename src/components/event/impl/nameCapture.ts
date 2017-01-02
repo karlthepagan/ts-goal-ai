@@ -1,4 +1,5 @@
 import * as Debug from "../../util/debug";
+import {elvisLazy} from "../../functions";
 
 type NameAndArgs = {name: string, args: any[]|undefined };
 
@@ -8,7 +9,7 @@ interface CaptureTarget {
   properties: NameAndArgs[];
 }
 
-export class NameCapture implements ProxyHandler<CaptureTarget> {
+export class NameCapture implements ProxyHandler<CaptureTarget|undefined> {
   public newTarget(count?: number, callback?: (properties: NameAndArgs[]) => any) {
     if (count !== undefined && callback === undefined) {
       throw new Error("callback required");
@@ -42,26 +43,33 @@ export class NameCapture implements ProxyHandler<CaptureTarget> {
     return new Proxy(gets, this) as any;
   }
 
-  public get (target: CaptureTarget, name: string, receiver: any): any {
+  public get (target: CaptureTarget|undefined, name: string): any {
+    if (name === "valueOf") {
+      return () => target;
+    }
+
+    const t = elvisLazy(target, this.newTarget);
     // Proxy coerces p into a string
     const args = undefined;
-    target.properties.push({name, args});
-    if (target.count !== undefined) {
-      target.count--;
+    t.properties.push({name, args});
+    if (t.count !== undefined) {
+      t.count--;
     }
 
-    return receiver;
+    return new Proxy(t, this);
   }
 
-  public apply(target: CaptureTarget, thisArg: any, argArray?: any): any {
-    if (target.count === 0) {
+  public apply(target: CaptureTarget|undefined, thisArg: any, argArray?: any): any {
+    thisArg = thisArg;
+    const t = elvisLazy(target, this.newTarget);
+    if (t.count === 0) {
       // TODO assertion function?
-      return (target.callback as any)(target.properties)(argArray) as any;
+      return (t.callback as any)(t.properties)(argArray) as any;
     }
 
-    target.properties[target.properties.length - 1].args = argArray;
+    t.properties[t.properties.length - 1].args = argArray;
 
-    return thisArg;
+    return new Proxy(t, this);
   }
 }
 

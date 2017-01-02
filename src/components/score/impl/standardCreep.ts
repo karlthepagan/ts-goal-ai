@@ -13,6 +13,10 @@ export const ROAD_WEIGHT = 3; // cost to maintain roads
 export const SWAMP_WEIGHT = 1; // cost to route around swamps
 export const COMBAT_DANGER = 10; // TODO implement risk
 
+export const FRACTION_CARRY_COST = 2 / 25;
+export const FRACTION_CREEP_TTL = 1 / 3;
+export const FRACTION_CLAIM_TTL = 1 / 9;
+
 abstract class StandardCreep extends ScoreMixin<CreepState> implements CreepScore {
   public energyVel() {
     // TODO is our source non-empty?
