@@ -2,7 +2,7 @@ import BotMemoryDescription from "./botMemoryDescription";
 import {CreepDescription} from "./botMemoryDescription";
 
 export default class ScreepsOsMemory implements BotMemoryDescription {
-  public getRoomCostmatrix(roomName: string): CostMatrix|any {
+  public getRoomCostmatrix(roomName: string): CostMatrix|undefined {
     roomName = roomName;
     return undefined;
   }

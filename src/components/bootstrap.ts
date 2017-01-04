@@ -22,6 +22,7 @@ import {scoreManager, eventManager, importManager} from "./singletons";
 import StandardCreep from "./score/impl/standardCreep";
 import StandardSource from "./score/impl/standardSource";
 import StandardStructure from "./score/impl/standardStructure";
+import OcsMemory from "./import/ocsMemory";
 
 export const bootstrap: (() => void)[] = [];
 
@@ -76,4 +77,5 @@ bootstrap.push(() => {
 bootstrap.push(() => {
   importManager.addMemoryDescription("tooAngel", new TooAngelMemory());
   importManager.addMemoryDescription("ScreepsOS", new ScreepsOsMemory());
+  importManager.addMemoryDescription("OCS", new OcsMemory());
 });

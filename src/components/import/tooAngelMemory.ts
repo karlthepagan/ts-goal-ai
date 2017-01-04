@@ -27,7 +27,7 @@ export default class TooAngelMemory implements BotMemoryDescription {
 
   public getRoomCostmatrix(roomName: string): CostMatrix|undefined {
     const room = Game.rooms[roomName];
-    if (room === undefined || room === null) {
+    if (room === undefined || room === null) { // TODO Memory instead of instance
       return undefined;
     }
 
