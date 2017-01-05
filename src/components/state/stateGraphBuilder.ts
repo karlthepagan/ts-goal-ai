@@ -50,7 +50,7 @@ export default class StateGraphBuilder implements GraphBuilder {
 
   public buildGraph(root: State<any>) {
     log.debug(root.pos().roomName, "graph root", root.pos().x, root.pos().y);
-    Debug.always("observe graph " + root.pos().x + " " + root.pos().y);
+    // Debug.always("observe graph " + root.pos().x + " " + root.pos().y);
     const srcWalkablePos = graphs.findWalkable(root.pos());
     if (!srcWalkablePos) {
       // TODO later, warn isolated structure

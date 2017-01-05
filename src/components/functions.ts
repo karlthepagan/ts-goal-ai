@@ -8,6 +8,7 @@ import * as Debug from "./util/debug";
 // export type CandidateLambda<S, T> = (state: S) => T[];
 // export type CandidateFactory<T> = { [key: string]: CandidateLambda<T, any> };
 
+export type Unsafe<X> = X;
 export type Filter<T> = (s: T) => boolean;
 export type Task = () => number;
 export type Func<X, Y> = (x: X) => Y;
@@ -296,6 +297,9 @@ function parseRoomNameSim(roomName: string): XY {
 // simulator monkeypatch!
 export const parseRoomName = Game.cpu.limit === undefined ? parseRoomNameSim : parseRoomNameNormal;
 
+/**
+ * E0S0 is center (W0N0 -> -1, -1)
+ */
 export function formatRoomName(pos: XY): string {
   if (pos.x < 0) {
     if (pos.y < 0) {

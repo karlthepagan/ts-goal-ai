@@ -22,6 +22,7 @@ import {scoreManager, eventManager, importManager} from "./singletons";
 import StandardCreep from "./score/impl/standardCreep";
 import StandardSource from "./score/impl/standardSource";
 import StandardStructure from "./score/impl/standardStructure";
+import cli from "./cli/cli";
 import OcsMemory from "./import/ocsMemory";
 
 export const bootstrap: (() => void)[] = [];
@@ -29,6 +30,12 @@ export const bootstrap: (() => void)[] = [];
 bootstrap.push(() => {
   log.debug("bootstrap starting");
   GlobalState.protectMemory("config");
+});
+
+bootstrap.push(() => {
+  cli.register("hello", () => {
+    log.error("hello cli");
+  });
 });
 
 bootstrap.push(() => {

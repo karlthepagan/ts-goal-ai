@@ -1,9 +1,16 @@
 import NAME_CAPTURE from "../event/impl/nameCapture";
-type CommandTree = { [name: string]: CommandTree|Function };
-type Command = CommandTree|Function|undefined;
+// import * as Debug from "../util/debug";
 
+type CommandTree = { [name: string]: CommandTree|Function };
+type CommandRoot = {};
+type Command = CommandTree|Function|CommandRoot;
 type Resolver = (a: any) => any;
 
+const ROOT = {} as CommandRoot;
+
+/**
+ * Symbol.toPrimitive is the key! everything triggers when that evaluates
+ */
 export class CLI implements ProxyHandler<Command> {
   public handlers: CommandTree = {};
 
@@ -20,7 +27,7 @@ export class CLI implements ProxyHandler<Command> {
 
       if (node[addr]) {
         node = node[addr] as CommandTree;
-      } else if (i === parts.length - i) {
+      } else if (i === parts.length - 1) {
         node[addr] = func;
       } else {
         node = node[addr] = {};
@@ -29,7 +36,11 @@ export class CLI implements ProxyHandler<Command> {
   }
 
   public get(target: Command, p: PropertyKey): any {
-    const node = target ? (target as CommandTree)[p] : this.handlers[p];
+    if (p === Symbol.toPrimitive) {
+      // resolve builder stack
+    }
+
+    const node = target !== ROOT ? (target as CommandTree)[p] : this.handlers[p];
     if (typeof node === "function") {
       node();
       // returning proxy allows args (better with arity option)
@@ -44,8 +55,8 @@ export class CLI implements ProxyHandler<Command> {
 }
 
 const cli = new CLI();
-const ai = new Proxy<any>(undefined, cli);
-const arg = new Proxy<any>(undefined, NAME_CAPTURE);
+const ai = new Proxy<any>(ROOT, cli);
+const arg = new Proxy<any>(ROOT, NAME_CAPTURE);
 
 global.ai = ai;
 global.$ = arg;
